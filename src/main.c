@@ -1,27 +1,38 @@
 #include <raylib.h>
+#include <stdio.h>
 
-int main(void)
+#define RAYLIB_NUKLEAR_IMPLEMENTATION
+#include <raylib-nuklear.h>
+
+int main()
 {
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    InitWindow(640, 480, "raylib-nuklear example");
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+    int fontSize = 10;
+    struct nk_context *ctx = InitNuklear(fontSize);
 
-    SetTargetFPS(60);
+    while (!WindowShouldClose()) {
+        UpdateNuklear(ctx);
 
-    while (!WindowShouldClose())
-    {
+        if (nk_begin(ctx, "Nuklear", nk_rect(100, 100, 220, 220),
+                NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)) {
+            nk_layout_row_static(ctx, 50, 150, 1);
+            if (nk_button_label(ctx, "Button")) {
+                printf("Hello World!\n");
+            }
+        }
+        nk_end(ctx);
+
         BeginDrawing();
-
             ClearBackground(RAYWHITE);
 
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+            DrawNuklear(ctx);
 
         EndDrawing();
     }
 
-    CloseWindow();
+    UnloadNuklear(ctx);
 
-    return 0;
+    CloseWindow();
 }
 
