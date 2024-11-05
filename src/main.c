@@ -1,11 +1,32 @@
 #include <raylib.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <pathbuf.h>
+#include <string.h>
 
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include <raylib-nuklear.h>
 
 int main()
 {
+    struct path path = {0};
+    append_dir(&path, "home");
+    append_dir(&path, "jany");
+    append_dir(&path, "Downloads");
+    append_file(&path, "wallpaper.png");
+
+    size_t to_alloc = path_bufsz(&path);
+    char str_path[to_alloc + 1];
+    memset(str_path, 0, to_alloc + 1);
+
+    path_str(&path, to_alloc, str_path);
+
+    printf("Path: %s\n", str_path);
+
+    deinit_path(&path, false);
+
+    return 0;
+
     InitWindow(640, 480, "raylib-nuklear example");
 
     int fontSize = 10;
@@ -34,5 +55,6 @@ int main()
     UnloadNuklear(ctx);
 
     CloseWindow();
-}
 
+    return 0;
+}

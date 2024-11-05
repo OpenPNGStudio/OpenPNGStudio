@@ -20,7 +20,7 @@ foreach url : ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs
 
 endforeach
 
-srcs = ['src/main.c']
+srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c']
 
 executable('OpenPNGStudio', srcs,
   dependencies: [
