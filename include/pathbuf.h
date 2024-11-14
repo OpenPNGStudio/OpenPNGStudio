@@ -16,11 +16,16 @@ struct path {
     struct path *next;
 };
 
-void append_dir(struct path *path, char *new_path);
-void append_file(struct path *path, char *filename);
+void path_append_dir(struct path *path, char *new_path);
+void path_append_file(struct path *path, char *filename);
 
-/* caller must free returned path */
-struct path *pop_path(struct path *path);
+/* 
+ * caller must free returned path
+ * if the function returns NULL, it means there is nothing to pop,
+ * it's the same object, just so the caller doesn't accidentally free
+ * the memory it uses
+ */
+struct path *path_pop(struct path *path);
 
 /* return byte count for the entire path */
 size_t path_bufsz(const struct path *path);
@@ -34,6 +39,6 @@ const char *path_basename(const struct path *path);
 void path_dir(const struct path *path, size_t dir_bufsz, char *buf);
 void path_str(const struct path *path, size_t path_bufsz, char *buf);
 
-void deinit_path(struct path *path, bool free_strings);
+void path_deinit(struct path *path, bool free_strings);
 
 #endif

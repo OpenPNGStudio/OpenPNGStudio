@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pathbuf.h>
 
-void append_dir(struct path *path, char *new_path)
+void path_append_dir(struct path *path, char *new_path)
 {
     assert(path != NULL);
 
@@ -26,7 +26,7 @@ void append_dir(struct path *path, char *new_path)
     iter->next->name = new_path;
 }
 
-void append_file(struct path *path, char *filename)
+void path_append_file(struct path *path, char *filename)
 {
     assert(path != NULL);
 
@@ -49,7 +49,24 @@ void append_file(struct path *path, char *filename)
     iter->next->is_file = true;
 }
 
-struct path *pop_path(struct path *path);
+struct path *path_pop(struct path *path)
+{
+    if (path->next == NULL) {
+        return NULL;
+    }
+
+    struct path *prev = path;
+    struct path *iter = path;
+
+    while (iter->next != NULL) {
+        prev = iter;
+        iter = iter->next;
+    }
+
+    prev->next = NULL;
+
+    return iter;
+}
 
 size_t path_bufsz(const struct path *path)
 {
@@ -75,11 +92,69 @@ size_t path_bufsz(const struct path *path)
     return bufsz;
 }
 
-size_t path_dirsz(const struct path *path);
+size_t path_dirsz(const struct path *path)
+{
+    assert(path != NULL);
 
-const char *path_basename(const struct path *path);
+#ifndef _WIN32
+    size_t bufsz = 1; /* separator length is 1 */
+#else
+    size_t bufsz = 3; /* include drive letter */
+#endif
 
-void path_dir(const struct path *path, size_t dir_bufsz, char *buf);
+    const struct path *iter = path;
+
+    while (iter != NULL && !iter->is_file) {
+        bufsz += strlen(iter->name);
+        bufsz++; /* separator */
+
+        iter = iter->next;
+    }
+
+    return bufsz;
+}
+
+const char *path_basename(const struct path *path)
+{
+    const struct path *iter = path;
+
+    while (iter->next != NULL)
+        iter = iter->next;
+
+    return iter->name;
+}
+
+void path_dir(const struct path *path, size_t dir_bufsz, char *buf)
+{
+    assert(path != NULL);
+
+#ifndef _WIN32
+    *buf = PATH_SEPARATOR;
+#else
+    memcpy(buf, "C:\\", 3); /* drive letter will be C most of the time */
+#endif
+
+    buf++;
+    dir_bufsz--;
+
+    const struct path *iter = path;
+
+    while (iter != NULL && dir_bufsz > 0 && !iter->is_file) {
+        size_t wrote = sized_strncpy(buf, iter->name, dir_bufsz);
+        dir_bufsz -= wrote;
+
+        buf += wrote;
+
+        if (dir_bufsz <= 0)
+            return;
+
+        dir_bufsz -= 1; /* separator */
+        *buf = PATH_SEPARATOR;
+        buf++;
+
+        iter = iter->next;
+    }
+}
 
 void path_str(const struct path *path, size_t path_bufsz, char *buf)
 {
@@ -119,7 +194,7 @@ void path_str(const struct path *path, size_t path_bufsz, char *buf)
     }
 }
 
-void deinit_path(struct path *path, bool free_strings)
+void path_deinit(struct path *path, bool free_strings)
 {
     assert(path != NULL);
 
