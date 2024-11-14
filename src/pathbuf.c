@@ -81,6 +81,9 @@ size_t path_bufsz(const struct path *path)
     const struct path *iter = path;
 
     while (iter != NULL) {
+        if (iter->name == NULL)
+            break;
+
         bufsz += strlen(iter->name);
 
         if (!iter->is_file)
@@ -105,6 +108,9 @@ size_t path_dirsz(const struct path *path)
     const struct path *iter = path;
 
     while (iter != NULL && !iter->is_file) {
+        if (iter->name == NULL)
+            break;
+
         bufsz += strlen(iter->name);
         bufsz++; /* separator */
 
@@ -140,6 +146,9 @@ void path_dir(const struct path *path, size_t dir_bufsz, char *buf)
     const struct path *iter = path;
 
     while (iter != NULL && dir_bufsz > 0 && !iter->is_file) {
+        if (iter->name == NULL)
+            break;
+
         size_t wrote = sized_strncpy(buf, iter->name, dir_bufsz);
         dir_bufsz -= wrote;
 
@@ -209,4 +218,9 @@ void path_deinit(struct path *path, bool free_strings)
 
         free(prev);
     }
+
+    if (free_strings)
+        free(path->name);
+
+    path->next = NULL;
 }
