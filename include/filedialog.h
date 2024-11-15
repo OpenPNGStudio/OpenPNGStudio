@@ -5,9 +5,20 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include <raylib-nuklear.h>
+
+enum image_type {
+    UP_IMG,
+    DIR_IMG,
+    FILE_IMG,
+    IMG_IMG,
+    IMG_TYPE_SZ
+};
+
 struct dir_entry {
     char *name;
     bool is_file;
+    nk_bool selected;
 };
 
 struct filedialog {
@@ -16,11 +27,12 @@ struct filedialog {
     struct dir_entry *dir_content;
     size_t content_size;
     int selected_index;
-    unsigned int row_width;
     bool open_for_write;
     bool show;
+    struct nk_rect geometry;
 
     /* CFG */
+    unsigned int row_count;
     const char *title;
     const char *filter;
 };
@@ -39,8 +51,10 @@ void filedialog_selected(const struct filedialog *dialog, size_t selsz,
 /* once everything is setup, trigger opening */
 void filedialog_show(struct filedialog *dialog);
 
-void filedialog_run(struct filedialog *dialog);
+void filedialog_run(struct filedialog *dialog, struct nk_context *ctx);
 
 void filedialog_deinit(struct filedialog *dialog);
+
+void filedialog_register_icon(enum image_type type, struct nk_image img);
 
 #endif

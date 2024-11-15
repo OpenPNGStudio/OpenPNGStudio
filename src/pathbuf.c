@@ -117,7 +117,7 @@ size_t path_dirsz(const struct path *path)
         iter = iter->next;
     }
 
-    return bufsz;
+    return bufsz + 1;
 }
 
 const char *path_basename(const struct path *path)

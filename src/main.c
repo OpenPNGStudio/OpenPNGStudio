@@ -1,11 +1,9 @@
 #include "filedialog.h"
 #include <raylib.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <pathbuf.h>
 #include <string.h>
 
-#define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include <raylib-nuklear.h>
 
 int main()
@@ -13,26 +11,35 @@ int main()
     struct filedialog d = {0};
 
     d.filter = NULL;
+    d.title = "Open File";
+    d.row_count = 4;
 
-    filedialog_deinit(&d);
+    filedialog_init(&d, false);
 
-    return 0;
+    filedialog_show(&d);
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(1024, 512, "raylib-nuklear example");
     Font font = LoadFont("../assets/Ubuntu-R.ttf");
+    SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
     int fontSize = 16;
     struct nk_context *ctx = InitNuklearEx(font, fontSize);
 
     int width = 1024;
 
+    filedialog_register_icon(UP_IMG, LoadNuklearImage("../assets/up.png"));
+    filedialog_register_icon(DIR_IMG, LoadNuklearImage("../assets/directory.png"));
+    filedialog_register_icon(FILE_IMG, LoadNuklearImage("../assets/file.png"));
+    filedialog_register_icon(IMG_IMG, LoadNuklearImage("../assets/image.png"));
+
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
         UpdateNuklear(ctx);
 
-        if (nk_begin(ctx, "Menu", nk_rect(0, 0, width, 30),
+        if (nk_begin(ctx, "Menu", nk_rect(0, 0, width, 25),
                 NK_WINDOW_NO_SCROLLBAR)) {
             nk_menubar_begin(ctx);
 
@@ -41,7 +48,6 @@ int main()
             if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
                 nk_layout_row_dynamic(ctx, 25, 1);
                 if (nk_menu_item_label(ctx, "New", NK_TEXT_LEFT)) {
-                    printf("Hello World!\n");
                 }
                 nk_menu_end(ctx);
             }
@@ -52,6 +58,8 @@ int main()
         nk_end(ctx);
 
         width = GetScreenWidth();
+
+        filedialog_run(&d, ctx);
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -64,6 +72,8 @@ int main()
     UnloadNuklear(ctx);
 
     CloseWindow();
+
+    filedialog_deinit(&d);
 
     return 0;
 }
