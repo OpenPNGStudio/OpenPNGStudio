@@ -5,6 +5,7 @@
 #include <nk.h>
 
 #include <raylib-nuklear.h>
+#include <string.h>
 
 int main()
 {
@@ -68,8 +69,18 @@ int main()
         BeginDrawing();
             ClearBackground(bg);
 
-            DrawNuklear(ctx);
+            if (!d.show) {
+                if (d.selected_index != -1) {
+                    size_t sz = filedialog_selsz(&d);
+                    char buffer[sz + 1];
+                    memset(buffer, 0, sz + 1);
+                    filedialog_selected(&d, sz, buffer);
 
+                    DrawTextEx(font, buffer, (Vector2) { 64, 64, }, 24.0f, 24.0f / 10.0f, WHITE);
+                }
+            }
+
+            DrawNuklear(ctx);
         EndDrawing();
     }
 

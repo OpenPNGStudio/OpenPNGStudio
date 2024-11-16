@@ -22,10 +22,17 @@ struct new_file {
     bool cleanup;
 };
 
+struct input_buffer {
+    char *buffer;
+    int len;
+    bool cleanup;
+};
+
 static struct nk_image images[IMG_TYPE_SZ] = {0};
 static char img_filter[] = "png;bmp;jpg;jpeg;gif;psd";
 
 static int on_new_file(struct nk_context *ctx, struct messagebox *box);
+static int on_search(struct nk_context *ctx, struct messagebox *box);
 static int entry_comparar(const void *p1, const void *p2);
 static struct dir_entry *append_file(struct filedialog *dialog, const char *name);
 static const char *filter_out(const char *filename, const char *filter);
@@ -95,7 +102,7 @@ void filedialog_selected(const struct filedialog *dialog, size_t selsz,
     size_t sz = path_dirsz(&dialog->current_directory);
     path_dir(&dialog->current_directory, selsz, buf);
 
-    buf += sz;
+    buf += sz - 1;
     selsz -= sz;
 
     sz = sized_strncpy(buf, e->name, selsz);
@@ -130,6 +137,7 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
     }
 
     static struct new_file new_filereq = {0};
+    static struct input_buffer search_filter = {0};
     static bool show_hiden = false;
 
     if (dialog->show) {
@@ -206,20 +214,32 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
                             new_filereq.is_file = true;
                             new_filereq.cleanup = true;
                             dialog->msg_box = messagebox_custom("New File", on_new_file, &new_filereq);
+                            nk_contextual_close(ctx);
+                            goto ctx_end;
                         }
 
                         if (nk_contextual_item_label(ctx, "Directory", NK_TEXT_LEFT)) {
                             new_filereq.is_file = false;
                             new_filereq.cleanup = true;
                             dialog->msg_box = messagebox_custom("New Directory", on_new_file, &new_filereq);
+                            nk_contextual_close(ctx);
+                            goto ctx_end;
                         }
                         nk_layout_row_dynamic(ctx, 2, 1);
                         nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
                         nk_layout_row_dynamic(ctx, 25, 1);
                     }
 
+                    if (nk_contextual_item_label(ctx, "Search", NK_TEXT_LEFT)) {
+                        search_filter.cleanup = true;
+                        dialog->msg_box = messagebox_custom("Search", on_search, &search_filter);
+                        nk_contextual_close(ctx);
+                        goto ctx_end;
+                    }
+
                     nk_checkbox_label(ctx, "Show hidden files", &show_hiden);
 
+ctx_end:
                     nk_contextual_end(ctx);
                 } else {
                     new_open = false;
@@ -237,6 +257,10 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
 
                     if (e->hidden && !show_hiden)
                         continue;
+
+                    if (search_filter.buffer != NULL)
+                        if (strncmp(search_filter.buffer, e->name, search_filter.len) != 0)
+                            continue;
 
                     nk_bool prev = e->selected;
                     enum image_type type = DIR_IMG;
@@ -257,6 +281,12 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
                     if (prev == true && e->selected == false) {
                         if (!e->is_file) {
                             filedialog_enter(dialog, e->name);
+                            if (search_filter.buffer != NULL) {
+                                free(search_filter.buffer);
+                                search_filter.cleanup = false;
+                                search_filter.buffer = NULL;
+                                search_filter.len = 0;
+                            }
                             goto end;
                         } else {
                             if (dialog->selected_index != -1)
@@ -610,6 +640,52 @@ static int on_new_file(struct nk_context *ctx, struct messagebox *box)
     nk_layout_row_push(ctx, 0.14f);
     if (nk_button_label(ctx, "Ok"))
         return 1;
+
+    return -1;
+}
+
+static int on_search(struct nk_context *ctx, struct messagebox *box)
+{
+    struct input_buffer *req = box->userdata;
+
+    if (req->cleanup) {
+        if (req->buffer != NULL) {
+            free(req->buffer);
+        }
+        req->cleanup = false;
+        req->buffer = malloc(1);
+        *req->buffer = 0;
+        req->len = 0;
+    }
+
+    int new_len = req->len;
+
+    nk_layout_row_dynamic(ctx, 25, 1);
+    nk_label(ctx, "Search term: ", NK_TEXT_LEFT);
+    nk_edit_string(ctx, NK_EDIT_SIMPLE, req->buffer, &new_len, req->len + 2, nk_filter_default);
+
+    if (new_len > req->len) {
+        req->buffer = realloc(req->buffer, ++req->len + 1);
+        req->buffer[req->len] = 0;
+    } else if (new_len < req->len) {
+        req->buffer[new_len] = 0;
+        req->len--;
+    }
+
+    struct nk_rect bounds = nk_window_get_content_region(ctx);
+
+    bounds.h -= 25 * 4;
+
+    nk_layout_row_dynamic(ctx, bounds.h, 1);
+    nk_label(ctx, " ", NK_TEXT_LEFT);
+
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+    nk_layout_row_push(ctx, 0.85f);
+    nk_label(ctx, " ", NK_TEXT_LEFT);
+
+    nk_layout_row_push(ctx, 0.14f);
+    if (nk_button_label(ctx, "Ok"))
+        return 0;
 
     return -1;
 }
