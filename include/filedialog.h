@@ -1,6 +1,7 @@
 #ifndef _FILEDIALOG_H_
 #define _FILEDIALOG_H_
 
+#include <messagebox.h>
 #include <pathbuf.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,6 +10,7 @@
 
 enum image_type {
     UP_IMG,
+    REFRESH_IMG,
     DIR_IMG,
     FILE_IMG,
     IMG_IMG,
@@ -18,6 +20,7 @@ enum image_type {
 struct dir_entry {
     char *name;
     bool is_file;
+    bool hidden;
     nk_bool selected;
 };
 
@@ -30,6 +33,7 @@ struct filedialog {
     bool open_for_write;
     bool show;
     struct nk_rect geometry;
+    struct messagebox msg_box;
 
     /* CFG */
     unsigned int row_count;

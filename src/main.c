@@ -2,7 +2,7 @@
 #include <raylib.h>
 #include <stdbool.h>
 #include <pathbuf.h>
-#include <string.h>
+#include <nk.h>
 
 #include <raylib-nuklear.h>
 
@@ -26,15 +26,19 @@ int main()
 
     int fontSize = 16;
     struct nk_context *ctx = InitNuklearEx(font, fontSize);
+    set_nk_font(font);
 
     int width = 1024;
 
     filedialog_register_icon(UP_IMG, LoadNuklearImage("../assets/up.png"));
+    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage("../assets/refresh.png"));
     filedialog_register_icon(DIR_IMG, LoadNuklearImage("../assets/directory.png"));
     filedialog_register_icon(FILE_IMG, LoadNuklearImage("../assets/file.png"));
     filedialog_register_icon(IMG_IMG, LoadNuklearImage("../assets/image.png"));
 
     SetTargetFPS(60);
+
+    Color bg = ColorFromNuklear(ctx->style.window.header.active.data.color);
 
     while (!WindowShouldClose()) {
         UpdateNuklear(ctx);
@@ -62,7 +66,7 @@ int main()
         filedialog_run(&d, ctx);
 
         BeginDrawing();
-            ClearBackground(RAYWHITE);
+            ClearBackground(bg);
 
             DrawNuklear(ctx);
 

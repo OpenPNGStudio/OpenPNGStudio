@@ -92,7 +92,7 @@ size_t path_bufsz(const struct path *path)
         iter = iter->next;
     }
 
-    return bufsz;
+    return bufsz + 1;
 }
 
 size_t path_dirsz(const struct path *path)
