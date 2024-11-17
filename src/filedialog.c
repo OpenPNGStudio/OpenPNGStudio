@@ -145,6 +145,7 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
                 NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE |
                 NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
             
+            messagebox_run(&dialog->msg_box, ctx);
             /* title bar*/
 
             nk_layout_row_template_begin(ctx, 32);
@@ -153,8 +154,13 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
             nk_layout_row_template_push_static(ctx, 32);
             nk_layout_row_template_end(ctx);
 
-            if (nk_button_image(ctx, images[UP_IMG]))
+            if (nk_button_image(ctx, images[UP_IMG])) {
                 filedialog_up(dialog);
+                free(search_filter.buffer);
+                search_filter.cleanup = false;
+                search_filter.buffer = NULL;
+                search_filter.len = 0;
+            }
 
             size_t sz = path_dirsz(&dialog->current_directory);
             char buf[sz + 1];
@@ -182,7 +188,15 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
 
             if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER)) {
                 static bool new_open = false;
+                static bool context_open = false;
+                context_open = dialog->msg_box.res != -1;
+
                 if (nk_contextual_begin(ctx, 0, nk_vec2(256, 256), bounds)) {
+                    if (!context_open) {
+                        nk_contextual_close(ctx);
+                        goto ctx_end;
+                    }
+
                     nk_layout_row_dynamic(ctx, 25, 1);
 
                     struct nk_vec2 old_padding = ctx->style.window.group_padding;
@@ -356,8 +370,6 @@ end:
             }
 
             nk_layout_row_end(ctx);
-
-            messagebox_run(&dialog->msg_box, ctx);
 
             if (dialog->msg_box.userdata == &new_filereq) {
                 if (dialog->msg_box.res == 1) {
