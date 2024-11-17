@@ -1,4 +1,5 @@
 build/
+build-mingw/
 subprojects/raylib/
 include/nuklear.h
 include/raylib-nuklear.h

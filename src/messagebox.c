@@ -5,6 +5,8 @@
 #include <messagebox.h>
 #include <stdio.h>
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 struct messagebox messagebox_info(const char *title, const char *body)
 {
     struct messagebox box = {0};
@@ -58,6 +60,8 @@ void messagebox_run(struct messagebox *messagebox, struct nk_context *ctx)
 
         float w = size.x;
         float h = size.y;
+
+        w = MAX(w, 200);
 
         if (messagebox->type == MESSAGEBOX_CUSTOM) {
             w = bounds.w / 100.0f * 80.0f;

@@ -17,6 +17,8 @@
 
 #ifdef _WIN32
 #include <fileapi.h>
+#include <errhandlingapi.h>
+#include <winerror.h>
 #define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
 #endif
 
@@ -462,9 +464,19 @@ end:
                         filedialog_up(dialog);
 
                         if (fd == -1) {
+#ifndef _WIN32
                             if (errno == EACCES) {
+#else
+                            DWORD err = GetLastError();
+                            if (err == ERROR_ACCESS_DENIED) {
+#endif
                                 dialog->msg_box =
                                     messagebox_error("Error", "Permissions Denied!");
+#ifdef _WIN32
+                            } else if (err == ERROR_NO_MORE_FILES) {
+                                dialog->msg_box =
+                                    messagebox_error("Error", "File Exists!");
+#endif
                             } else {
                                 perror("open");
                                 abort();
@@ -481,6 +493,7 @@ end:
                         filedialog_up(dialog);
 
                         if (res == -1) {
+#ifndef _WIN32
                             switch (errno) {
                             case EACCES:
                                 dialog->msg_box =
@@ -490,6 +503,17 @@ end:
                                 dialog->msg_box =
                                     messagebox_error("Error", "Directory Exists!");
                                 break;
+#else
+                            switch (GetLastError()) {
+                            case ERROR_ACCESS_DENIED:
+                                dialog->msg_box =
+                                    messagebox_error("Error", "Permissions Denied!");
+                                break;
+                            case ERROR_NO_MORE_FILES:
+                                dialog->msg_box =
+                                    messagebox_error("Error", "Directory Exists!");
+                                break;
+#endif
                             default:
                                 perror("mkdir");
                                 abort();
@@ -557,7 +581,7 @@ static void init_content(struct filedialog *dialog)
     *buf = dialog->current_drive_letter;
     DIR *dir = opendir(buf);
     if (dir == NULL) {
-        if (errno == EACCES) {
+        if (GetLastError() == ERROR_ACCESS_DENIED) {
             dialog->msg_box = messagebox_error("Error", "Permissions Denied!");
             return;
         }
