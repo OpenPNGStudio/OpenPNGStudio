@@ -14,6 +14,7 @@ enum image_type {
     DIR_IMG,
     FILE_IMG,
     IMG_IMG,
+    DRIVE_IMG,
     IMG_TYPE_SZ
 };
 
@@ -21,6 +22,9 @@ struct dir_entry {
     char *name;
     bool is_file;
     bool hidden;
+#ifdef _WIN32
+    bool system_hidden;
+#endif
     nk_bool selected;
 };
 
@@ -34,6 +38,9 @@ struct filedialog {
     bool show;
     struct nk_rect geometry;
     struct messagebox msg_box;
+    #ifdef _WIN32
+    char current_drive_letter;
+    #endif
 
     /* CFG */
     unsigned int row_count;

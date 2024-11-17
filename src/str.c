@@ -9,3 +9,16 @@ size_t sized_strncpy(char *dest, const char *src, size_t n)
 
     return count;
 }
+
+#ifdef _WIN32
+char *strchrnul(const char *p, int ch)
+{
+	char c;
+
+	c = ch;
+	for (;; ++p) {
+		if (*p == c || *p == '\0')
+			return ((char *)p);
+	}
+}
+#endif

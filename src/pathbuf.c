@@ -138,6 +138,7 @@ void path_dir(const struct path *path, size_t dir_bufsz, char *buf)
     *buf = PATH_SEPARATOR;
 #else
     memcpy(buf, "C:\\", 3); /* drive letter will be C most of the time */
+    buf += 2;
 #endif
 
     buf++;
@@ -173,6 +174,7 @@ void path_str(const struct path *path, size_t path_bufsz, char *buf)
     *buf = PATH_SEPARATOR;
 #else
     memcpy(buf, "C:\\", 3); /* drive letter will be C most of the time */
+    buf += 2;
 #endif
 
     buf++;

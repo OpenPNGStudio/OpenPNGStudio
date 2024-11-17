@@ -9,6 +9,17 @@
 
 int main()
 {
+    /*struct path p = {0};*/
+    /*path_append_dir(&p, "Users");*/
+    /**/
+    /*size_t sz = path_bufsz(&p);*/
+    /*char buf[sz + 1];*/
+    /*memset(buf, 0, sz + 1);*/
+    /*path_str(&p, sz, buf);*/
+    /**/
+    /*printf("%s\n", buf);*/
+    /**/
+    /*return 0;*/
     struct filedialog d = {0};
 
     d.filter = NULL;
@@ -32,6 +43,7 @@ int main()
     int width = 1024;
 
     filedialog_register_icon(UP_IMG, LoadNuklearImage("../assets/up.png"));
+    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage("../assets/drive.png"));
     filedialog_register_icon(REFRESH_IMG, LoadNuklearImage("../assets/refresh.png"));
     filedialog_register_icon(DIR_IMG, LoadNuklearImage("../assets/directory.png"));
     filedialog_register_icon(FILE_IMG, LoadNuklearImage("../assets/file.png"));

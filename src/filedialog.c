@@ -15,6 +15,11 @@
 #include <raylib-nuklear.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <fileapi.h>
+#define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
+#endif
+
 struct new_file {
     char *buffer;
     int len;
@@ -31,16 +36,24 @@ struct input_buffer {
 static struct nk_image images[IMG_TYPE_SZ] = {0};
 static char img_filter[] = "png;bmp;jpg;jpeg;gif;psd";
 
+static int hide_file(const char *path);
 static int on_new_file(struct nk_context *ctx, struct messagebox *box);
 static int on_search(struct nk_context *ctx, struct messagebox *box);
 static int entry_comparar(const void *p1, const void *p2);
+#ifndef _WIN32
 static struct dir_entry *append_file(struct filedialog *dialog, const char *name);
+#else
+static struct dir_entry *append_file(struct filedialog *dialog, const char *name, const char *full_path);
+#endif
 static const char *filter_out(const char *filename, const char *filter);
 static void init_content(struct filedialog *dialog);
 static void deinit_content(struct filedialog *dialog);
 
 void filedialog_init(struct filedialog *dialog, bool write)
 {
+#ifdef _WIN32
+    dialog->current_drive_letter = 'C';
+#endif
     filedialog_deinit(dialog);
     dialog->open_for_write = write;
     init_content(dialog);
@@ -102,6 +115,10 @@ void filedialog_selected(const struct filedialog *dialog, size_t selsz,
     size_t sz = path_dirsz(&dialog->current_directory);
     path_dir(&dialog->current_directory, selsz, buf);
 
+#ifdef _WIN32
+    *buf = dialog->current_drive_letter;
+#endif
+
     buf += sz - 1;
     selsz -= sz;
 
@@ -139,6 +156,9 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
     static struct new_file new_filereq = {0};
     static struct input_buffer search_filter = {0};
     static bool show_hiden = false;
+#ifdef _WIN32
+    static bool show_system_hidden = false;
+#endif
 
     if (dialog->show) {
         if (nk_begin(ctx, dialog->title, dialog->geometry,
@@ -166,6 +186,10 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
             char buf[sz + 1];
             memset(buf, 0, sz + 1);
             path_dir(&dialog->current_directory, sz, buf);
+
+#ifdef _WIN32
+            *buf = dialog->current_drive_letter;
+#endif            
 
             int len = sz;
 
@@ -252,6 +276,9 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
                     }
 
                     nk_checkbox_label(ctx, "Show hidden files", &show_hiden);
+#ifdef _WIN32
+                    nk_checkbox_label(ctx, "Show system files", &show_system_hidden);
+#endif
 
 ctx_end:
                     nk_contextual_end(ctx);
@@ -271,6 +298,10 @@ ctx_end:
 
                     if (e->hidden && !show_hiden)
                         continue;
+#ifdef _WIN32
+                    if (e->system_hidden && !show_system_hidden)
+                        continue;
+#endif
 
                     if (search_filter.buffer != NULL)
                         if (strncmp(search_filter.buffer, e->name, search_filter.len) != 0)
@@ -308,6 +339,47 @@ ctx_end:
                         }
                     }
                 }
+
+#ifdef _WIN32
+                if (dialog->current_directory.next == NULL && dialog->current_directory.name == NULL) {
+                    struct nk_style_button style = ctx->style.contextual_button;
+                    style.hover = ctx->style.contextual_button.normal;
+                    style.text_alignment = NK_TEXT_LEFT;
+
+                    nk_layout_row_dynamic(ctx, 2, 1);
+                    nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
+                    nk_layout_row_dynamic(ctx, 32, 1);
+
+                    nk_label(ctx, "Other Locations: ", NK_TEXT_LEFT);
+
+                    nk_layout_row_template_begin(ctx, 32);
+                    nk_layout_row_template_push_static(ctx, 32);
+                    nk_layout_row_template_push_dynamic(ctx);
+                    nk_layout_row_template_end(ctx);
+
+                    DWORD drives = GetLogicalDrives();
+                    for (int i = 0; i < 26; i++) {
+                        if (drives & (1 << i)) {
+                            char drive[] = {'A', ':', 0};
+                            drive[0] += i;
+
+                            nk_image(ctx, images[DRIVE_IMG]);
+                            if (nk_button_label_styled(ctx, &style, drive)) {
+                                
+                                dialog->current_drive_letter = drive[0];
+                                free(search_filter.buffer);
+                                search_filter.cleanup = false;
+                                search_filter.buffer = NULL;
+                                search_filter.len = 0;
+
+                                deinit_content(dialog);
+                                init_content(dialog);
+                                goto end;
+                            }
+                        }
+                    }
+                }
+#endif
 end:
                 nk_group_end(ctx);
             }
@@ -380,6 +452,10 @@ end:
                     memset(tmpbuf, 0, sz + 1);
                     path_str(&dialog->current_directory, sz, tmpbuf);
 
+#ifdef _WIN32
+                    *tmpbuf = dialog->current_drive_letter;
+#endif
+
                     if (new_filereq.is_file) {
                         int fd = open(tmpbuf, O_CREAT, DEFFILEMODE);
 
@@ -397,7 +473,11 @@ end:
                             close(fd);
                         }
                     } else {
+#ifndef _WIN32
                         int res = mkdir(tmpbuf, 0755);
+#else
+                        int res = mkdir(tmpbuf);
+#endif
                         filedialog_up(dialog);
 
                         if (res == -1) {
@@ -458,6 +538,7 @@ static void init_content(struct filedialog *dialog)
     memset(buf, 0, sz + 1);
     path_dir(&dialog->current_directory, sz, buf);
 
+#ifndef _WIN32
     int fd = open(buf, O_RDONLY | O_DIRECTORY);
 
     if (fd == -1) {
@@ -472,6 +553,20 @@ static void init_content(struct filedialog *dialog)
     }
 
     DIR *dir = fdopendir(fd);
+#else
+    *buf = dialog->current_drive_letter;
+    DIR *dir = opendir(buf);
+    if (dir == NULL) {
+        if (errno == EACCES) {
+            dialog->msg_box = messagebox_error("Error", "Permissions Denied!");
+            return;
+        }
+
+        printf("About to abort on path: %s\n", buf);
+        perror("open");
+        abort();
+    }
+#endif
 
     struct dirent *entry = NULL;
 
@@ -485,6 +580,7 @@ static void init_content(struct filedialog *dialog)
                 continue;
         }
 
+#ifndef _WIN32
         switch (entry->d_type) {
         case DT_DIR:
             append_file(dialog, entry->d_name)->is_file = false;
@@ -498,26 +594,51 @@ static void init_content(struct filedialog *dialog)
             break;
         }
         case DT_UNKNOWN: {
+#endif
             struct stat s;
-            if (lstat(entry->d_name, &s) == -1) {
-                perror("lstat");
+            size_t full_sz = path_dirsz(&dialog->current_directory);
+            char full_buf[full_sz + 1];
+            memset(full_buf, 0, full_sz + 1);
+            path_dir(&dialog->current_directory, full_sz, full_buf);
+
+            strcat(full_buf, entry->d_name);
+#ifndef _WIN32
+            int res = lstat(full_buf, &s);
+#else
+            *full_buf = dialog->current_drive_letter;
+            int res = stat(full_buf, &s);
+#endif
+            if (res == -1) {
+                printf("Failing on '%s'\n", entry->d_name);
+                perror("stat");
                 abort();
             }
 
             if (S_ISDIR(s.st_mode)) {
+#ifndef _WIN32
                 append_file(dialog, entry->d_name)->is_file = false;
+#else
+                append_file(dialog, entry->d_name, full_buf)->is_file = false;
+#endif
             } else if (S_ISREG(s.st_mode)) {
                 const char *out = filter_out(entry->d_name, dialog->filter);
 
-                if (out != NULL)
+                if (out != NULL) {
+#ifndef _WIN32
                     append_file(dialog, out);
+#else
+                    append_file(dialog, out, full_buf);
+#endif
+                }
             }
 
+#ifndef _WIN32
             break;
         }
         default:
             continue;
         }
+#endif
     }
 
     /* sort */
@@ -573,7 +694,11 @@ static const char *filter_out(const char *filename, const char *filter)
     return NULL;
 }
 
+#ifndef _WIN32
 static struct dir_entry *append_file(struct filedialog *dialog, const char *name)
+#else
+static struct dir_entry *append_file(struct filedialog *dialog, const char *name, const char *full_path)
+#endif
 {
     dialog->dir_content = realloc(
         dialog->dir_content, sizeof(struct dir_entry) * ++dialog->content_size);
@@ -584,10 +709,30 @@ static struct dir_entry *append_file(struct filedialog *dialog, const char *name
     e->hidden = false;
     e->name = strdup(name);
 
-    if (*name == '.')
-        e->hidden = true;
+#ifndef _WIN32
+    e->hidden = hide_file(name) == 1;
+#else
+    e->hidden = hide_file(full_path) == 1;
+    e->system_hidden = hide_file(full_path) == 2;
+#endif
 
     return e;
+}
+
+static int hide_file(const char *path)
+{
+#ifndef _WIN32
+    if (*path == '.')
+        return 1;
+#else
+    DWORD attributes = GetFileAttributes(path);
+    if (attributes & FILE_ATTRIBUTE_SYSTEM)
+        return 2;
+
+    if (attributes & FILE_ATTRIBUTE_HIDDEN)
+        return 1;
+#endif
+    return 0;
 }
 
 void filedialog_register_icon(enum image_type type, struct nk_image img)
