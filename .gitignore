@@ -1,6 +1,8 @@
 build/
 build-mingw/
 subprojects/raylib/
+subprojects/libuv-v1.49.1/
+subprojects/packagecache/
 include/nuklear.h
 include/raylib-nuklear.h
 .cache/

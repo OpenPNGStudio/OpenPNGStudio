@@ -9,6 +9,9 @@ curl = find_program('curl')
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
 
+libuv_proj = subproject('libuv')
+libuv = libuv_proj.get_variable('libuv_dep')
+
 message('Downloading nuklear')
 
 message(host_machine.system())
@@ -24,7 +27,7 @@ endforeach
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
   'src/nuklear.c', 'src/messagebox.c']
 
-deps = [raylib, cc.find_library('m')]
+deps = [raylib, libuv, cc.find_library('m')]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')

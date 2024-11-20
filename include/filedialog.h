@@ -43,7 +43,6 @@ struct filedialog {
     #endif
 
     /* CFG */
-    unsigned int row_count;
     const char *title;
     const char *filter;
 };
