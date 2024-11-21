@@ -1,3 +1,4 @@
+#include "console.h"
 #include <filedialog.h>
 #include <raylib.h>
 #include <stdbool.h>
@@ -39,6 +40,20 @@ void update(uv_idle_t *idle)
 
     filedialog_run(&ctx->dialog, ctx->ctx);
 
+    if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
+      console_show();
+
+    console_draw(ctx->ctx);
+
+    if (IsKeyPressed(KEY_B))
+        LOG("Beep", 0);
+    if (IsKeyPressed(KEY_T))
+        LOG_I("Toast", 0);
+    if (IsKeyPressed(KEY_R))
+        LOG_W("RAM", 0);
+    if (IsKeyPressed(KEY_P))
+        LOG_E("Boop", 0);
+
     if (WindowShouldClose())
         uv_stop(ctx->loop);
 }
@@ -51,8 +66,6 @@ void draw(uv_idle_t *idle)
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    DrawFPS(100, 100);
 
     DrawNuklear(ctx->ctx);
     EndDrawing();
@@ -67,6 +80,7 @@ int main()
     struct context ctx = {0};
     ctx.loop = uv_default_loop();
     filedialog_init(&ctx.dialog, 0);
+    console_init();
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1024, 640, "OpenPNGStudio");
@@ -102,8 +116,9 @@ int main()
     uv_run(ctx.loop, UV_RUN_DEFAULT);
     uv_loop_close(ctx.loop);
 
+    filedialog_deinit(&ctx.dialog);
+    console_deinit();
     UnloadNuklear(ctx.ctx);
-
     CloseWindow();
 
     return 0;

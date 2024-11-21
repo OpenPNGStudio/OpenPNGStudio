@@ -25,7 +25,7 @@ foreach url : ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs
 endforeach
 
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
-  'src/nuklear.c', 'src/messagebox.c']
+  'src/nuklear.c', 'src/messagebox.c', 'src/console.c']
 
 deps = [raylib, libuv, cc.find_library('m')]
 
