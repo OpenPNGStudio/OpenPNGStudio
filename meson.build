@@ -14,9 +14,13 @@ libuv = libuv_proj.get_variable('libuv_dep')
 
 message('Downloading nuklear')
 
-message(host_machine.system())
+headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h', 'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h']
 
-foreach url : ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h', 'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h']
+if host_machine.system() == 'windows'
+  headers += 'https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h'
+endif
+
+foreach url : headers
   file = 'include/' + fs.name(url)
   if not fs.exists(file)
     message('Downloading ' + file)
@@ -25,7 +29,7 @@ foreach url : ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs
 endforeach
 
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
-  'src/nuklear.c', 'src/messagebox.c', 'src/console.c']
+  'src/nuklear.c', 'src/messagebox.c', 'src/console.c', 'src/layermgr.c']
 
 deps = [raylib, libuv, cc.find_library('m')]
 

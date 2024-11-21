@@ -5,4 +5,5 @@ subprojects/libuv-v1.49.1/
 subprojects/packagecache/
 include/nuklear.h
 include/raylib-nuklear.h
+include/raylib_win32.h
 .cache/

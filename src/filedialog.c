@@ -626,13 +626,10 @@ static void init_content(struct filedialog *dialog)
             path_dir(&dialog->current_directory, full_sz, full_buf);
 
             strcat(full_buf, entry->d_name);
-#ifndef _WIN32
-            int res = lstat(full_buf, &s);
-#else
+#ifdef _WIN32
             *full_buf = dialog->current_drive_letter;
-            int res = stat(full_buf, &s);
 #endif
-            if (res == -1) {
+            if (stat(full_buf, &s) == -1) {
                 printf("Failing on '%s'\n", entry->d_name);
                 perror("stat");
                 abort();

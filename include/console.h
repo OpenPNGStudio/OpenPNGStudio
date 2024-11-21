@@ -1,8 +1,11 @@
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
-#include "messagebox.h"
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include "uv.h"
+#include "messagebox.h"
 
 void console_init();
 void console_deinit();

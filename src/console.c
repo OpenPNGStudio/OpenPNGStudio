@@ -1,5 +1,7 @@
-#include "messagebox.h"
-#include "raylib.h"
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
@@ -14,10 +16,10 @@
 #define NLOGS 128
 
 enum log_type {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR
+    L_DEBUG,
+    L_INFO,
+    L_WARN,
+    L_ERROR
 };
 
 struct log {
@@ -107,19 +109,19 @@ void console_draw(struct nk_context *ctx)
                 nk_layout_row_push(ctx, 0.17f);
 
                 switch (iter->type) {
-                case DEBUG:
+                case L_DEBUG:
                     ctx->style.text.color = nk_rgb(0x0D, 0xBC, 0x79);
                     nk_label_wrap(ctx, "Debug");
                     break;
-                case INFO:
+                case L_INFO:
                     ctx->style.text.color = nk_rgb(0x11, 0xA8, 0xCD);
                     nk_label_wrap(ctx, "Info");
                     break;
-                case WARN:
+                case L_WARN:
                     ctx->style.text.color = nk_rgb(0xE5, 0xE5, 0x10);
                     nk_label_wrap(ctx, "Warning");
                     break;
-                case ERROR:
+                case L_ERROR:
                     ctx->style.text.color = nk_rgb(0xCD, 0x31, 0x31);
                     nk_label_wrap(ctx, "Error");
                     break;
@@ -168,7 +170,7 @@ void console_debug(const char *fn, size_t line, const char *fmt, ...)
     printf("%s\n", final);
 
     struct log *l = append_log();
-    l->type = DEBUG;
+    l->type = L_DEBUG;
     l->fn = fn;
     l->line = line;
     l->buffer = malloc(add_sz + 1);
@@ -193,7 +195,7 @@ void console_info(const char *fn, size_t line, const char *fmt, ...)
     printf("%s\n", final);
 
     struct log *l = append_log();
-    l->type = INFO;
+    l->type = L_INFO;
     l->fn = fn;
     l->line = line;
     l->buffer = malloc(add_sz + 1);
@@ -218,7 +220,7 @@ void console_warn(const char *fn, size_t line, const char *fmt, ...)
     printf("%s\n", final);
 
     struct log *l = append_log();
-    l->type = WARN;
+    l->type = L_WARN;
     l->fn = fn;
     l->line = line;
     l->buffer = malloc(add_sz + 1);
@@ -243,7 +245,7 @@ void console_error(const char *fn, size_t line, const char *fmt, ...)
     printf("%s\n", final);
 
     struct log *l = append_log();
-    l->type = ERROR;
+    l->type = L_ERROR;
     l->fn = fn;
     l->line = line;
     l->buffer = malloc(add_sz + 1);
@@ -281,6 +283,9 @@ static struct log *append_log()
 
 static void free_list(struct log *log)
 {
+    if (log == NULL)
+        return;
+
     if (log->next)
         free_list(log->next);
 
