@@ -11,6 +11,12 @@ struct model_layer {
     float rotation;
     struct line_edit name;
     bool delete;
+
+    /* GIF bloat */
+    Image img;
+    int frames_count;
+    int current_frame;
+    int frame_counter;
 };
 
 struct layer_manager {

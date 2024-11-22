@@ -5,6 +5,7 @@ fs = import('fs')
 
 cc = meson.get_compiler('c')
 curl = find_program('curl')
+cp = find_program('cp')
 
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
@@ -14,7 +15,9 @@ libuv = libuv_proj.get_variable('libuv_dep')
 
 message('Downloading nuklear')
 
-headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h', 'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h']
+headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h',
+  'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h',
+  'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h']
 
 if host_machine.system() == 'windows'
   headers += 'https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h'
@@ -28,9 +31,12 @@ foreach url : headers
   endif
 endforeach
 
+message('Copying raylib config')
+run_command(cp, 'raylib_config.h', 'subprojects/raylib/src/config.h', check:  true)
+
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
   'src/nuklear.c', 'src/messagebox.c', 'src/console.c', 'src/layermgr.c',
-  'src/editor.c', 'src/line_edit.c']
+  'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c']
 
 deps = [raylib, libuv, cc.find_library('m')]
 

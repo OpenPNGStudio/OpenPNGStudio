@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <uv.h>
 
-static char image_filter[] = "png;bmp;jpg;jpeg;gif;psd";
+static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 
 void on_file_read(uv_fs_t *req)
 {
@@ -27,6 +27,7 @@ void on_file_read(uv_fs_t *req)
     struct context *ctx = req->data;
     if (req->result > 0) {
         ctx->f.ready = true;
+        uv_fs_close(uv_default_loop(), &ctx->f.close_req, ctx->f.open_req.result, NULL);
     }
 }
 
@@ -37,6 +38,18 @@ void on_file_open(uv_fs_t *req)
         uv_fs_read(ctx->loop, &ctx->f.read_req, req->result, &ctx->f.buffer,
             1, 0, on_file_read);
     }
+}
+
+void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
+    struct microphone_data* data = device->pUserData;
+    float* inputData = (float*)input;
+
+    float sum = 0.0f;
+    for (ma_uint32 i = 0; i < frameCount; i++) {
+        sum += inputData[i] * inputData[i];
+    }
+
+    data->volume = sqrtf(sum / frameCount);
 }
 
 void draw_grid(int line_width, int spacing, Color color)
@@ -137,6 +150,30 @@ void update(uv_idle_t *idle)
                 }
 
                 ctx->f.buffer = uv_buf_init(malloc(s.st_size), s.st_size);
+                ctx->f.name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
+                enum file_extension ext;
+
+                char *ptr;
+
+                switch (*(ptr = strrchr(ctx->f.name, '.') + 1)) {
+                case 'p':
+                    ext = F_PNG;
+                    break;
+                case 'b':
+                    ext = F_BMP;
+                    break;
+                case 'j':
+                    ext = F_JPG;
+                    break;
+                case 'g':
+                    ext = F_GIF;
+                    break;
+                default:
+                    LOG_E("%s not supported yet :3", ptr);
+                    abort();
+                }
+
+                ctx->f.ext = ext;
                 ctx->f.open_req.data = ctx;
                 ctx->f.read_req.data = ctx;
                 ctx->f.close_req.data = ctx;
@@ -145,15 +182,45 @@ void update(uv_idle_t *idle)
             }
 
             if (ctx->f.ready) {
-                Image loaded = LoadImageFromMemory(".png", (unsigned char*) ctx->f.buffer.base, ctx->f.buffer.len);
+                const char *ext = NULL;
+
+                switch (ctx->f.ext) {
+                case F_PNG:
+                    ext = ".png";
+                    break;
+                case F_BMP:
+                    ext = ".bmp";
+                    break;
+                case F_JPG:
+                    ext = ".jpeg";
+                    break;
+                case F_GIF:
+                    ext = ".gif";
+                    break;
+                default:
+                    LOG_E("I have no idea how you got here silly", 0);
+                    abort();
+                }
+
+                Image loaded;
                 struct model_layer layer = {0};
+
+                if (ctx->f.ext != F_GIF)
+                    loaded = LoadImageFromMemory(ext, (unsigned char*) ctx->f.buffer.base, ctx->f.buffer.len);
+                else
+                    loaded = LoadImageAnimFromMemory(ext, (unsigned char*) ctx->f.buffer.base, ctx->f.buffer.len, &layer.frames_count);
+
                 layer.texture = LoadTextureFromImage(loaded);
                 SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
-                layer.name.len = 2;
+                layer.name.len = strlen(ctx->f.name);
                 layer.name.cleanup = false;
-                layer.name.buffer = strdup(":3");
+                layer.name.buffer = ctx->f.name;
                 layer.rotation = 180.0f;
-                UnloadImage(loaded);
+
+                if (ctx->f.ext == F_GIF)
+                    layer.img = loaded;
+
+                free(ctx->f.buffer.base);
 
                 LOG_I("Loaded layer", 0);
 
@@ -181,6 +248,8 @@ void update(uv_idle_t *idle)
             ctx->camera.zoom = Clamp(ctx->camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
     }
+
+    LOG_I("Microphone volume: %f", ctx->mic.volume);
 
     if (WindowShouldClose())
         uv_stop(ctx->loop);
@@ -251,6 +320,28 @@ int main()
     ctx.ctx = InitNuklearEx(font, 16);
     set_nk_font(font);
 
+    /* MINIAUDIO */
+    ma_result result;
+    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
+    deviceConfig.capture.format = ma_format_f32;
+    deviceConfig.capture.channels = 1; // Use 1 channel for microphone
+    deviceConfig.sampleRate = 44100;
+    deviceConfig.dataCallback = onAudioData;
+
+    result = ma_device_init(NULL, &deviceConfig, &ctx.mic.device);
+    if (result != MA_SUCCESS) {
+        LOG_E("Failed to initialize device.\n", 0);
+        return -1;
+    }
+
+    ctx.mic.device.pUserData = &ctx.mic;
+
+    result = ma_device_start(&ctx.mic.device);
+    if (result != MA_SUCCESS) {
+        LOG_E("Failed to start device.\n", 0);
+        return -1;
+    }
+
     ctx.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
 
     SetTargetFPS(60);
@@ -272,6 +363,7 @@ int main()
     uv_run(ctx.loop, UV_RUN_DEFAULT);
     uv_loop_close(ctx.loop);
 
+    ma_device_uninit(&ctx.mic.device);
     filedialog_deinit(&ctx.dialog);
     console_deinit();
     UnloadNuklear(ctx.ctx);

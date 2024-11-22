@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <layermgr.h>
 
+/* TODO */
+#define FRAME_DELAY 10
+
 void layer_manager_deinit(struct layer_manager *mgr)
 {
     /* TODO */
@@ -99,7 +102,21 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
 
     for (int i = 0; i < mgr->layer_count; i++) {
         struct model_layer *layer = mgr->layers + i;
+        Image *img = &layer->img;
         Texture2D texture = layer->texture;
+
+        if (layer->frames_count > 0) {
+            layer->frame_counter++;
+            if (layer->frame_counter >= FRAME_DELAY) {
+                layer->current_frame++;
+                if (layer->current_frame >= layer->frames_count) layer->current_frame = 0;
+
+                size_t offset = img->width * img->height * 4 * layer->current_frame;
+
+                UpdateTexture(texture, ((unsigned char*) img->data) + offset);
+            }
+        }
+
         DrawTexturePro(texture, (Rectangle) {
             .x = 1,
             .y = 1,

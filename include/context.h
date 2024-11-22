@@ -6,13 +6,26 @@
 #ifdef _WIN32
 #include <raylib_win32.h>
 #endif
+#include <miniaudio.h>
 #include <uv.h>
 #include <raylib.h>
 #include <filedialog.h>
 
+struct microphone_data {
+    float volume;
+    ma_device device;
+};
+
 enum fileload_state {
     NOTHING,
     LOADING_IMAGE,
+};
+
+enum file_extension {
+    F_PNG,
+    F_BMP,
+    F_JPG,
+    F_GIF
 };
 
 struct file_loading {
@@ -20,6 +33,8 @@ struct file_loading {
     uv_fs_t open_req;
     uv_fs_t read_req;
     uv_buf_t buffer;
+    char *name;
+    enum file_extension ext;
     bool ready;
 };
 
@@ -37,6 +52,8 @@ struct context {
     Color background_color;
 
     struct editor editor;
+
+    struct microphone_data mic;
 };
 
 #endif
