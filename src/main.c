@@ -1,6 +1,6 @@
 #include "console.h"
+#include "editor.h"
 #include "layermgr.h"
-#include "messagebox.h"
 #include <fcntl.h>
 #include <filedialog.h>
 #include <raylib.h>
@@ -9,17 +9,21 @@
 #include <nk.h>
 
 #include <raylib-nuklear.h>
+#include "raymath.h"
+#include "rlgl.h"
 #include <context.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <uv.h>
 
 static char image_filter[] = "png;bmp;jpg;jpeg;gif;psd";
 
 void on_file_read(uv_fs_t *req)
 {
+    uv_fs_req_cleanup(req);
     struct context *ctx = req->data;
     if (req->result > 0) {
         ctx->f.ready = true;
@@ -35,8 +39,32 @@ void on_file_open(uv_fs_t *req)
     }
 }
 
+void draw_grid(int line_width, int spacing, Color color)
+{
+    float width = GetScreenWidth();
+    float height = GetScreenHeight();
+
+    float width_total = width / spacing;
+    int width_count = width / spacing;
+    float width_pad_half = (width_total - width_count) / 2;
+
+    for (int i = width_pad_half * spacing; i < width; i += spacing) {
+        DrawLineEx((Vector2) { i, 0 }, (Vector2) { i, height }, line_width, color);
+    }
+    
+    float height_total = height / spacing;
+    int height_count = height / spacing;
+    float height_pad_half = (height_total - height_count) / 2;
+
+    for (int i = height_pad_half * spacing; i < height; i += spacing) {
+        DrawLineEx((Vector2) { 0, i }, (Vector2) { width, i }, line_width, color);
+    }
+}
+
 void update(uv_idle_t *idle)
 {
+    bool ui_focused = false;
+
     struct context *ctx = idle->data;
     struct nk_context *nk_ctx = ctx->ctx;
 
@@ -49,6 +77,9 @@ void update(uv_idle_t *idle)
 
     if (nk_begin(nk_ctx, "Menu", nk_rect(0, 0, ctx->width, 25),
             NK_WINDOW_NO_SCROLLBAR)) {
+        if (nk_input_is_mouse_hovering_rect(&nk_ctx->input, nk_window_get_bounds(nk_ctx)))
+            ui_focused = true;
+
         nk_menubar_begin(nk_ctx);
 
         nk_layout_row_static(nk_ctx, 20, 40, 1);
@@ -80,14 +111,16 @@ void update(uv_idle_t *idle)
         nk_menubar_end(nk_ctx);
     }
 
+
     nk_end(nk_ctx);
 
-    filedialog_run(&ctx->dialog, nk_ctx);
+    filedialog_run(&ctx->dialog, nk_ctx, &ui_focused);
+    editor_draw(&ctx->editor, ctx->ctx, &ui_focused);
 
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();
 
-    console_draw(nk_ctx);
+    console_draw(nk_ctx, &ui_focused);
 
     if (!ctx->dialog.show) {
         if (ctx->dialog.selected_index != -1) {
@@ -98,14 +131,12 @@ void update(uv_idle_t *idle)
                 char buffer[sz + 1];
                 memset(buffer, 0, sz + 1);
                 filedialog_selected(&ctx->dialog, sz, buffer);
-
                 if (stat(buffer, &s) == -1) {
                     perror("stat");
                     abort();
                 }
 
                 ctx->f.buffer = uv_buf_init(malloc(s.st_size), s.st_size);
-                ctx->f.ready = false;
                 ctx->f.open_req.data = ctx;
                 ctx->f.read_req.data = ctx;
                 ctx->f.close_req.data = ctx;
@@ -117,14 +148,37 @@ void update(uv_idle_t *idle)
                 Image loaded = LoadImageFromMemory(".png", (unsigned char*) ctx->f.buffer.base, ctx->f.buffer.len);
                 struct model_layer layer = {0};
                 layer.texture = LoadTextureFromImage(loaded);
-                layer.name = ":3";
+                SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
+                layer.name.len = 2;
+                layer.name.cleanup = false;
+                layer.name.buffer = strdup(":3");
+                layer.rotation = 180.0f;
                 UnloadImage(loaded);
 
                 LOG_I("Loaded layer", 0);
 
-                layer_manager_add_layer(&ctx->mgr, &layer);
                 ctx->f.ready = false;
+                layer_manager_add_layer(&ctx->editor.layer_manager, &layer);
             }
+        }
+    }
+
+    if (!ui_focused) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+            Vector2 delta = GetMouseDelta();
+            delta = Vector2Scale(delta, -1.0f/ctx->camera.zoom);
+            ctx->camera.target = Vector2Add(ctx->camera.target, delta);
+        }
+
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0) {
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), ctx->camera);
+            ctx->camera.offset = GetMousePosition();
+            ctx->camera.target = mouseWorldPos;
+
+            float scaleFactor = 1.0f + (0.1f * fabsf(wheel));
+            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+            ctx->camera.zoom = Clamp(ctx->camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
     }
 
@@ -139,9 +193,21 @@ void draw(uv_idle_t *idle)
         uv_stop(ctx->loop);
 
     BeginDrawing();
-    ClearBackground(RAYWHITE);
 
-    layer_manager_draw_layers(&ctx->mgr);
+    Color inverted = {255, 255, 255, 255};
+    inverted.r -= ctx->background_color.r;
+    inverted.g -= ctx->background_color.g;
+    inverted.b -= ctx->background_color.b;
+
+    draw_grid(1, 60, inverted);
+
+    ClearBackground(ctx->background_color);
+
+    BeginMode2D(ctx->camera);
+
+    layer_manager_draw_layers(&ctx->editor.layer_manager);
+
+    EndMode2D();
 
     DrawNuklear(ctx->ctx);
     EndDrawing();
@@ -158,7 +224,19 @@ int main()
     filedialog_init(&ctx.dialog, 0);
     console_init();
 
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+#ifdef _WIN32
+    path_append_dir(&ctx.dialog.current_directory, strdup("users"));
+    path_append_dir(&ctx.dialog.current_directory, strdup(getenv("USERNAME")));
+#else
+    path_append_dir(&ctx.dialog.current_directory, strdup("home"));
+    path_append_dir(&ctx.dialog.current_directory, strdup(getlogin()));
+#endif
+    filedialog_refresh(&ctx.dialog);
+
+    ctx.camera.zoom = 1.0f;
+    ctx.editor.layer_manager.selected_index = -1;
+
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
     Font font = LoadFont("../assets/Ubuntu-R.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
@@ -172,6 +250,8 @@ int main()
 
     ctx.ctx = InitNuklearEx(font, 16);
     set_nk_font(font);
+
+    ctx.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
 
     SetTargetFPS(60);
 

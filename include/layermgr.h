@@ -2,17 +2,21 @@
 #define _LAYERMGR_H_
 
 #include <stddef.h>
-#include "messagebox.h"
+#include "line_edit.h"
 #include "raylib.h"
 
 struct model_layer {
     Texture2D texture;
-    const char *name;
+    Vector2 position_offset;
+    float rotation;
+    struct line_edit name;
+    bool delete;
 };
 
 struct layer_manager {
     size_t layer_count;
     struct model_layer *layers;
+    int selected_index;
 };
 
 void layer_manager_deinit(struct layer_manager *mgr);

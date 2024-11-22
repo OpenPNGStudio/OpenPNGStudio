@@ -61,10 +61,11 @@ void filedialog_selected(const struct filedialog *dialog, size_t selsz,
 /* once everything is setup, trigger opening */
 void filedialog_show(struct filedialog *dialog);
 
-void filedialog_run(struct filedialog *dialog, struct nk_context *ctx);
+void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_focused);
 
 void filedialog_deinit(struct filedialog *dialog);
 
+void filedialog_refresh(struct filedialog *dialog);
 void filedialog_register_icon(enum image_type type, struct nk_image img);
 
 #endif

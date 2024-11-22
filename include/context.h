@@ -1,9 +1,13 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
-#include "layermgr.h"
-#include "messagebox.h"
+#include "editor.h"
+
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include <uv.h>
+#include <raylib.h>
 #include <filedialog.h>
 
 enum fileload_state {
@@ -29,7 +33,10 @@ struct context {
     struct filedialog dialog;
     float width, height;
 
-    struct layer_manager mgr;
+    Camera2D camera;
+    Color background_color;
+
+    struct editor editor;
 };
 
 #endif

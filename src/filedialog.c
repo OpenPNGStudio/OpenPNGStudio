@@ -137,7 +137,7 @@ void filedialog_show(struct filedialog *dialog)
     dialog->show = true;
 }
 
-void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
+void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_focused)
 {
     if (dialog->title == NULL)
         dialog->title = ":3";
@@ -166,7 +166,9 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
         if (nk_begin(ctx, dialog->title, dialog->geometry,
                 NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE |
                 NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
-            
+            if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
+                *ui_focused = true;
+
             messagebox_run(&dialog->msg_box, ctx);
             /* title bar*/
 
@@ -197,10 +199,8 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx)
 
             nk_edit_string(ctx, NK_EDIT_DEACTIVATED, buf, &len, sz, nk_filter_default);
 
-            if (nk_button_image(ctx, images[REFRESH_IMG])) {
-                deinit_content(dialog);
-                init_content(dialog);
-            }
+            if (nk_button_image(ctx, images[REFRESH_IMG]))
+                filedialog_refresh(dialog);
 
             /* sidebar and file grid */
 
@@ -397,7 +397,6 @@ end:
             len = strlen(selected) + 1;
 
             nk_edit_string(ctx, NK_EDIT_DEACTIVATED, (char*) selected, &len, len, nk_filter_default);
-            nk_widget_disable_end(ctx);
             nk_layout_row_push(ctx, 0.2f);
 
             struct nk_vec2 new_size = nk_widget_size(ctx);
@@ -535,6 +534,7 @@ end:
             dialog->geometry.h = wprop.y;
 
             dialog->show = false;
+            dialog->selected_index = -1;
         }
 
         nk_end(ctx);
@@ -866,4 +866,10 @@ static int on_search(struct nk_context *ctx, struct messagebox *box)
         return 0;
 
     return -1;
+}
+
+void filedialog_refresh(struct filedialog *dialog)
+{
+    deinit_content(dialog);
+    init_content(dialog);
 }

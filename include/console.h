@@ -4,14 +4,14 @@
 #ifdef _WIN32
 #include <raylib_win32.h>
 #endif
-#include "uv.h"
-#include "messagebox.h"
+#include <stddef.h>
+#include <raylib-nuklear.h>
 
 void console_init();
 void console_deinit();
 
 void console_show();
-void console_draw(struct nk_context *ctx);
+void console_draw(struct nk_context *ctx, bool *ui_focused);
 
 void console_debug(const char *fn, size_t line, const char *fmt, ...);
 void console_info(const char *fn, size_t line, const char *fmt, ...);

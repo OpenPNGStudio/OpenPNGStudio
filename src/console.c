@@ -58,14 +58,14 @@ void console_show()
     c.show = true;
 }
 
-void console_draw(struct nk_context *ctx)
+void console_draw(struct nk_context *ctx, bool *ui_focused)
 {
     if (c.geometry.x == 0 && c.geometry.y == 0 &&
         c.geometry.w == 0 && c.geometry.h == 0) {
 
         int width = GetScreenWidth();
         int height = GetScreenHeight();
-        float w = width / 100.0f * 45.0f;
+        float w = width - 40.0f;
         float h = height / 100.0f * 45.0f;
         float x = 20;
         float y = height - 20 - h;
@@ -76,7 +76,10 @@ void console_draw(struct nk_context *ctx)
     if (c.show) {
         if (nk_begin(ctx, "Debug Console", c.geometry,
                 NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE |
-                NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_EDIT_NO_HORIZONTAL_SCROLL)) {
+                NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
+
+            if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
+                *ui_focused = true;
 
             nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
             nk_layout_row_push(ctx, 0.20f);
@@ -164,7 +167,7 @@ void console_debug(const char *fn, size_t line, const char *fmt, ...)
     snprintf(final, bufsz + 1, "%s:%lu \e[42;1m\e[37;1m D \e[0m ", fn, line);
 
     va_start(args, fmt);
-    snprintf(final + bufsz, add_sz + 1, fmt, args);
+    vsnprintf(final + bufsz, add_sz + 1, fmt, args);
     va_end(args);
 
     printf("%s\n", final);
@@ -189,7 +192,7 @@ void console_info(const char *fn, size_t line, const char *fmt, ...)
     snprintf(final, bufsz + 1, "%s:%lu \e[46;1m\e[37;1m I \e[0m ", fn, line);
 
     va_start(args, fmt);
-    snprintf(final + bufsz, add_sz + 1, fmt, args);
+    vsnprintf(final + bufsz, add_sz + 1, fmt, args);
     va_end(args);
 
     printf("%s\n", final);
@@ -214,7 +217,7 @@ void console_warn(const char *fn, size_t line, const char *fmt, ...)
     snprintf(final, bufsz + 1, "%s:%lu \e[43;1m\e[30;1m W \e[0m ", fn, line);
 
     va_start(args, fmt);
-    snprintf(final + bufsz, add_sz + 1, fmt, args);
+    vsnprintf(final + bufsz, add_sz + 1, fmt, args);
     va_end(args);
 
     printf("%s\n", final);
@@ -239,7 +242,7 @@ void console_error(const char *fn, size_t line, const char *fmt, ...)
     snprintf(final, bufsz + 1, "%s:%lu \e[41;1m\e[30m E \e[0m ", fn, line);
 
     va_start(args, fmt);
-    snprintf(final + bufsz, add_sz + 1, fmt, args);
+    vsnprintf(final + bufsz, add_sz + 1, fmt, args);
     va_end(args);
 
     printf("%s\n", final);

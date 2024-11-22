@@ -29,7 +29,8 @@ foreach url : headers
 endforeach
 
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
-  'src/nuklear.c', 'src/messagebox.c', 'src/console.c', 'src/layermgr.c']
+  'src/nuklear.c', 'src/messagebox.c', 'src/console.c', 'src/layermgr.c',
+  'src/editor.c', 'src/line_edit.c']
 
 deps = [raylib, libuv, cc.find_library('m')]
 
