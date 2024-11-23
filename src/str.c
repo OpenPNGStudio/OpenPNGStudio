@@ -10,15 +10,13 @@ size_t sized_strncpy(char *dest, const char *src, size_t n)
     return count;
 }
 
-#ifdef _WIN32
-char *strchrnul(const char *p, int ch)
+char* strchrnul(const char *s, int c)
 {
-	char c;
+    while (*s) {
+        if ((char) c == *s)
+            break;
+        s++;
+    }
 
-	c = ch;
-	for (;; ++p) {
-		if (*p == c || *p == '\0')
-			return ((char *)p);
-	}
+    return (char*) s;
 }
-#endif

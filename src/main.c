@@ -307,15 +307,15 @@ int main()
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
-    Font font = LoadFont("../assets/Ubuntu-R.ttf");
+    Font font = LoadFont("./assets/Ubuntu-R.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
-    filedialog_register_icon(UP_IMG, LoadNuklearImage("../assets/up.png"));
-    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage("../assets/drive.png"));
-    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage("../assets/refresh.png"));
-    filedialog_register_icon(DIR_IMG, LoadNuklearImage("../assets/directory.png"));
-    filedialog_register_icon(FILE_IMG, LoadNuklearImage("../assets/file.png"));
-    filedialog_register_icon(IMG_IMG, LoadNuklearImage("../assets/image.png"));
+    filedialog_register_icon(UP_IMG, LoadNuklearImage("./assets/up.png"));
+    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage("./assets/drive.png"));
+    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage("./assets/refresh.png"));
+    filedialog_register_icon(DIR_IMG, LoadNuklearImage("./assets/directory.png"));
+    filedialog_register_icon(FILE_IMG, LoadNuklearImage("./assets/file.png"));
+    filedialog_register_icon(IMG_IMG, LoadNuklearImage("./assets/image.png"));
 
     ctx.ctx = InitNuklearEx(font, 16);
     set_nk_font(font);
