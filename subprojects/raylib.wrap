@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/raysan5/raylib.git
-revision = head
+revision = HEAD
 depth = 1

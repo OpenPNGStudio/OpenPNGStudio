@@ -10,7 +10,7 @@ cp = find_program('cp')
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
 
-libuv_proj = subproject('libuv')
+libuv_proj = subproject('libuv', default_options: ['default_library=static'])
 libuv = libuv_proj.get_variable('libuv_dep')
 
 message('Downloading nuklear')
