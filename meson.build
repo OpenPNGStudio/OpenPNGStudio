@@ -52,6 +52,9 @@ if host_machine.system() == 'windows'
 endif
 
 executable('OpenPNGStudio', srcs,
+  install: true,
   dependencies: deps,
   include_directories : include_directories('include/'),
 )
+
+install_subdir('assets', install_dir: 'share/openpngstudio')
