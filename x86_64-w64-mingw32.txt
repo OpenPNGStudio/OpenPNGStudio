@@ -5,7 +5,6 @@ ld = 'x86_64-w64-mingw32-ld'
 ar = 'x86_64-w64-mingw32-ar'
 windres = 'x86_64-w64-mingw32-windres'
 strip = 'x86_64-w64-mingw32-strip'
-exe_wrapper = 'wine64'
 
 [host_machine]
 system = 'windows'

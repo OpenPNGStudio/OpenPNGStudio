@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/libressl/portable.git
+revision = master
+depth = 1
+
+diff_files = libressl.diff

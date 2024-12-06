@@ -1,0 +1,29 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ebd8260..f57a7dc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,6 +3,11 @@ if(MSVC)
+ 	cmake_policy(SET CMP0091 NEW)
+ endif()
+ 
++execute_process(
++    COMMAND "./autogen.sh"
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
++)
++
+ project(LibreSSL LANGUAGES C ASM)
+ 
+ include(CheckFunctionExists)
+@@ -224,12 +229,6 @@ if(HAVE_REALLOCARRAY)
+ 	add_definitions(-DHAVE_REALLOCARRAY)
+ endif()
+ 
+-# XXX strcasecmp() is in strings.h which isn't available everywhere
+-check_function_exists(strcasecmp HAVE_STRCASECMP)
+-if(HAVE_STRCASECMP)
+-	add_definitions(-DHAVE_STRCASECMP)
+-endif()
+-
+ # Emscripten's strlcat and strlcpy triggers ASAN errors
+ if(NOT EMSCRIPTEN)
+ 	check_symbol_exists(strlcat "string.h" HAVE_STRLCAT)

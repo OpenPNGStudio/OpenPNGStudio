@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <uv.h>
 
+#define PATH_START "../"
+
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 
 void on_file_read(uv_fs_t *req)
@@ -307,15 +309,15 @@ int main()
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
-    Font font = LoadFont("./assets/Ubuntu-R.ttf");
+    Font font = LoadFont(PATH_START "assets/Ubuntu-R.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
-    filedialog_register_icon(UP_IMG, LoadNuklearImage("./assets/up.png"));
-    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage("./assets/drive.png"));
-    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage("./assets/refresh.png"));
-    filedialog_register_icon(DIR_IMG, LoadNuklearImage("./assets/directory.png"));
-    filedialog_register_icon(FILE_IMG, LoadNuklearImage("./assets/file.png"));
-    filedialog_register_icon(IMG_IMG, LoadNuklearImage("./assets/image.png"));
+    filedialog_register_icon(UP_IMG, LoadNuklearImage(PATH_START "assets/up.png"));
+    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage(PATH_START "assets/drive.png"));
+    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage(PATH_START "assets/refresh.png"));
+    filedialog_register_icon(DIR_IMG, LoadNuklearImage(PATH_START "assets/directory.png"));
+    filedialog_register_icon(FILE_IMG, LoadNuklearImage(PATH_START "assets/file.png"));
+    filedialog_register_icon(IMG_IMG, LoadNuklearImage(PATH_START "assets/image.png"));
 
     ctx.ctx = InitNuklearEx(font, 16);
     set_nk_font(font);

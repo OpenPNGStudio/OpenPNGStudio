@@ -10,7 +10,14 @@ cp = find_program('cp')
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
 
-libuv_proj = subproject('libuv', default_options: ['default_library=static'])
+libressl_opt = cmake.subproject_options()
+libressl_opt.add_cmake_defines({'LIBRESSL_APPS': false})
+libressl_opt.add_cmake_defines({'LIBRESSL_TESTS': false})
+
+libressl_proj = cmake.subproject('libressl', options: libressl_opt)
+crypto = libressl_proj.dependency('crypto')
+
+libuv_proj = subproject('libuv', default_options: ['default_library=static', 'build_tests=false'])
 libuv = libuv_proj.get_variable('libuv_dep')
 
 message('Downloading nuklear')
@@ -38,7 +45,7 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/nuklear.c', 'src/messagebox.c', 'src/console.c', 'src/layermgr.c',
   'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c']
 
-deps = [raylib, libuv, cc.find_library('m')]
+deps = [raylib, libuv, cc.find_library('m'), crypto]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')
