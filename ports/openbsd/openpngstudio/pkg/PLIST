@@ -1,0 +1,9 @@
+@bin bin/OpenPNGStudio
+share/openpngstudio/assets/
+share/openpngstudio/assets/Ubuntu-R.ttf
+share/openpngstudio/assets/directory.png
+share/openpngstudio/assets/drive.png
+share/openpngstudio/assets/file.png
+share/openpngstudio/assets/image.png
+share/openpngstudio/assets/refresh.png
+share/openpngstudio/assets/up.png
