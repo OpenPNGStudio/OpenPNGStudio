@@ -10,12 +10,16 @@ cp = find_program('cp')
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
 
-libressl_opt = cmake.subproject_options()
-libressl_opt.add_cmake_defines({'LIBRESSL_APPS': false})
-libressl_opt.add_cmake_defines({'LIBRESSL_TESTS': false})
+if host_machine.system() == 'openbsd'
+  crypto = dependency('libcrypto')
+else
+  libressl_opt = cmake.subproject_options()
+  libressl_opt.add_cmake_defines({'LIBRESSL_APPS': false})
+  libressl_opt.add_cmake_defines({'LIBRESSL_TESTS': false})
 
-libressl_proj = cmake.subproject('libressl', options: libressl_opt)
-crypto = libressl_proj.dependency('crypto')
+  libressl_proj = cmake.subproject('libressl', options: libressl_opt)
+  crypto = libressl_proj.dependency('crypto')
+endif
 
 libuv_proj = subproject('libuv', default_options: ['default_library=static', 'build_tests=false'])
 libuv = libuv_proj.get_variable('libuv_dep')
