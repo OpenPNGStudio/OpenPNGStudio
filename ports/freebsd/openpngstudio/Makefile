@@ -1,29 +1,31 @@
-COMMENT = Create & stream PNGTuber models with ease
-DISTVERSION = 0.1.0
-PORTNAME = openpngstudio
-MASTER_SITES = https://codeberg.org/LowByteFox/OpenPNGStudio/archive/
-WWW = https://codeberg.org/LowByteFox/OpenPNGStudio
-CATEGORIES = multimedia graphics
-DISTFILES = c36f289.tar.gz
-DISTNAME = openpngstudio
-FULLPKGNAME = ${DISTNAME}-${VERSION}
-MAINTAINER = LowByteFox lowbytefox@noreply.codeberg.org
+PORTNAME=	openpngstudio
+DISTVERSION=	0.1.0
+CATEGORIES=	graphics multimedia
+MASTER_SITES=	https://codeberg.org/LowByteFox/OpenPNGStudio/archive/
+DISTNAME=	c36f289
+WRKSRC=		${WRKDIR}/${PORTNAME}
 
-BUILD_DEPENDS = meson:devel/meson \
-				ninja:devel/ninja \
-				cmake:devel/cmake \
-				git:devel/git \
-				curl:ftp/curl
+MAINTAINER=	lowbytefox@noreply.codeberg.org
+COMMENT=	Create & stream PNGTuber models with ease
+WWW=		https://codeberg.org/LowByteFox/OpenPNGStudio
 
-USE_GL = glu opengl
-USE_LDCONFIG = yes
-USE_XORG = ice sm x11 xcursor xext xi xinerama xrandr xxf86vm
+LICENSE=	EUPL-1.2
+LICENSE_NAME=	EUROPEAN UNION PUBLIC LICENCE v. 1.2
+LICENSE_FILE=	${WRKSRC}/LICENSE
+LICENSE_PERMS=	dist-mirror dist-sell pkg-mirror pkg-sell auto-accept
 
-LICENSE = EUPL-1.2
-LICENSE_NAME = EUROPEAN UNION PUBLIC LICENCE v. 1.2
-LICENSE_FILE = ${WRKSRC}/LICENSE
-LICENSE_PERMS = dist-mirror dist-sell pkg-mirror pkg-sell auto-accept
+BUILD_DEPENDS=	cmake:devel/cmake \
+		curl:ftp/curl \
+		git:devel/git \
+		meson:devel/meson \
+		ninja:devel/ninja
 
-USES = meson
+USES=		gl meson xorg
+
+USE_GL=		glu opengl
+USE_XORG=	ice sm x11 xcursor xext xi xinerama xrandr xxf86vm
+
+post-patch:
+	${REINPLACE_CMD} -e 's,%%LOCALBASE%%,${LOCALBASE},g' ${WRKSRC}/src/main.c
 
 .include <bsd.port.mk>
