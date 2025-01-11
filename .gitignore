@@ -1,6 +1,7 @@
 build/
 build-mingw/
 subprojects/raylib/
+subprojects/libunuv/
 subprojects/libuv-v1.49.1/
 subprojects/libressl/
 subprojects/packagecache/

@@ -8,6 +8,7 @@
 #endif
 #include <miniaudio.h>
 #include <uv.h>
+#include <unuv.h>
 #include <raylib.h>
 #include <filedialog.h>
 
@@ -29,10 +30,9 @@ enum file_extension {
 };
 
 struct file_loading {
-    uv_fs_t close_req;
-    uv_fs_t open_req;
-    uv_fs_t read_req;
-    uv_buf_t buffer;
+    char *buffer;
+    size_t size;
+    un_file *file;
     char *name;
     enum file_extension ext;
     bool ready;
@@ -43,7 +43,7 @@ struct context {
     /* TODO: rename */
     struct file_loading f;
 
-    uv_loop_t *loop;
+    un_loop *loop;
     struct nk_context *ctx;
     struct filedialog dialog;
     float width, height;
