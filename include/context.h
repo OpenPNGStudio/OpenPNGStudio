@@ -19,6 +19,7 @@ struct microphone_data {
 
 enum fileload_state {
     NOTHING,
+    SELECTING_IMAGE,
     LOADING_IMAGE,
 };
 

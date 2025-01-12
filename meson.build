@@ -21,8 +21,10 @@ else
   crypto = libressl_proj.dependency('crypto')
 endif
 
+libuv_proj = subproject('libuv', default_options: ['default_library=static', 'build_tests=false'])
+libuv = libuv_proj.get_variable('libuv_dep')
+
 libunuv_proj = subproject('libunuv', default_options: ['default_library=static'])
-libuv = libunuv_proj.get_variable('libuv')
 libunuv = libunuv_proj.get_variable('libunuv_dep')
 
 message('Downloading nuklear')

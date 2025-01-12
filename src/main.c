@@ -34,7 +34,7 @@ void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 f
         sum += inputData[i] * inputData[i];
     }
 
-    data->volume = sqrtf(sum / frameCount);
+    data->volume = sqrtf(sum / frameCount) * 100;
 }
 
 void draw_grid(int line_width, int spacing, Color color)
@@ -210,8 +210,9 @@ enum un_action update(un_idle *task)
                 ctx.dialog.filter = image_filter;
                 ctx.dialog.title = "Open Image File";
                 filedialog_show(&ctx.dialog);
-
-                ctx.loading_state = LOADING_IMAGE;
+                
+                if (ctx.loading_state == NOTHING)
+                    ctx.loading_state = SELECTING_IMAGE;
             }
 
             nk_menu_end(nk_ctx);
@@ -233,8 +234,8 @@ enum un_action update(un_idle *task)
 
     if (!ctx.dialog.show) {
         if (ctx.dialog.selected_index != -1) {
-            if (ctx.loading_state == LOADING_IMAGE) {
-                ctx.loading_state = NOTHING;
+            if (ctx.loading_state == SELECTING_IMAGE) {
+                ctx.loading_state = LOADING_IMAGE;
                 struct stat s;
                 size_t sz = filedialog_selsz(&ctx.dialog);
                 char buffer[sz + 1];
@@ -245,7 +246,7 @@ enum un_action update(un_idle *task)
                     abort();
                 }
 
-                ctx.f.buffer = malloc(s.st_size);
+                ctx.f.buffer = malloc(s.st_size + 1);
                 ctx.f.size = s.st_size;
                 ctx.f.name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
                 enum file_extension ext;
@@ -318,6 +319,7 @@ enum un_action update(un_idle *task)
                 LOG_I("Loaded layer", 0);
 
                 ctx.f.ready = false;
+                ctx.loading_state = NOTHING;
                 layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
             }
         }
@@ -342,8 +344,6 @@ enum un_action update(un_idle *task)
         }
     }
 
-    LOG_I("Microphone volume: %f", ctx.mic.volume);
-
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
 
@@ -355,7 +355,7 @@ void on_open(un_file *file, int result)
     if (result < 0) {
         LOG_E("%s\n", uv_strerror(result));
     } else {
-        un_fs_read(file, ctx.f.buffer, ctx.f.size, on_read);
+        un_fs_read(file, ctx.f.buffer, BUFSIZ, on_read);
     }
 }
 
@@ -363,10 +363,14 @@ enum un_action on_read(un_file *file, char *buffer, int result)
 {
     if (result < 0) {
         LOG_E("%s\n", uv_strerror(result));
-    } else {
+    } else if (result < BUFSIZ) {
         ctx.f.ready = true;
         un_fs_close(file, NULL);
+        return DISARM;
     }
 
-    return DISARM;
+    buffer[result] = 0;
+    un_fs_update_buffer(file, READ_BUFFER, buffer + result, BUFSIZ);
+
+    return REARM;
 }
