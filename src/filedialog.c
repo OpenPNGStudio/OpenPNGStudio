@@ -147,7 +147,8 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
             NK_WINDOW_MOVABLE |
             NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
 
-        *ui_focused = dialog->win.focus;
+        if (dialog->win.focus)
+            *ui_focused = true;
 
         messagebox_run(&dialog->msg_box, ctx);
         draw_titlebar(dialog, ctx);

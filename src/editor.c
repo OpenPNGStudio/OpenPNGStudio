@@ -23,7 +23,8 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
     if (window_begin(&editor->win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE |
         NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE )) {
 
-        *ui_focused = editor->win.focus;
+        if (editor->win.focus)
+            *ui_focused = true;
 
         const char *names[] = {"Overview", "Layers", "Scripts"};
         const int name_count = 3;

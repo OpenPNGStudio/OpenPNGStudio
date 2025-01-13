@@ -75,7 +75,8 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
     if (window_begin(&c.win, NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE |
             NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
 
-        *ui_focused = c.win.focus;
+        if (c.win.focus)
+            *ui_focused = true;
 
         nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
         nk_layout_row_push(ctx, 0.20f);

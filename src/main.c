@@ -26,7 +26,12 @@
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 struct context ctx = {0};
 
-void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
+static enum un_action update(un_idle *task);
+static enum un_action draw(un_idle *task);
+static void draw_menubar(bool *ui_focused);
+static void load_layer();
+
+static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
     float* inputData = (float*)input;
 
@@ -38,7 +43,7 @@ void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 f
     data->volume = sqrtf(sum / frameCount) * 100;
 }
 
-void draw_grid(int line_width, int spacing, Color color)
+static void draw_grid(int line_width, int spacing, Color color)
 {
     float width = GetScreenWidth();
     float height = GetScreenHeight();
@@ -59,12 +64,6 @@ void draw_grid(int line_width, int spacing, Color color)
         DrawLineEx((Vector2) { 0, i }, (Vector2) { width, i }, line_width, color);
     }
 }
-
-enum un_action update(un_idle *task);
-enum un_action draw(un_idle *task);
-
-void on_open(un_file *file, int result);
-enum un_action on_read(un_file *file, char *buffer, int result);
 
 int main()
 {
@@ -142,7 +141,7 @@ int main()
     return 0;
 }
 
-enum un_action draw(un_idle *task)
+static enum un_action draw(un_idle *task)
 {
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
@@ -173,7 +172,7 @@ enum un_action draw(un_idle *task)
     return REARM;
 }
 
-enum un_action update(un_idle *task)
+static enum un_action update(un_idle *task)
 {
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
@@ -185,10 +184,59 @@ enum un_action update(un_idle *task)
     ctx.width = GetScreenWidth();
     ctx.height = GetScreenHeight();
 
+    draw_menubar(&ui_focused);
+
+    nk_end(nk_ctx);
+
+    filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
+    editor_draw(&ctx.editor, ctx.ctx, &ui_focused);
+
+    if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
+      console_show();
+
+    console_draw(nk_ctx, &ui_focused);
+
+    if (!ctx.dialog.win.show) {
+        if (ctx.dialog.selected_index != -1) {
+            if (ctx.loading_state == SELECTING_IMAGE) {
+                load_layer();
+            }
+        }
+    }
+
+    if (!ui_focused) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+            Vector2 delta = GetMouseDelta();
+            delta = Vector2Scale(delta, -1.0f/ctx.camera.zoom);
+            ctx.camera.target = Vector2Add(ctx.camera.target, delta);
+        }
+
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0) {
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), ctx.camera);
+            ctx.camera.offset = GetMousePosition();
+            ctx.camera.target = mouseWorldPos;
+
+            float scaleFactor = 1.0f + (0.1f * fabsf(wheel));
+            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+            ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
+        }
+    }
+
+    if (WindowShouldClose())
+        uv_stop((uv_loop_t*) ctx.loop);
+
+    return REARM;
+}
+
+static void draw_menubar(bool *ui_focused)
+{
+    struct nk_context *nk_ctx = ctx.ctx;
+
     if (nk_begin(nk_ctx, "Menu", nk_rect(0, 0, ctx.width, 25),
             NK_WINDOW_NO_SCROLLBAR)) {
         if (nk_input_is_mouse_hovering_rect(&nk_ctx->input, nk_window_get_bounds(nk_ctx)))
-            ui_focused = true;
+            *ui_focused = true;
 
         nk_menubar_begin(nk_ctx);
 
@@ -221,121 +269,58 @@ enum un_action update(un_idle *task)
 
         nk_menubar_end(nk_ctx);
     }
-
-
-    nk_end(nk_ctx);
-
-    filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
-    editor_draw(&ctx.editor, ctx.ctx, &ui_focused);
-
-    if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
-      console_show();
-
-    console_draw(nk_ctx, &ui_focused);
-
-    if (!ctx.dialog.win.show) {
-        if (ctx.dialog.selected_index != -1) {
-            if (ctx.loading_state == SELECTING_IMAGE) {
-                struct stat s;
-                size_t sz = filedialog_selsz(&ctx.dialog);
-                char buffer[sz + 1];
-                memset(buffer, 0, sz + 1);
-                filedialog_selected(&ctx.dialog, sz, buffer);
-
-                if (stat(buffer, &s) == -1) {
-                    perror("stat");
-                    abort();
-                }
-
-                int fd = open(buffer, O_RDONLY);
-                char *name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
-                const char *ext = strrchr(buffer, '.');
-                unsigned char *mmaped_file = mmap(NULL, s.st_size, PROT_READ,
-                    MAP_SHARED, fd, 0);
-
-                if (mmaped_file == MAP_FAILED) {
-                    perror("mmap");
-                    abort();
-                }
-
-                Image loaded;
-                struct model_layer layer = {0};
-
-                if (ctx.f.ext != F_GIF)
-                    loaded = LoadImageFromMemory(ext, mmaped_file, s.st_size);
-                else
-                    loaded = LoadImageAnimFromMemory(ext, mmaped_file, s.st_size, &layer.frames_count);
-
-                layer.texture = LoadTextureFromImage(loaded);
-                SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
-                layer.name.len = strlen(name);
-                layer.name.cleanup = false;
-                layer.name.buffer = name;
-                layer.rotation = 180.0f;
-
-                if (ctx.f.ext == F_GIF)
-                    layer.img = loaded;
-
-                free(ctx.f.buffer);
-
-                LOG_I("Loaded layer", 0);
-
-                ctx.f.ready = false;
-                ctx.loading_state = NOTHING;
-                layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
-
-                munmap(mmaped_file, s.st_size);
-                close(fd);
-            }
-        }
-    }
-
-    if (!ui_focused) {
-        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
-            Vector2 delta = GetMouseDelta();
-            delta = Vector2Scale(delta, -1.0f/ctx.camera.zoom);
-            ctx.camera.target = Vector2Add(ctx.camera.target, delta);
-        }
-
-        float wheel = GetMouseWheelMove();
-        if (wheel != 0) {
-            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), ctx.camera);
-            ctx.camera.offset = GetMousePosition();
-            ctx.camera.target = mouseWorldPos;
-
-            float scaleFactor = 1.0f + (0.1f * fabsf(wheel));
-            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
-            ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
-        }
-    }
-
-    if (WindowShouldClose())
-        uv_stop((uv_loop_t*) ctx.loop);
-
-    return REARM;
 }
 
-void on_open(un_file *file, int result)
+static void load_layer()
 {
-    if (result < 0) {
-        LOG_E("%s\n", uv_strerror(result));
-    } else {
-        un_fs_read(file, ctx.f.buffer, BUFSIZ, on_read);
-    }
-}
+    struct stat s;
+    size_t sz = filedialog_selsz(&ctx.dialog);
+    char buffer[sz + 1];
+    memset(buffer, 0, sz + 1);
+    filedialog_selected(&ctx.dialog, sz, buffer);
 
-enum un_action on_read(un_file *file, char *buffer, int result)
-{
-    if (result < 0) {
-        LOG_E("%s\n", uv_strerror(result));
-    } else if (result < BUFSIZ) {
-        ctx.f.ready = true;
-        un_fs_close(file, NULL);
-        return DISARM;
+    if (stat(buffer, &s) == -1) {
+        perror("stat");
+        abort();
     }
 
-    buffer[result] = 0;
-    un_fs_update_buffer(file, READ_BUFFER, buffer + result, BUFSIZ);
+    int fd = open(buffer, O_RDONLY);
+    char *name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
+    const char *ext = strrchr(buffer, '.');
+    unsigned char *mmaped_file = mmap(NULL, s.st_size, PROT_READ,
+        MAP_SHARED, fd, 0);
 
-    return REARM;
+    if (mmaped_file == MAP_FAILED) {
+        perror("mmap");
+        abort();
+    }
+
+    Image loaded;
+    struct model_layer layer = {0};
+
+    if (ctx.f.ext != F_GIF)
+        loaded = LoadImageFromMemory(ext, mmaped_file, s.st_size);
+    else
+        loaded = LoadImageAnimFromMemory(ext, mmaped_file, s.st_size, &layer.frames_count);
+
+    layer.texture = LoadTextureFromImage(loaded);
+    SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
+    layer.name.len = strlen(name);
+    layer.name.cleanup = false;
+    layer.name.buffer = name;
+    layer.rotation = 180.0f;
+
+    if (ctx.f.ext == F_GIF)
+        layer.img = loaded;
+
+    free(ctx.f.buffer);
+
+    LOG_I("Loaded layer", 0);
+
+    ctx.f.ready = false;
+    ctx.loading_state = NOTHING;
+    layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
+
+    munmap(mmaped_file, s.st_size);
+    close(fd);
 }
