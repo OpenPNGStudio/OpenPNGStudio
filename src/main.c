@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <unuv.h>
@@ -212,8 +213,7 @@ enum un_action update(un_idle *task)
                 ctx.dialog.win.title = "Open Image File";
                 filedialog_show(&ctx.dialog);
                 
-                if (ctx.loading_state == NOTHING)
-                    ctx.loading_state = SELECTING_IMAGE;
+                ctx.loading_state = SELECTING_IMAGE;
             }
 
             nk_menu_end(nk_ctx);
@@ -236,64 +236,25 @@ enum un_action update(un_idle *task)
     if (!ctx.dialog.win.show) {
         if (ctx.dialog.selected_index != -1) {
             if (ctx.loading_state == SELECTING_IMAGE) {
-                ctx.loading_state = LOADING_IMAGE;
                 struct stat s;
                 size_t sz = filedialog_selsz(&ctx.dialog);
                 char buffer[sz + 1];
                 memset(buffer, 0, sz + 1);
                 filedialog_selected(&ctx.dialog, sz, buffer);
+
                 if (stat(buffer, &s) == -1) {
                     perror("stat");
                     abort();
                 }
 
-                ctx.f.buffer = malloc(s.st_size + 1);
-                ctx.f.size = s.st_size;
-                ctx.f.name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
-                enum file_extension ext;
+                int fd = open(buffer, O_RDONLY);
+                char *name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
+                const char *ext = strrchr(buffer, '.');
+                unsigned char *mmaped_file = mmap(NULL, s.st_size, PROT_READ,
+                    MAP_SHARED, fd, 0);
 
-                char *ptr;
-
-                switch (*(ptr = strrchr(ctx.f.name, '.') + 1)) {
-                case 'p':
-                    ext = F_PNG;
-                    break;
-                case 'b':
-                    ext = F_BMP;
-                    break;
-                case 'j':
-                    ext = F_JPG;
-                    break;
-                case 'g':
-                    ext = F_GIF;
-                    break;
-                default:
-                    LOG_E("%s not supported yet :3", ptr);
-                    abort();
-                }
-
-                ctx.f.ext = ext;
-                un_fs_open(ctx.loop, buffer, O_RDONLY, 0, on_open);
-            }
-
-            if (ctx.f.ready) {
-                const char *ext = NULL;
-
-                switch (ctx.f.ext) {
-                case F_PNG:
-                    ext = ".png";
-                    break;
-                case F_BMP:
-                    ext = ".bmp";
-                    break;
-                case F_JPG:
-                    ext = ".jpeg";
-                    break;
-                case F_GIF:
-                    ext = ".gif";
-                    break;
-                default:
-                    LOG_E("I have no idea how you got here silly", 0);
+                if (mmaped_file == MAP_FAILED) {
+                    perror("mmap");
                     abort();
                 }
 
@@ -301,15 +262,15 @@ enum un_action update(un_idle *task)
                 struct model_layer layer = {0};
 
                 if (ctx.f.ext != F_GIF)
-                    loaded = LoadImageFromMemory(ext, (unsigned char*) ctx.f.buffer, ctx.f.size);
+                    loaded = LoadImageFromMemory(ext, mmaped_file, s.st_size);
                 else
-                    loaded = LoadImageAnimFromMemory(ext, (unsigned char*) ctx.f.buffer, ctx.f.size, &layer.frames_count);
+                    loaded = LoadImageAnimFromMemory(ext, mmaped_file, s.st_size, &layer.frames_count);
 
                 layer.texture = LoadTextureFromImage(loaded);
                 SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
-                layer.name.len = strlen(ctx.f.name);
+                layer.name.len = strlen(name);
                 layer.name.cleanup = false;
-                layer.name.buffer = ctx.f.name;
+                layer.name.buffer = name;
                 layer.rotation = 180.0f;
 
                 if (ctx.f.ext == F_GIF)
@@ -322,6 +283,9 @@ enum un_action update(un_idle *task)
                 ctx.f.ready = false;
                 ctx.loading_state = NOTHING;
                 layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
+
+                munmap(mmaped_file, s.st_size);
+                close(fd);
             }
         }
     }

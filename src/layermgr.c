@@ -48,6 +48,7 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
             mgr->selected_index = i;
 
         line_edit_draw(&layer->name, ctx);
+
         /* UI controls */
         nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
         nk_layout_row_push(ctx, 0.33f);
