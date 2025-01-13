@@ -778,7 +778,7 @@ static int on_new_file(struct nk_context *ctx, struct messagebox *box)
 
     nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
     nk_layout_row_push(ctx, 0.7f);
-    nk_label(ctx, " ", NK_TEXT_LEFT);
+    nk_spacing(ctx, 1);
 
     nk_layout_row_push(ctx, 0.15f);
     if (nk_button_label(ctx, "Cancel"))
@@ -808,7 +808,7 @@ static int on_search(struct nk_context *ctx, struct messagebox *box)
 
     nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
     nk_layout_row_push(ctx, 0.85f);
-    nk_label(ctx, " ", NK_TEXT_LEFT);
+    nk_spacing(ctx, 1);
 
     nk_layout_row_push(ctx, 0.14f);
     if (nk_button_label(ctx, "Ok"))

@@ -3,11 +3,14 @@
 #include "raylib-nuklear.h"
 #include "raylib.h"
 #include <float.h>
+#include <math.h>
 #include <stdlib.h>
 #include <layermgr.h>
 
 /* TODO */
 #define FRAME_DELAY 10
+
+static void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
 
 void layer_manager_deinit(struct layer_manager *mgr)
 {
@@ -32,14 +35,22 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
     }
 
     for (int i = 0; i < mgr->layer_count; i++) {
-        nk_layout_row_dynamic(ctx, 30, 1);
         struct model_layer *layer = mgr->layers + i;
         struct nk_rect bounds = nk_layout_widget_bounds(ctx);
         bounds.h *= 2;
 
+        nk_layout_row_template_begin(ctx, 32);
+        nk_layout_row_template_push_static(ctx, 64);
+        nk_layout_row_template_push_dynamic(ctx);
+        nk_layout_row_template_end(ctx);
+
+        if (nk_button_label(ctx, "SEL"))
+            mgr->selected_index = i;
+
         line_edit_draw(&layer->name, ctx);
         /* UI controls */
-        nk_layout_row_dynamic(ctx, 30, 3);
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+        nk_layout_row_push(ctx, 0.33f);
         if (i == 0)
             nk_widget_disable_begin(ctx);
 
@@ -56,6 +67,7 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
         if (i == mgr->layer_count - 1)
             nk_widget_disable_begin(ctx);
 
+        nk_layout_row_push(ctx, 0.33f);
         if (nk_button_label(ctx, "DOWN")) {
             struct model_layer next = mgr->layers[i + 1];
             *(mgr->layers + i + 1) = *layer;
@@ -66,30 +78,18 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
         if (i == mgr->layer_count - 1)
             nk_widget_disable_end(ctx);
 
+        nk_layout_row_push(ctx, 0.33f);
         if (nk_button_label(ctx, "DEL"))
             layer->delete = true;
-
-        if (nk_input_mouse_clicked(&ctx->input, NK_BUTTON_LEFT, bounds) && ctx->last_widget_state == 4)
-            mgr->selected_index = i;
+        nk_layout_row_end(ctx);
     }
 
     if (res)
         nk_group_end(ctx);
 
     if (mgr->selected_index != -1) {
-        if (nk_group_begin(ctx, "Layer Property Editor", 0)) {
-            struct model_layer *layer = mgr->layers + mgr->selected_index;
-            nk_layout_row_dynamic(ctx, 30, 1);
-            nk_label(ctx, "Position:", NK_TEXT_LEFT);
-            nk_layout_row_dynamic(ctx, 30, 2);
-            nk_property_float(ctx, "X", -FLT_MAX, &layer->position_offset.x, FLT_MAX, 0.1f, 0.1f);
-            nk_property_float(ctx, "Y", -FLT_MAX, &layer->position_offset.y, FLT_MAX, 0.1f, 0.1f);
-            nk_layout_row_dynamic(ctx, 30, 1);
-            nk_label(ctx, "Rotation:", NK_TEXT_LEFT);
-            nk_layout_row_static(ctx, 40, 40, 1);
-            nk_knob_float(ctx, 0, &layer->rotation, 360, 0.1, NK_DOWN, 0.0f);
-            nk_group_end(ctx);
-        }
+        if (nk_group_begin(ctx, "Layer Property Editor", 0))
+            draw_props(mgr, ctx);
     }
 
     /* TODO cleanup */
@@ -132,4 +132,39 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
             .y = texture.height / 2.0f,
         }, layer->rotation - 180, WHITE);
     }
+}
+
+static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
+{
+    struct model_layer *layer = mgr->layers + mgr->selected_index;
+    bool holding_shift = nk_input_is_key_down(&ctx->input, NK_KEY_SHIFT);
+
+    nk_layout_row_template_begin(ctx, 32);
+    nk_layout_row_dynamic(ctx, 30, 1);
+    nk_label(ctx, "Position:", NK_TEXT_LEFT);
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
+    nk_layout_row_push(ctx, 0.5f);
+    if (!holding_shift) {
+        nk_property_float(ctx, "X", -FLT_MAX, &layer->position_offset.x, FLT_MAX, 0.1f, 0.1f);
+        nk_layout_row_push(ctx, 0.49f);
+        nk_property_float(ctx, "Y", -FLT_MAX, &layer->position_offset.y, FLT_MAX, 0.1f, 0.1f);
+    } else {
+        layer->position_offset.x = roundf(layer->position_offset.x);
+        layer->position_offset.y = roundf(layer->position_offset.y);
+        nk_property_float(ctx, "X", -FLT_MAX, &layer->position_offset.x, FLT_MAX, 1, 1);
+        nk_layout_row_push(ctx, 0.49f);
+        nk_property_float(ctx, "Y", -FLT_MAX, &layer->position_offset.y, FLT_MAX, 1, 1);
+    }
+    nk_layout_row_end(ctx);
+
+    nk_layout_row_dynamic(ctx, 30, 1);
+    nk_label(ctx, "Rotation:", NK_TEXT_LEFT);
+    nk_layout_row_static(ctx, 40, 40, 1);
+
+    nk_knob_float(ctx, 0, &layer->rotation, 360, 0.1f, NK_DOWN, 0.0f);
+
+    if (holding_shift)
+        layer->rotation = roundf(layer->rotation / 15.0f) * 15.0f;
+
+    nk_group_end(ctx);
 }

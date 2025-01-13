@@ -107,7 +107,7 @@ void messagebox_run(struct messagebox *messagebox, struct nk_context *ctx)
                 nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
 
                 nk_layout_row_push(ctx, 0.1f);
-                nk_label(ctx, " ", 0);
+                nk_spacing(ctx, 1);
                 nk_layout_row_push(ctx, 0.35f);
                 if (nk_button_label(ctx, "Ok")) {
                     messagebox->res = 0;
@@ -115,14 +115,14 @@ void messagebox_run(struct messagebox *messagebox, struct nk_context *ctx)
                 }
 
                 nk_layout_row_push(ctx, 0.1f);
-                nk_label(ctx, " ", 0);
+                nk_spacing(ctx, 1);
                 nk_layout_row_push(ctx, 0.35f);
                 if (nk_button_label(ctx, "Cancel")) {
                     messagebox->res = 1;
                     nk_popup_close(ctx);
                 }
                 nk_layout_row_push(ctx, 0.1f);
-                nk_label(ctx, " ", 0);
+                nk_spacing(ctx, 1);
                 nk_layout_row_end(ctx);
             }
 

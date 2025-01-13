@@ -1,3 +1,4 @@
+#include "ui/window.h"
 #ifdef _WIN32
 #include <raylib_win32.h>
 #endif
@@ -32,10 +33,9 @@ struct log {
 
 struct console {
     size_t log_count;
-    bool show;
     struct log *logs;
     struct log *tail;
-    struct nk_rect geometry;
+    struct window win;
 };
 
 static struct console c = {0};
@@ -45,7 +45,6 @@ static void free_list(struct log *log);
 
 void console_init()
 {
-    c.geometry = nk_rect(0, 0, 0, 0);
 }
 
 void console_deinit()
@@ -55,14 +54,12 @@ void console_deinit()
 
 void console_show()
 {
-    c.show = true;
+    c.win.show = true;
 }
 
 void console_draw(struct nk_context *ctx, bool *ui_focused)
 {
-    if (c.geometry.x == 0 && c.geometry.y == 0 &&
-        c.geometry.w == 0 && c.geometry.h == 0) {
-
+    if (c.win.ctx == NULL) {
         int width = GetScreenWidth();
         int height = GetScreenHeight();
         float w = width - 40.0f;
@@ -70,96 +67,88 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
         float x = 20;
         float y = height - 20 - h;
 
-        c.geometry = nk_rect(x, y, w, h);
+        c.win.geometry = nk_rect(x, y, w, h);
+
+        window_init(&c.win, ctx, "Debug Console");
     }
 
-    if (c.show) {
-        if (nk_begin(ctx, "Debug Console", c.geometry,
-                NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE |
-                NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
+    if (window_begin(&c.win, NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE |
+            NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
 
-            if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
-                *ui_focused = true;
+        *ui_focused = c.win.focus;
 
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
+        nk_layout_row_push(ctx, 0.20f);
+        nk_label(ctx, "Function", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 0.10f);
+        nk_label(ctx, "Line", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 0.17f);
+        nk_label(ctx, "Type", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 0.43f);
+        nk_label(ctx, "Message", NK_TEXT_LEFT);
+        nk_layout_row_end(ctx);
+
+        nk_layout_row_dynamic(ctx, 2, 1);
+        nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
+
+        struct log *iter = c.logs;
+
+        while (iter != NULL) {
             nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
             nk_layout_row_push(ctx, 0.20f);
-            nk_label(ctx, "Function", NK_TEXT_LEFT);
+            nk_label_wrap(ctx, iter->fn);
+            size_t size = snprintf(NULL, 0, "%ld", iter->line);
+            char linebuff[size + 1];
+            snprintf(linebuff, size + 1, "%ld", iter->line);
             nk_layout_row_push(ctx, 0.10f);
-            nk_label(ctx, "Line", NK_TEXT_LEFT);
+            nk_label_wrap(ctx, linebuff);
+
+            struct nk_color old_color = ctx->style.text.color;
+
             nk_layout_row_push(ctx, 0.17f);
-            nk_label(ctx, "Type", NK_TEXT_LEFT);
-            nk_layout_row_push(ctx, 0.43f);
-            nk_label(ctx, "Message", NK_TEXT_LEFT);
-            nk_layout_row_end(ctx);
 
-            nk_layout_row_dynamic(ctx, 2, 1);
-            nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
-
-            struct log *iter = c.logs;
-
-            while (iter != NULL) {
-                nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
-                nk_layout_row_push(ctx, 0.20f);
-                nk_label_wrap(ctx, iter->fn);
-                size_t size = snprintf(NULL, 0, "%ld", iter->line);
-                char linebuff[size + 1];
-                snprintf(linebuff, size + 1, "%ld", iter->line);
-                nk_layout_row_push(ctx, 0.10f);
-                nk_label_wrap(ctx, linebuff);
-
-                struct nk_color old_color = ctx->style.text.color;
-
-                nk_layout_row_push(ctx, 0.17f);
-
-                switch (iter->type) {
-                case L_DEBUG:
-                    ctx->style.text.color = nk_rgb(0x0D, 0xBC, 0x79);
-                    nk_label_wrap(ctx, "Debug");
-                    break;
-                case L_INFO:
-                    ctx->style.text.color = nk_rgb(0x11, 0xA8, 0xCD);
-                    nk_label_wrap(ctx, "Info");
-                    break;
-                case L_WARN:
-                    ctx->style.text.color = nk_rgb(0xE5, 0xE5, 0x10);
-                    nk_label_wrap(ctx, "Warning");
-                    break;
-                case L_ERROR:
-                    ctx->style.text.color = nk_rgb(0xCD, 0x31, 0x31);
-                    nk_label_wrap(ctx, "Error");
-                    break;
-                }
-
-                ctx->style.text.color = old_color;
-
-                nk_layout_row_push(ctx, 0.43f);
-                nk_label_wrap(ctx, iter->buffer);
-
-                nk_layout_row_end(ctx);
-                iter = iter->next;
+            switch (iter->type) {
+            case L_DEBUG:
+                ctx->style.text.color = nk_rgb(0x0D, 0xBC, 0x79);
+                nk_label_wrap(ctx, "Debug");
+                break;
+            case L_INFO:
+                ctx->style.text.color = nk_rgb(0x11, 0xA8, 0xCD);
+                nk_label_wrap(ctx, "Info");
+                break;
+            case L_WARN:
+                ctx->style.text.color = nk_rgb(0xE5, 0xE5, 0x10);
+                nk_label_wrap(ctx, "Warning");
+                break;
+            case L_ERROR:
+                ctx->style.text.color = nk_rgb(0xCD, 0x31, 0x31);
+                nk_label_wrap(ctx, "Error");
+                break;
             }
-        } else {
-            struct nk_vec2 wprop = nk_window_get_position(ctx);
-            c.geometry.x = wprop.x;
-            c.geometry.y = wprop.y;
 
-            wprop = nk_window_get_size(ctx);
+            ctx->style.text.color = old_color;
 
-            c.geometry.w = wprop.x;
-            c.geometry.h = wprop.y;
+            nk_layout_row_push(ctx, 0.43f);
+            nk_label_wrap(ctx, iter->buffer);
 
-            c.show = false;
+            nk_layout_row_end(ctx);
+            iter = iter->next;
         }
-
-        nk_end(ctx);
     }
+
+    if (c.win.state != HIDE)
+        window_end(&c.win);
 }
 
 void console_debug(const char *fn, size_t line, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifdef _WIN32
+    size_t bufsz = snprintf(NULL, 0, "%s:%llu \e[42;1m\e[37;1m D \e[0m ", fn, line);
+#else
     size_t bufsz = snprintf(NULL, 0, "%s:%lu \e[42;1m\e[37;1m D \e[0m ", fn, line);
+#endif
     size_t add_sz = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
@@ -184,7 +173,11 @@ void console_info(const char *fn, size_t line, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifdef _WIN32
+    size_t bufsz = snprintf(NULL, 0, "%s:%llu \e[46;1m\e[37;1m I \e[0m ", fn, line);
+#else
     size_t bufsz = snprintf(NULL, 0, "%s:%lu \e[46;1m\e[37;1m I \e[0m ", fn, line);
+#endif
     size_t add_sz = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
@@ -209,7 +202,11 @@ void console_warn(const char *fn, size_t line, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifdef _WIN32
+    size_t bufsz = snprintf(NULL, 0, "%s:%llu \e[43;1m\e[30;1m W \e[0m ", fn, line);
+#else
     size_t bufsz = snprintf(NULL, 0, "%s:%lu \e[43;1m\e[30;1m W \e[0m ", fn, line);
+#endif
     size_t add_sz = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
@@ -234,7 +231,11 @@ void console_error(const char *fn, size_t line, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifdef _WIN32
     size_t bufsz = snprintf(NULL, 0, "%s:%lu \e[41;1m\e[30m E \e[0m ", fn, line);
+#else
+    size_t bufsz = snprintf(NULL, 0, "%s:%lu \e[41;1m\e[30m E \e[0m ", fn, line);
+#endif
     size_t add_sz = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
