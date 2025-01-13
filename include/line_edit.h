@@ -10,6 +10,7 @@ struct line_edit {
     bool cleanup;
 };
 
+void line_edit_cleanup(struct line_edit *edit);
 void line_edit_draw(struct line_edit *edit, struct nk_context *ctx);
 
 #endif

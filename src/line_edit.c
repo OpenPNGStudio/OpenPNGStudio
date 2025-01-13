@@ -26,3 +26,16 @@ void line_edit_draw(struct line_edit *edit, struct nk_context *ctx)
         edit->len--;
     }
 }
+
+void line_edit_cleanup(struct line_edit *edit)
+{
+    if (edit->cleanup) {
+        if (edit->buffer != NULL) {
+            free(edit->buffer);
+        }
+        edit->cleanup = false;
+        edit->buffer = malloc(1);
+        *edit->buffer = 0;
+        edit->len = 0;
+    }
+}

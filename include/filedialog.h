@@ -1,6 +1,7 @@
 #ifndef _FILEDIALOG_H_
 #define _FILEDIALOG_H_
 
+#include "line_edit.h"
 #include "ui/window.h"
 #include <messagebox.h>
 #include <pathbuf.h>
@@ -40,8 +41,18 @@ struct filedialog {
     size_t content_size;
     int selected_index;
     bool open_for_write;
+    struct {
+        struct line_edit input;
+        bool is_file;
+    } new_file;
+    struct line_edit search_filter;
+    bool show_hidden;
+    bool submenu_new_open;
+    bool context_menu_open;
+
     #ifdef _WIN32
     char current_drive_letter;
+    bool show_system_hidden;
     #endif
 
     /* CFG */

@@ -208,6 +208,7 @@ enum un_action update(un_idle *task)
 
             if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
                 ctx.dialog.filter = image_filter;
+                filedialog_refresh(&ctx.dialog);
                 ctx.dialog.win.title = "Open Image File";
                 filedialog_show(&ctx.dialog);
                 
