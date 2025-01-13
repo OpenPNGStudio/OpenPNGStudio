@@ -1,6 +1,6 @@
 #include "messagebox.h"
-#include "raylib.h"
 #include "str.h"
+#include "ui/window.h"
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -134,26 +134,13 @@ void filedialog_selected(const struct filedialog *dialog, size_t selsz,
 
 void filedialog_show(struct filedialog *dialog)
 {
-    dialog->show = true;
+    dialog->win.show = true;
 }
 
 void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_focused)
 {
-    if (dialog->title == NULL)
-        dialog->title = ":3";
-
-    if (dialog->geometry.x == 0 && dialog->geometry.y == 0 &&
-        dialog->geometry.w == 0 && dialog->geometry.h == 0) {
-
-        int width = GetScreenWidth();
-        int height = GetScreenHeight();
-        float w = width / 100.0f * 80.0f;
-        float h = height / 100.0f * 80.0f;
-        float x = (width - w) / 2.0f;
-        float y = (height - h) / 2.0f;
-
-        dialog->geometry = nk_rect(x, y, w, h);
-    }
+    if (dialog->win.ctx == NULL)
+        window_init(&dialog->win, ctx, dialog->win.title);
 
     static struct new_file new_filereq = {0};
     static struct input_buffer search_filter = {0};
@@ -162,383 +149,371 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
     static bool show_system_hidden = false;
 #endif
 
-    if (dialog->show) {
-        if (nk_begin(ctx, dialog->title, dialog->geometry,
-                NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE |
-                NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
-            if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
-                *ui_focused = true;
+    if (window_begin(&dialog->win, NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE |
+            NK_WINDOW_MOVABLE |
+            NK_WINDOW_SCALABLE | NK_WINDOW_BORDER)) {
 
-            messagebox_run(&dialog->msg_box, ctx);
-            /* title bar*/
+        *ui_focused = dialog->win.focus;
+
+        messagebox_run(&dialog->msg_box, ctx);
+        /* title bar*/
+
+        nk_layout_row_template_begin(ctx, 32);
+        nk_layout_row_template_push_static(ctx, 32);
+        nk_layout_row_template_push_dynamic(ctx);
+        nk_layout_row_template_push_static(ctx, 32);
+        nk_layout_row_template_end(ctx);
+
+        if (nk_button_image(ctx, images[UP_IMG])) {
+            filedialog_up(dialog);
+            free(search_filter.buffer);
+            search_filter.cleanup = false;
+            search_filter.buffer = NULL;
+            search_filter.len = 0;
+        }
+
+        size_t sz = path_dirsz(&dialog->current_directory);
+        char buf[sz + 1];
+        memset(buf, 0, sz + 1);
+        path_dir(&dialog->current_directory, sz, buf);
+
+#ifdef _WIN32
+        *buf = dialog->current_drive_letter;
+#endif            
+
+        int len = sz;
+
+        nk_edit_string(ctx, NK_EDIT_DEACTIVATED, buf, &len, sz, nk_filter_default);
+
+        if (nk_button_image(ctx, images[REFRESH_IMG]))
+            filedialog_refresh(dialog);
+
+        /* sidebar and file grid */
+
+        struct nk_rect total = nk_window_get_content_region(ctx);
+
+        nk_layout_row_begin(ctx, NK_DYNAMIC, total.h - 80, 1);
+
+        nk_layout_row_push(ctx, NK_UNDEFINED);
+        struct nk_rect bounds = nk_layout_space_bounds(ctx);
+        bounds.h += 30;
+
+        if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER)) {
+            static bool new_open = false;
+            static bool context_open = false;
+            context_open = dialog->msg_box.res != -1;
+
+            if (nk_contextual_begin(ctx, 0, nk_vec2(256, 256), bounds)) {
+                if (!context_open) {
+                    nk_contextual_close(ctx);
+                    goto ctx_end;
+                }
+
+                nk_layout_row_dynamic(ctx, 25, 1);
+
+                struct nk_vec2 old_padding = ctx->style.window.group_padding;
+                ctx->style.window.group_padding = nk_vec2(0, 0);
+
+                if (nk_group_begin(ctx, "New", NK_WINDOW_NO_SCROLLBAR)) {
+                    struct nk_style_button style = ctx->style.combo.button;
+                    style.text_alignment = NK_TEXT_LEFT;
+                    nk_layout_row_template_begin(ctx, 25);
+                    nk_layout_row_template_push_dynamic(ctx);
+                    nk_layout_row_template_push_static(ctx, 25);
+                    nk_layout_row_template_end(ctx);
+
+                    if (nk_button_label_styled(ctx, &style, "New") ||
+                        nk_button_symbol_styled(ctx, &style, NK_SYMBOL_TRIANGLE_DOWN)){
+                        new_open = !new_open;
+                    }
+
+                    nk_group_end(ctx);
+                }
+
+                ctx->style.window.group_padding = old_padding;
+
+                if (new_open) {
+                    nk_layout_row_dynamic(ctx, 2, 1);
+                    nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                    if (nk_contextual_item_label(ctx, "File", NK_TEXT_LEFT)) {
+                        new_filereq.is_file = true;
+                        new_filereq.cleanup = true;
+                        dialog->msg_box = messagebox_custom("New File", on_new_file, &new_filereq);
+                        nk_contextual_close(ctx);
+                        goto ctx_end;
+                    }
+
+                    if (nk_contextual_item_label(ctx, "Directory", NK_TEXT_LEFT)) {
+                        new_filereq.is_file = false;
+                        new_filereq.cleanup = true;
+                        dialog->msg_box = messagebox_custom("New Directory", on_new_file, &new_filereq);
+                        nk_contextual_close(ctx);
+                        goto ctx_end;
+                    }
+                    nk_layout_row_dynamic(ctx, 2, 1);
+                    nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                }
+
+                if (nk_contextual_item_label(ctx, "Search", NK_TEXT_LEFT)) {
+                    search_filter.cleanup = true;
+                    dialog->msg_box = messagebox_custom("Search", on_search, &search_filter);
+                    nk_contextual_close(ctx);
+                    goto ctx_end;
+                }
+
+                nk_checkbox_label(ctx, "Show hidden files", &show_hiden);
+#ifdef _WIN32
+                nk_checkbox_label(ctx, "Show system files", &show_system_hidden);
+#endif
+
+ctx_end:
+                nk_contextual_end(ctx);
+            } else {
+                new_open = false;
+            }
 
             nk_layout_row_template_begin(ctx, 32);
             nk_layout_row_template_push_static(ctx, 32);
             nk_layout_row_template_push_dynamic(ctx);
-            nk_layout_row_template_push_static(ctx, 32);
             nk_layout_row_template_end(ctx);
 
-            if (nk_button_image(ctx, images[UP_IMG])) {
-                filedialog_up(dialog);
-                free(search_filter.buffer);
-                search_filter.cleanup = false;
-                search_filter.buffer = NULL;
-                search_filter.len = 0;
-            }
+            for (size_t i = 0; i < dialog->content_size; i++) {
+                struct dir_entry *e = dialog->dir_content + i;
+                if (i != dialog->selected_index)
+                    e->selected = false;
 
-            size_t sz = path_dirsz(&dialog->current_directory);
-            char buf[sz + 1];
-            memset(buf, 0, sz + 1);
-            path_dir(&dialog->current_directory, sz, buf);
-
+                if (e->hidden && !show_hiden)
+                    continue;
 #ifdef _WIN32
-            *buf = dialog->current_drive_letter;
-#endif            
-
-            int len = sz;
-
-            nk_edit_string(ctx, NK_EDIT_DEACTIVATED, buf, &len, sz, nk_filter_default);
-
-            if (nk_button_image(ctx, images[REFRESH_IMG]))
-                filedialog_refresh(dialog);
-
-            /* sidebar and file grid */
-
-            struct nk_rect total = nk_window_get_content_region(ctx);
-
-            nk_layout_row_begin(ctx, NK_DYNAMIC, total.h - 80, 1);
-
-            nk_layout_row_push(ctx, NK_UNDEFINED);
-            struct nk_rect bounds = nk_layout_space_bounds(ctx);
-            bounds.h += 30;
-
-            if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER)) {
-                static bool new_open = false;
-                static bool context_open = false;
-                context_open = dialog->msg_box.res != -1;
-
-                if (nk_contextual_begin(ctx, 0, nk_vec2(256, 256), bounds)) {
-                    if (!context_open) {
-                        nk_contextual_close(ctx);
-                        goto ctx_end;
-                    }
-
-                    nk_layout_row_dynamic(ctx, 25, 1);
-
-                    struct nk_vec2 old_padding = ctx->style.window.group_padding;
-                    ctx->style.window.group_padding = nk_vec2(0, 0);
-
-                    if (nk_group_begin(ctx, "New", NK_WINDOW_NO_SCROLLBAR)) {
-                        struct nk_style_button style = ctx->style.combo.button;
-                        style.text_alignment = NK_TEXT_LEFT;
-                        nk_layout_row_template_begin(ctx, 25);
-                        nk_layout_row_template_push_dynamic(ctx);
-                        nk_layout_row_template_push_static(ctx, 25);
-                        nk_layout_row_template_end(ctx);
-
-                        if (nk_button_label_styled(ctx, &style, "New") ||
-                            nk_button_symbol_styled(ctx, &style, NK_SYMBOL_TRIANGLE_DOWN)){
-                            new_open = !new_open;
-                        }
-
-                        nk_group_end(ctx);
-                    }
-
-                    ctx->style.window.group_padding = old_padding;
-
-                    if (new_open) {
-                        nk_layout_row_dynamic(ctx, 2, 1);
-                        nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
-                        nk_layout_row_dynamic(ctx, 25, 1);
-                        if (nk_contextual_item_label(ctx, "File", NK_TEXT_LEFT)) {
-                            new_filereq.is_file = true;
-                            new_filereq.cleanup = true;
-                            dialog->msg_box = messagebox_custom("New File", on_new_file, &new_filereq);
-                            nk_contextual_close(ctx);
-                            goto ctx_end;
-                        }
-
-                        if (nk_contextual_item_label(ctx, "Directory", NK_TEXT_LEFT)) {
-                            new_filereq.is_file = false;
-                            new_filereq.cleanup = true;
-                            dialog->msg_box = messagebox_custom("New Directory", on_new_file, &new_filereq);
-                            nk_contextual_close(ctx);
-                            goto ctx_end;
-                        }
-                        nk_layout_row_dynamic(ctx, 2, 1);
-                        nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
-                        nk_layout_row_dynamic(ctx, 25, 1);
-                    }
-
-                    if (nk_contextual_item_label(ctx, "Search", NK_TEXT_LEFT)) {
-                        search_filter.cleanup = true;
-                        dialog->msg_box = messagebox_custom("Search", on_search, &search_filter);
-                        nk_contextual_close(ctx);
-                        goto ctx_end;
-                    }
-
-                    nk_checkbox_label(ctx, "Show hidden files", &show_hiden);
-#ifdef _WIN32
-                    nk_checkbox_label(ctx, "Show system files", &show_system_hidden);
+                if (e->system_hidden && !show_system_hidden)
+                    continue;
 #endif
 
-ctx_end:
-                    nk_contextual_end(ctx);
-                } else {
-                    new_open = false;
+                if (search_filter.buffer != NULL)
+                    if (strncmp(search_filter.buffer, e->name, search_filter.len) != 0)
+                        continue;
+
+                nk_bool prev = e->selected;
+                enum image_type type = DIR_IMG;
+
+                if (e->is_file)
+                    type++;
+
+                if (filter_out(e->name, img_filter) != NULL)
+                    type = IMG_IMG;
+
+                nk_image(ctx, images[type]);
+                nk_selectable_label(ctx, e->name, NK_TEXT_LEFT, &e->selected);
+
+                if (e->selected) {
+                    dialog->selected_index = i;
                 }
+
+                if (prev == true && e->selected == false) {
+                    if (!e->is_file) {
+                        filedialog_enter(dialog, e->name);
+                        if (search_filter.buffer != NULL) {
+                            free(search_filter.buffer);
+                            search_filter.cleanup = false;
+                            search_filter.buffer = NULL;
+                            search_filter.len = 0;
+                        }
+                        goto end;
+                    } else {
+                        if (dialog->selected_index != -1)
+                            dialog->win.show = false;
+                    }
+                }
+            }
+
+#ifdef _WIN32
+            if (dialog->current_directory.next == NULL && dialog->current_directory.name == NULL) {
+                struct nk_style_button style = ctx->style.contextual_button;
+                style.hover = ctx->style.contextual_button.normal;
+                style.text_alignment = NK_TEXT_LEFT;
+
+                nk_layout_row_dynamic(ctx, 2, 1);
+                nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
+                nk_layout_row_dynamic(ctx, 32, 1);
+
+                nk_label(ctx, "Other Locations: ", NK_TEXT_LEFT);
 
                 nk_layout_row_template_begin(ctx, 32);
                 nk_layout_row_template_push_static(ctx, 32);
                 nk_layout_row_template_push_dynamic(ctx);
                 nk_layout_row_template_end(ctx);
 
-                for (size_t i = 0; i < dialog->content_size; i++) {
-                    struct dir_entry *e = dialog->dir_content + i;
-                    if (i != dialog->selected_index)
-                        e->selected = false;
+                DWORD drives = GetLogicalDrives();
+                for (int i = 0; i < 26; i++) {
+                    if (drives & (1 << i)) {
+                        char drive[] = {'A', ':', 0};
+                        drive[0] += i;
 
-                    if (e->hidden && !show_hiden)
-                        continue;
-#ifdef _WIN32
-                    if (e->system_hidden && !show_system_hidden)
-                        continue;
-#endif
+                        nk_image(ctx, images[DRIVE_IMG]);
+                        if (nk_button_label_styled(ctx, &style, drive)) {
+                            
+                            dialog->current_drive_letter = drive[0];
+                            free(search_filter.buffer);
+                            search_filter.cleanup = false;
+                            search_filter.buffer = NULL;
+                            search_filter.len = 0;
 
-                    if (search_filter.buffer != NULL)
-                        if (strncmp(search_filter.buffer, e->name, search_filter.len) != 0)
-                            continue;
-
-                    nk_bool prev = e->selected;
-                    enum image_type type = DIR_IMG;
-
-                    if (e->is_file)
-                        type++;
-
-                    if (filter_out(e->name, img_filter) != NULL)
-                        type = IMG_IMG;
-
-                    nk_image(ctx, images[type]);
-                    nk_selectable_label(ctx, e->name, NK_TEXT_LEFT, &e->selected);
-
-                    if (e->selected) {
-                        dialog->selected_index = i;
-                    }
-
-                    if (prev == true && e->selected == false) {
-                        if (!e->is_file) {
-                            filedialog_enter(dialog, e->name);
-                            if (search_filter.buffer != NULL) {
-                                free(search_filter.buffer);
-                                search_filter.cleanup = false;
-                                search_filter.buffer = NULL;
-                                search_filter.len = 0;
-                            }
+                            deinit_content(dialog);
+                            init_content(dialog);
                             goto end;
-                        } else {
-                            if (dialog->selected_index != -1)
-                                dialog->show = false;
                         }
                     }
                 }
-
-#ifdef _WIN32
-                if (dialog->current_directory.next == NULL && dialog->current_directory.name == NULL) {
-                    struct nk_style_button style = ctx->style.contextual_button;
-                    style.hover = ctx->style.contextual_button.normal;
-                    style.text_alignment = NK_TEXT_LEFT;
-
-                    nk_layout_row_dynamic(ctx, 2, 1);
-                    nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
-                    nk_layout_row_dynamic(ctx, 32, 1);
-
-                    nk_label(ctx, "Other Locations: ", NK_TEXT_LEFT);
-
-                    nk_layout_row_template_begin(ctx, 32);
-                    nk_layout_row_template_push_static(ctx, 32);
-                    nk_layout_row_template_push_dynamic(ctx);
-                    nk_layout_row_template_end(ctx);
-
-                    DWORD drives = GetLogicalDrives();
-                    for (int i = 0; i < 26; i++) {
-                        if (drives & (1 << i)) {
-                            char drive[] = {'A', ':', 0};
-                            drive[0] += i;
-
-                            nk_image(ctx, images[DRIVE_IMG]);
-                            if (nk_button_label_styled(ctx, &style, drive)) {
-                                
-                                dialog->current_drive_letter = drive[0];
-                                free(search_filter.buffer);
-                                search_filter.cleanup = false;
-                                search_filter.buffer = NULL;
-                                search_filter.len = 0;
-
-                                deinit_content(dialog);
-                                init_content(dialog);
-                                goto end;
-                            }
-                        }
-                    }
-                }
+            }
 #endif
 end:
-                nk_group_end(ctx);
-            }
-
-            nk_layout_row_end(ctx);
-            nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
-            nk_layout_row_push(ctx, 0.7f);
-
-            const char *selected = "";
-            if (dialog->selected_index != -1)
-                selected = dialog->dir_content[dialog->selected_index].name;
-
-            len = strlen(selected) + 1;
-
-            nk_edit_string(ctx, NK_EDIT_DEACTIVATED, (char*) selected, &len, len, nk_filter_default);
-            nk_layout_row_push(ctx, 0.2f);
-
-            struct nk_vec2 new_size = nk_widget_size(ctx);
-
-            const char *filter = NULL;
-            if (dialog->filter != NULL)
-                filter = dialog->filter;
-
-            if (filter != NULL && nk_combo_begin_label(ctx, "Filters", nk_vec2(new_size.x, 100))) {
-                nk_layout_row_dynamic(ctx, 30, 1);
-                const char *iter = filter;
-                do {
-                    const char *prev = iter;
-                    if (*prev == 0)
-                        break;
-
-                    iter = strchrnul(iter, ';');
-                    size_t len = iter - prev;
-                    char split[len + 1];
-                    memset(split, 0, len + 1);
-                    memcpy(split, prev, len);
-                    nk_label(ctx, split, NK_TEXT_LEFT);
-                } while (iter++);
-
-                nk_combo_end(ctx);
-            } else {
-                if (filter == NULL)
-                    nk_label(ctx, "Every File", NK_TEXT_CENTERED);
-            }
-
-            nk_layout_row_push(ctx, 0.1f);
-            if (nk_button_label(ctx, "Select")) {
-                if (dialog->selected_index != -1) {
-                    struct dir_entry *e = dialog->dir_content +
-                        dialog->selected_index;
-
-                    if (!e->is_file)
-                        filedialog_enter(dialog, e->name);
-                    else
-                        dialog->show = false;
-                } else
-                    dialog->msg_box = messagebox_error("Select a File",
-                        "Please select a file!");
-            }
-
-            nk_layout_row_end(ctx);
-
-            if (dialog->msg_box.userdata == &new_filereq) {
-                if (dialog->msg_box.res == 1) {
-                    path_append_file(&dialog->current_directory,strdup(new_filereq.buffer));
-
-                    size_t sz = path_bufsz(&dialog->current_directory);
-                    char tmpbuf[sz + 1];
-                    memset(tmpbuf, 0, sz + 1);
-                    path_str(&dialog->current_directory, sz, tmpbuf);
-
-#ifdef _WIN32
-                    *tmpbuf = dialog->current_drive_letter;
-#endif
-
-                    if (new_filereq.is_file) {
-                        int fd = open(tmpbuf, O_CREAT, DEFFILEMODE);
-
-                        filedialog_up(dialog);
-
-                        if (fd == -1) {
-#ifndef _WIN32
-                            if (errno == EACCES) {
-#else
-                            DWORD err = GetLastError();
-                            if (err == ERROR_ACCESS_DENIED) {
-#endif
-                                dialog->msg_box =
-                                    messagebox_error("Error", "Permissions Denied!");
-#ifdef _WIN32
-                            } else if (err == ERROR_NO_MORE_FILES) {
-                                dialog->msg_box =
-                                    messagebox_error("Error", "File Exists!");
-#endif
-                            } else {
-                                perror("open");
-                                abort();
-                            }
-                        } else {
-                            close(fd);
-                        }
-                    } else {
-#ifndef _WIN32
-                        int res = mkdir(tmpbuf, 0755);
-#else
-                        int res = mkdir(tmpbuf);
-#endif
-                        filedialog_up(dialog);
-
-                        if (res == -1) {
-#ifndef _WIN32
-                            switch (errno) {
-                            case EACCES:
-                                dialog->msg_box =
-                                    messagebox_error("Error", "Permissions Denied!");
-                                break;
-                            case EEXIST:
-                                dialog->msg_box =
-                                    messagebox_error("Error", "Directory Exists!");
-                                break;
-#else
-                            switch (GetLastError()) {
-                            case ERROR_ACCESS_DENIED:
-                                dialog->msg_box =
-                                    messagebox_error("Error", "Permissions Denied!");
-                                break;
-                            case ERROR_NO_MORE_FILES:
-                                dialog->msg_box =
-                                    messagebox_error("Error", "Directory Exists!");
-                                break;
-#endif
-                            default:
-                                perror("mkdir");
-                                abort();
-                            }
-                        }
-                    }
-
-                    dialog->msg_box.userdata = NULL;
-                }
-            }
-        } else {
-            struct nk_vec2 wprop = nk_window_get_position(ctx);
-            dialog->geometry.x = wprop.x;
-            dialog->geometry.y = wprop.y;
-
-            wprop = nk_window_get_size(ctx);
-
-            dialog->geometry.w = wprop.x;
-            dialog->geometry.h = wprop.y;
-
-            dialog->show = false;
-            dialog->selected_index = -1;
+            nk_group_end(ctx);
         }
 
-        nk_end(ctx);
-    }
+        nk_layout_row_end(ctx);
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+        nk_layout_row_push(ctx, 0.7f);
+
+        const char *selected = "";
+        if (dialog->selected_index != -1)
+            selected = dialog->dir_content[dialog->selected_index].name;
+
+        len = strlen(selected) + 1;
+
+        nk_edit_string(ctx, NK_EDIT_DEACTIVATED, (char*) selected, &len, len, nk_filter_default);
+        nk_layout_row_push(ctx, 0.2f);
+
+        struct nk_vec2 new_size = nk_widget_size(ctx);
+
+        const char *filter = NULL;
+        if (dialog->filter != NULL)
+            filter = dialog->filter;
+
+        if (filter != NULL && nk_combo_begin_label(ctx, "Filters", nk_vec2(new_size.x, 100))) {
+            nk_layout_row_dynamic(ctx, 30, 1);
+            const char *iter = filter;
+            do {
+                const char *prev = iter;
+                if (*prev == 0)
+                    break;
+
+                iter = strchrnul(iter, ';');
+                size_t len = iter - prev;
+                char split[len + 1];
+                memset(split, 0, len + 1);
+                memcpy(split, prev, len);
+                nk_label(ctx, split, NK_TEXT_LEFT);
+            } while (iter++);
+
+            nk_combo_end(ctx);
+        } else {
+            if (filter == NULL)
+                nk_label(ctx, "Every File", NK_TEXT_CENTERED);
+        }
+
+        nk_layout_row_push(ctx, 0.1f);
+        if (nk_button_label(ctx, "Select")) {
+            if (dialog->selected_index != -1) {
+                struct dir_entry *e = dialog->dir_content +
+                    dialog->selected_index;
+
+                if (!e->is_file)
+                    filedialog_enter(dialog, e->name);
+                else
+                    dialog->win.show = false;
+            } else
+                dialog->msg_box = messagebox_error("Select a File",
+                    "Please select a file!");
+        }
+
+        nk_layout_row_end(ctx);
+
+        if (dialog->msg_box.userdata == &new_filereq) {
+            if (dialog->msg_box.res == 1) {
+                path_append_file(&dialog->current_directory,strdup(new_filereq.buffer));
+
+                size_t sz = path_bufsz(&dialog->current_directory);
+                char tmpbuf[sz + 1];
+                memset(tmpbuf, 0, sz + 1);
+                path_str(&dialog->current_directory, sz, tmpbuf);
+
+#ifdef _WIN32
+                *tmpbuf = dialog->current_drive_letter;
+#endif
+
+                if (new_filereq.is_file) {
+                    int fd = open(tmpbuf, O_CREAT, DEFFILEMODE);
+
+                    filedialog_up(dialog);
+
+                    if (fd == -1) {
+#ifndef _WIN32
+                        if (errno == EACCES) {
+#else
+                        DWORD err = GetLastError();
+                        if (err == ERROR_ACCESS_DENIED) {
+#endif
+                            dialog->msg_box =
+                                messagebox_error("Error", "Permissions Denied!");
+#ifdef _WIN32
+                        } else if (err == ERROR_NO_MORE_FILES) {
+                            dialog->msg_box =
+                                messagebox_error("Error", "File Exists!");
+#endif
+                        } else {
+                            perror("open");
+                            abort();
+                        }
+                    } else {
+                        close(fd);
+                    }
+                } else {
+#ifndef _WIN32
+                    int res = mkdir(tmpbuf, 0755);
+#else
+                    int res = mkdir(tmpbuf);
+#endif
+                    filedialog_up(dialog);
+
+                    if (res == -1) {
+#ifndef _WIN32
+                        switch (errno) {
+                        case EACCES:
+                            dialog->msg_box =
+                                messagebox_error("Error", "Permissions Denied!");
+                            break;
+                        case EEXIST:
+                            dialog->msg_box =
+                                messagebox_error("Error", "Directory Exists!");
+                            break;
+#else
+                        switch (GetLastError()) {
+                        case ERROR_ACCESS_DENIED:
+                            dialog->msg_box =
+                                messagebox_error("Error", "Permissions Denied!");
+                            break;
+                        case ERROR_NO_MORE_FILES:
+                            dialog->msg_box =
+                                messagebox_error("Error", "Directory Exists!");
+                            break;
+#endif
+                        default:
+                            perror("mkdir");
+                            abort();
+                        }
+                    }
+                }
+
+                dialog->msg_box.userdata = NULL;
+            }
+        }
+    } else
+        dialog->selected_index = -1;
+
+    if (dialog->win.state != HIDE)
+        window_end(&dialog->win);
 }
 
 void filedialog_deinit(struct filedialog *dialog)
@@ -550,9 +525,9 @@ void filedialog_deinit(struct filedialog *dialog)
     deinit_content(dialog);
 
     dialog->open_for_write = false;
-    dialog->show = false;
+    dialog->win.show = false;
 
-    dialog->geometry = nk_rect(0, 0, 0, 0);
+    dialog->win.geometry = nk_rect(0, 0, 0, 0);
 }
 
 static void init_content(struct filedialog *dialog)

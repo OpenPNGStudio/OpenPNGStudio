@@ -1,6 +1,7 @@
 #ifndef _FILEDIALOG_H_
 #define _FILEDIALOG_H_
 
+#include "ui/window.h"
 #include <messagebox.h>
 #include <pathbuf.h>
 #include <stdbool.h>
@@ -29,21 +30,21 @@ struct dir_entry {
 };
 
 struct filedialog {
+    /* UI */
+    struct window win;
+    struct messagebox msg_box;
+
     /* STATE */
     struct path current_directory;
     struct dir_entry *dir_content;
     size_t content_size;
     int selected_index;
     bool open_for_write;
-    bool show;
-    struct nk_rect geometry;
-    struct messagebox msg_box;
     #ifdef _WIN32
     char current_drive_letter;
     #endif
 
     /* CFG */
-    const char *title;
     const char *filter;
 };
 

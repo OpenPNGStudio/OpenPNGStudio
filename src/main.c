@@ -74,7 +74,7 @@ int main()
 
 #ifdef _WIN32
     path_append_dir(&ctx.dialog.current_directory, strdup("users"));
-    path_append_dir(&cx.dialog.current_directory, strdup(getenv("USERNAME")));
+    path_append_dir(&ctx.dialog.current_directory, strdup(getenv("USERNAME")));
 #else
     path_append_dir(&ctx.dialog.current_directory, strdup("home"));
     path_append_dir(&ctx.dialog.current_directory, strdup(getlogin()));
@@ -208,7 +208,7 @@ enum un_action update(un_idle *task)
 
             if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
                 ctx.dialog.filter = image_filter;
-                ctx.dialog.title = "Open Image File";
+                ctx.dialog.win.title = "Open Image File";
                 filedialog_show(&ctx.dialog);
                 
                 if (ctx.loading_state == NOTHING)
@@ -232,7 +232,7 @@ enum un_action update(un_idle *task)
 
     console_draw(nk_ctx, &ui_focused);
 
-    if (!ctx.dialog.show) {
+    if (!ctx.dialog.win.show) {
         if (ctx.dialog.selected_index != -1) {
             if (ctx.loading_state == SELECTING_IMAGE) {
                 ctx.loading_state = LOADING_IMAGE;
