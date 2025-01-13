@@ -20,7 +20,6 @@ struct microphone_data {
 enum fileload_state {
     NOTHING,
     SELECTING_IMAGE,
-    LOADING_IMAGE,
 };
 
 enum file_extension {
@@ -30,19 +29,22 @@ enum file_extension {
     F_GIF
 };
 
-struct file_loading {
-    char *buffer;
+struct image_load_req {
+    Image img;
+    uv_work_t req;
+    unsigned char *buffer;
     size_t size;
-    un_file *file;
     char *name;
-    enum file_extension ext;
+    const char *ext;
+    struct image_load_req *next;
+    int fd;
+    int frames_count;
     bool ready;
 };
 
 struct context {
     enum fileload_state loading_state;
-    /* TODO: rename */
-    struct file_loading f;
+    struct image_load_req *image_work_queue;
 
     un_loop *loop;
     struct nk_context *ctx;
@@ -56,5 +58,8 @@ struct context {
 
     struct microphone_data mic;
 };
+
+void context_load_image(struct context *ctx, const char *name,
+    int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
 
 #endif

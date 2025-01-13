@@ -31,6 +31,10 @@ static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
 static void load_layer();
 
+/* to be replaced */
+static void load_layer_file(uv_work_t *req);
+static void after_layer_loaded(uv_work_t *req, int status);
+
 static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
     float* inputData = (float*)input;
@@ -46,7 +50,7 @@ static void onAudioData(ma_device* device, void* output, const void* input, ma_u
 static void draw_grid(int line_width, int spacing, Color color)
 {
     float width = GetScreenWidth();
-    float height = GetScreenHeight();
+float height = GetScreenHeight();
 
     float width_total = width / spacing;
     int width_count = width / spacing;
@@ -67,10 +71,15 @@ static void draw_grid(int line_width, int spacing, Color color)
 
 int main()
 {
+    char cpubuff[4] = {0};
+    snprintf(cpubuff, 3, "%d", uv_available_parallelism());
+    setenv("UV_THREADPOOL_SIZE", cpubuff, 1);
     /* CFG */
     ctx.loop = un_loop_new();
     filedialog_init(&ctx.dialog, 0);
     console_init();
+
+    LOG_I("Using %d threads", uv_available_parallelism());
 
 #ifdef _WIN32
     path_append_dir(&ctx.dialog.current_directory, strdup("users"));
@@ -223,6 +232,31 @@ static enum un_action update(un_idle *task)
         }
     }
 
+    /* check for pending work */
+    if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready) {
+        struct image_load_req *work = ctx.image_work_queue;
+        struct model_layer layer;
+        LOG_I("Sending image \"%s\" to the GPU", work->name);
+        layer.texture = LoadTextureFromImage(work->img);
+        SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
+        layer.name.len = strlen(work->name);
+        layer.name.cleanup = false;
+        layer.name.buffer = work->name;
+        layer.rotation = 180.0f;
+        layer.img = work->img;
+        layer.frames_count = work->frames_count;
+        LOG_I("Loaded layer \"%s\"", work->name);
+
+        layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
+
+        /* cleanup */
+        ctx.image_work_queue = work->next;
+        ctx.loading_state = NOTHING;
+        munmap(work->buffer, work->size);
+        close(work->fd);
+        free(work);
+    }
+
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
 
@@ -273,6 +307,7 @@ static void draw_menubar(bool *ui_focused)
 
 static void load_layer()
 {
+    /* submit to queue */
     struct stat s;
     size_t sz = filedialog_selsz(&ctx.dialog);
     char buffer[sz + 1];
@@ -285,42 +320,26 @@ static void load_layer()
     }
 
     int fd = open(buffer, O_RDONLY);
-    char *name = strdup(strrchr(buffer, PATH_SEPARATOR) + 1);
-    const char *ext = strrchr(buffer, '.');
-    unsigned char *mmaped_file = mmap(NULL, s.st_size, PROT_READ,
-        MAP_SHARED, fd, 0);
 
-    if (mmaped_file == MAP_FAILED) {
-        perror("mmap");
-        abort();
-    }
+    LOG_I("Preparing layer to be loaded", NULL);
 
-    Image loaded;
-    struct model_layer layer = {0};
+    context_load_image(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
+        s.st_size, load_layer_file, after_layer_loaded);
+}
 
-    if (ctx.f.ext != F_GIF)
-        loaded = LoadImageFromMemory(ext, mmaped_file, s.st_size);
+static void load_layer_file(uv_work_t *req)
+{
+    struct image_load_req *work = req->data;
+    if (strcmp(work->ext, ".gif") == 0)
+        work->img = LoadImageAnimFromMemory(work->ext, work->buffer,
+            work->size, &work->frames_count);
     else
-        loaded = LoadImageAnimFromMemory(ext, mmaped_file, s.st_size, &layer.frames_count);
+        work->img = LoadImageFromMemory(work->ext, work->buffer, work->size);
+}
 
-    layer.texture = LoadTextureFromImage(loaded);
-    SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
-    layer.name.len = strlen(name);
-    layer.name.cleanup = false;
-    layer.name.buffer = name;
-    layer.rotation = 180.0f;
-
-    if (ctx.f.ext == F_GIF)
-        layer.img = loaded;
-
-    free(ctx.f.buffer);
-
-    LOG_I("Loaded layer", 0);
-
-    ctx.f.ready = false;
-    ctx.loading_state = NOTHING;
-    layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
-
-    munmap(mmaped_file, s.st_size);
-    close(fd);
+static void after_layer_loaded(uv_work_t *req, int status)
+{
+    struct image_load_req *work = req->data;
+    work->ready = true;
+    LOG_I("Image \"%s\" loaded, now to turn it into a layer", work->name);
 }
