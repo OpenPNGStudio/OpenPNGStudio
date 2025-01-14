@@ -2,21 +2,23 @@
 #define _LAYERMGR_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include "line_edit.h"
 #include "raylib.h"
 
 struct model_layer {
+    Image img;
     Texture2D texture;
     Vector2 position_offset;
     float rotation;
     struct line_edit name;
     bool delete;
 
-    /* GIF bloat */
-    Image img;
+    /* GIF related fields */
+    uint32_t *delays;
     int frames_count;
     int current_frame;
-    int frame_counter;
+    int previous_frame;
 };
 
 struct layer_manager {

@@ -1,5 +1,4 @@
-#ifndef _FILEDIALOG_H_
-#define _FILEDIALOG_H_
+#pragma once
 
 #include "line_edit.h"
 #include "ui/window.h"
@@ -79,5 +78,3 @@ void filedialog_deinit(struct filedialog *dialog);
 
 void filedialog_refresh(struct filedialog *dialog);
 void filedialog_register_icon(enum image_type type, struct nk_image img);
-
-#endif

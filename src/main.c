@@ -1,5 +1,6 @@
 #include "console.h"
 #include "editor.h"
+#include "gif_config.h"
 #include "layermgr.h"
 #include <fcntl.h>
 #include <filedialog.h>
@@ -13,6 +14,7 @@
 #include "rlgl.h"
 #include <context.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -199,6 +201,23 @@ static enum un_action update(un_idle *task)
 
     filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
     editor_draw(&ctx.editor, ctx.ctx, &ui_focused);
+    gif_configurator_draw(&ctx.gif_cfg, nk_ctx, &ui_focused);
+
+    if (ctx.configuring_gif && !ctx.gif_cfg.win.show) {
+        LOG_I("GIF Configured", NULL);
+        /* reset state */
+        ctx.configuring_gif = false;
+        ctx.gif_cfg.global_delay = false;
+        free(ctx.gif_cfg.lengths);
+        ctx.gif_cfg.lengths = NULL;
+
+        for (int i = 0; i < ctx.gif_cfg.layer->frames_count; i++)
+            free(ctx.gif_cfg.inputs[i]);
+        free(ctx.gif_cfg.inputs);
+        ctx.gif_cfg.inputs = NULL;
+
+        ctx.gif_cfg.layer = NULL;
+    }
 
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();
@@ -233,9 +252,10 @@ static enum un_action update(un_idle *task)
     }
 
     /* check for pending work */
-    if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready) {
+    if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready &&
+        !ctx.configuring_gif) {
         struct image_load_req *work = ctx.image_work_queue;
-        struct model_layer layer;
+        struct model_layer layer = {0};
         LOG_I("Sending image \"%s\" to the GPU", work->name);
         layer.texture = LoadTextureFromImage(work->img);
         SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
@@ -248,6 +268,22 @@ static enum un_action update(un_idle *task)
         LOG_I("Loaded layer \"%s\"", work->name);
 
         layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
+
+        if (layer.frames_count > 0) {
+            ctx.configuring_gif = true;
+            ctx.gif_cfg.layer = ctx.editor.layer_manager.layers +
+                (ctx.editor.layer_manager.layer_count - 1);
+            ctx.gif_cfg.inputs = calloc(layer.frames_count, sizeof(char*));
+            ctx.gif_cfg.lengths = calloc(layer.frames_count, sizeof(int));
+            /* 4294967295 - 10 characters + 2 backup */
+            for (int i = 0; i < layer.frames_count; i++)
+                ctx.gif_cfg.inputs[i] = calloc(12, sizeof(char));
+
+            ctx.gif_cfg.layer->delays = calloc(layer.frames_count,
+                sizeof(uint32_t));
+
+            ctx.gif_cfg.win.show = true;
+        }
 
         /* cleanup */
         ctx.image_work_queue = work->next;

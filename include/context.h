@@ -11,6 +11,7 @@
 #include <unuv.h>
 #include <raylib.h>
 #include <filedialog.h>
+#include <gif_config.h>
 
 struct microphone_data {
     float volume;
@@ -45,6 +46,7 @@ struct image_load_req {
 struct context {
     enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
+    bool configuring_gif;
 
     un_loop *loop;
     struct nk_context *ctx;
@@ -55,7 +57,7 @@ struct context {
     Color background_color;
 
     struct editor editor;
-
+    struct gif_configurator gif_cfg;
     struct microphone_data mic;
 };
 

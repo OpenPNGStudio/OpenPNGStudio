@@ -31,7 +31,7 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
         
         nk_style_push_vec2(ctx, &ctx->style.window.spacing, nk_vec2(0,0));
         nk_style_push_float(ctx, &ctx->style.button.rounding, 0);
-        nk_layout_row_begin(ctx, NK_STATIC, 40, name_count);
+        nk_layout_row_begin(ctx, NK_STATIC, 30, name_count);
 
         for (int i = 0; i < name_count; ++i) {
             Vector2 size = MeasureTextEx(get_nk_font(), names[i], 16, 16 / 10.0f);
@@ -60,14 +60,14 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
 
             switch (editor->current_tab) {
             case OVERVIEW:
-                nk_layout_row_dynamic(ctx, 40, 1);
+                nk_layout_row_dynamic(ctx, 30, 1);
                 nk_label(ctx, "Model Information: ", NK_TEXT_LEFT);
                 break;
             case LAYERS:
                 layer_manager_draw_ui(&editor->layer_manager, ctx);
                 break;
             case SCRIPTS:
-                nk_layout_row_dynamic(ctx, 40, 1);
+                nk_layout_row_dynamic(ctx, 30, 1);
                 nk_label(ctx, "Comming Soon :3", NK_TEXT_LEFT);
                 break;
             }

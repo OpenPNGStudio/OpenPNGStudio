@@ -78,7 +78,7 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
         if (c.win.focus)
             *ui_focused = true;
 
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
         nk_layout_row_push(ctx, 0.20f);
         nk_label(ctx, "Function", NK_TEXT_LEFT);
         nk_layout_row_push(ctx, 0.10f);
@@ -95,7 +95,7 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
         struct log *iter = c.logs;
 
         while (iter != NULL) {
-            nk_layout_row_begin(ctx, NK_DYNAMIC, 40, 4);
+            nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
             nk_layout_row_push(ctx, 0.20f);
             nk_label_wrap(ctx, iter->fn);
             size_t size = snprintf(NULL, 0, "%ld", iter->line);

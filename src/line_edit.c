@@ -16,7 +16,7 @@ void line_edit_draw(struct line_edit *edit, struct nk_context *ctx)
 
     int new_len = edit->len;
 
-    nk_edit_string(ctx, NK_EDIT_SIMPLE, edit->buffer, &new_len, edit->len + 2, nk_filter_default);
+    nk_edit_string(ctx, NK_EDIT_FIELD, edit->buffer, &new_len, edit->len + 2, nk_filter_default);
 
     if (new_len > edit->len) {
         edit->buffer = realloc(edit->buffer, ++edit->len + 1);
