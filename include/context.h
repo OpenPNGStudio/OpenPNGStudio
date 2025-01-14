@@ -2,6 +2,7 @@
 #define _CONTEXT_H_
 
 #include "editor.h"
+#include <stdatomic.h>
 
 #ifdef _WIN32
 #include <raylib_win32.h>
@@ -14,7 +15,8 @@
 #include <gif_config.h>
 
 struct microphone_data {
-    float volume;
+    atomic_size_t volume;
+    atomic_int multiplier;
     ma_device device;
 };
 

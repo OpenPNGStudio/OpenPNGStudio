@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <filedialog.h>
 #include <raylib.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <pathbuf.h>
 #include <nk.h>
@@ -24,6 +25,7 @@
 #include <uv.h>
 
 #define PATH_START "../"
+#define DEFAULT_MULTIPLIER 2500
 
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 struct context ctx = {0};
@@ -52,13 +54,13 @@ static void onAudioData(ma_device* device, void* output, const void* input, ma_u
         sum += inputData[i] * inputData[i];
     }
 
-    data->volume = sqrtf(sum / frameCount) * 100;
+    atomic_store(&data->volume, sqrtf(sum / frameCount) * atomic_load(&data->multiplier));
 }
 
 static void draw_grid(int line_width, int spacing, Color color)
 {
     float width = GetScreenWidth();
-float height = GetScreenHeight();
+    float height = GetScreenHeight();
 
     float width_total = width / spacing;
     int width_count = width / spacing;
@@ -117,6 +119,8 @@ int main()
     set_nk_font(font);
 
     /* MINIAUDIO */
+    ctx.mic.multiplier = DEFAULT_MULTIPLIER;
+    atomic_store(&ctx.mic.multiplier, DEFAULT_MULTIPLIER);
     ma_result result;
     ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
     deviceConfig.capture.format = ma_format_f32;
@@ -264,6 +268,8 @@ static enum un_action update(un_idle *task)
             ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
     }
+
+    LOG_I("Volume %ld", atomic_load(&ctx.mic.volume));
 
     /* check for pending work */
     if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready &&
