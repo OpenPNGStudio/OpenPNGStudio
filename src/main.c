@@ -102,6 +102,8 @@ int main()
 
     ctx.camera.zoom = 1.0f;
     ctx.editor.layer_manager.selected_index = -1;
+    ctx.editor.mic = &ctx.mic;
+    ctx.editor.microphone_trigger = 40;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
@@ -142,7 +144,7 @@ int main()
         return -1;
     }
 
-    ctx.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
+    ctx.editor.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
 
     SetTargetFPS(60);
 
@@ -170,13 +172,14 @@ static enum un_action draw(un_idle *task)
     BeginDrawing();
 
     Color inverted = {255, 255, 255, 255};
-    inverted.r -= ctx.background_color.r;
-    inverted.g -= ctx.background_color.g;
-    inverted.b -= ctx.background_color.b;
+    inverted.r -= ctx.editor.background_color.r;
+    inverted.g -= ctx.editor.background_color.g;
+    inverted.b -= ctx.editor.background_color.b;
 
-    draw_grid(1, 60, inverted);
+    ClearBackground(ctx.editor.background_color);
 
-    ClearBackground(ctx.background_color);
+    if (ctx.mode == EDIT_MODE)
+        draw_grid(1, 60, inverted);
 
     BeginMode2D(ctx.camera);
 
@@ -205,12 +208,24 @@ static enum un_action update(un_idle *task)
     ctx.width = GetScreenWidth();
     ctx.height = GetScreenHeight();
 
+    if (IsKeyPressed(KEY_TAB)) {
+        if (ctx.mode == EDIT_MODE) 
+            ctx.mode = STREAM_MODE;
+        else
+            ctx.mode = EDIT_MODE;
+    }
+
     draw_menubar(&ui_focused);
 
     nk_end(nk_ctx);
 
     filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
-    editor_draw(&ctx.editor, ctx.ctx, &ui_focused);
+
+    if (ctx.mode == EDIT_MODE)
+        editor_draw(&ctx.editor, nk_ctx, &ui_focused);
+    else
+        editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+
     gif_configurator_draw(&ctx.gif_cfg, nk_ctx, &ui_focused);
 
     if (ctx.configuring_gif && !ctx.gif_cfg.win.show) {
@@ -268,8 +283,6 @@ static enum un_action update(un_idle *task)
             ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
     }
-
-    LOG_I("Volume %ld", atomic_load(&ctx.mic.volume));
 
     /* check for pending work */
     if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready &&
@@ -342,17 +355,20 @@ static void draw_menubar(bool *ui_focused)
             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT))
                 LOG("I don't do anything yet", 0);
 
-            nk_layout_row_dynamic(nk_ctx, 2, 1);
-            nk_rule_horizontal(nk_ctx, nk_ctx->style.window.border_color, false);
-            nk_layout_row_dynamic(nk_ctx, 25, 1);
+            if (ctx.mode == EDIT_MODE) {
+                nk_layout_row_dynamic(nk_ctx, 2, 1);
+                nk_rule_horizontal(nk_ctx, nk_ctx->style.window.border_color,
+                    false);
+                nk_layout_row_dynamic(nk_ctx, 25, 1);
 
-            if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
-                ctx.dialog.filter = image_filter;
-                filedialog_refresh(&ctx.dialog);
-                ctx.dialog.win.title = "Open Image File";
-                filedialog_show(&ctx.dialog);
-                
-                ctx.loading_state = SELECTING_IMAGE;
+                if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
+                    ctx.dialog.filter = image_filter;
+                    filedialog_refresh(&ctx.dialog);
+                    ctx.dialog.win.title = "Open Image File";
+                    filedialog_show(&ctx.dialog);
+                    
+                    ctx.loading_state = SELECTING_IMAGE;
+                }
             }
 
             nk_menu_end(nk_ctx);

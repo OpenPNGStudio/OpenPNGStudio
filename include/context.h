@@ -13,11 +13,11 @@
 #include <raylib.h>
 #include <filedialog.h>
 #include <gif_config.h>
+#include <microphone.h>
 
-struct microphone_data {
-    atomic_size_t volume;
-    atomic_int multiplier;
-    ma_device device;
+enum program_mode {
+    EDIT_MODE,
+    STREAM_MODE,
 };
 
 enum fileload_state {
@@ -56,11 +56,12 @@ struct context {
     float width, height;
 
     Camera2D camera;
-    Color background_color;
 
     struct editor editor;
     struct gif_configurator gif_cfg;
     struct microphone_data mic;
+
+    enum program_mode mode;
 };
 
 void context_load_image(struct context *ctx, const char *name,
