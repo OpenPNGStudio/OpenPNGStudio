@@ -14,10 +14,11 @@ void layer_manager_deinit(struct layer_manager *mgr)
     /* TODO */
 }
 
-void layer_manager_add_layer(struct layer_manager *mgr, struct model_layer *layer)
+struct model_layer *layer_manager_add_layer(struct layer_manager *mgr, struct model_layer *layer)
 {
     mgr->layers = realloc(mgr->layers, (++mgr->layer_count) * sizeof(*layer));
     mgr->layers[mgr->layer_count - 1] = *layer;
+    return (mgr->layers + (mgr->layer_count - 1));
 }
 
 void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
@@ -109,6 +110,7 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
                     layer->current_frame;
 
                 UpdateTexture(texture, ((unsigned char*) img->data) + offset);
+                layer->previous_frame = layer->current_frame;
             }
         }
 

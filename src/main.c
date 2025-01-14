@@ -28,6 +28,11 @@
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 struct context ctx = {0};
 
+struct gif_progress {
+    struct layer_manager *mgr;
+    int i;
+};
+
 static enum un_action update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
@@ -36,6 +41,7 @@ static void load_layer();
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
 static void after_layer_loaded(uv_work_t *req, int status);
+static enum un_action update_gif(un_timer *timer);
 
 static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
@@ -216,6 +222,14 @@ static enum un_action update(un_idle *task)
         free(ctx.gif_cfg.inputs);
         ctx.gif_cfg.inputs = NULL;
 
+        struct gif_progress *prog = calloc(1, sizeof(struct gif_progress));
+        prog->i = ctx.editor.layer_manager.layer_count - 1;
+        prog->mgr = &ctx.editor.layer_manager;
+
+        un_timer *timer = un_timer_new(ctx.loop);
+        un_timer_set_data(timer, prog);
+        uint32_t delay = ctx.gif_cfg.layer->delays[0];
+        un_timer_start(timer, delay, delay, update_gif);
         ctx.gif_cfg.layer = NULL;
     }
 
@@ -265,14 +279,15 @@ static enum un_action update(un_idle *task)
         layer.rotation = 180.0f;
         layer.img = work->img;
         layer.frames_count = work->frames_count;
+        layer.previous_frame = 0;
+        layer.current_frame = 0;
         LOG_I("Loaded layer \"%s\"", work->name);
 
-        layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
+        struct model_layer *l = layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
 
         if (layer.frames_count > 0) {
             ctx.configuring_gif = true;
-            ctx.gif_cfg.layer = ctx.editor.layer_manager.layers +
-                (ctx.editor.layer_manager.layer_count - 1);
+            ctx.gif_cfg.layer = l;
             ctx.gif_cfg.inputs = calloc(layer.frames_count, sizeof(char*));
             ctx.gif_cfg.lengths = calloc(layer.frames_count, sizeof(int));
             /* 4294967295 - 10 characters + 2 backup */
@@ -378,4 +393,16 @@ static void after_layer_loaded(uv_work_t *req, int status)
     struct image_load_req *work = req->data;
     work->ready = true;
     LOG_I("Image \"%s\" loaded, now to turn it into a layer", work->name);
+}
+
+static enum un_action update_gif(un_timer *timer)
+{
+    struct gif_progress *prog = un_timer_get_data(timer);
+    struct model_layer *layer = prog->mgr->layers + prog->i;
+
+    layer->previous_frame = layer->current_frame;
+    layer->current_frame = (layer->current_frame + 1) % layer->frames_count;
+    un_timer_set_repeat(timer, layer->delays[layer->current_frame]);
+
+    return REARM;
 }
