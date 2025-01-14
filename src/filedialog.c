@@ -396,7 +396,7 @@ static void draw_files(struct filedialog *dialog, struct nk_context *ctx)
         if (e->hidden && !dialog->show_hidden)
             continue;
 #ifdef _WIN32
-        if (e->system_hidden && !show_system_hidden)
+        if (e->system_hidden && !dialog->show_system_hidden)
             continue;
 #endif
 

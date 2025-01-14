@@ -1,8 +1,16 @@
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
+
 #include "uv.h"
 #include <context.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/mman.h>
+#else
+#include <mman.h>
+#endif
 
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after)

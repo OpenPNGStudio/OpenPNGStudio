@@ -1,8 +1,6 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
-#include "editor.h"
-#include <stdatomic.h>
 
 #ifdef _WIN32
 #include <raylib_win32.h>
@@ -10,6 +8,8 @@
 #include <miniaudio.h>
 #include <uv.h>
 #include <unuv.h>
+#include "editor.h"
+#include <stdatomic.h>
 #include <raylib.h>
 #include <filedialog.h>
 #include <gif_config.h>

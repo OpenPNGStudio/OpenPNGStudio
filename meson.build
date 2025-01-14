@@ -35,6 +35,8 @@ headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/hea
 
 if host_machine.system() == 'windows'
   headers += 'https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h'
+  mman_proj = cmake.subproject('mman-win32')
+  mman = mman_proj.dependency('mman')
 endif
 
 foreach url : headers
@@ -57,6 +59,7 @@ deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')
+  deps += mman
 endif
 
 executable('OpenPNGStudio', srcs,

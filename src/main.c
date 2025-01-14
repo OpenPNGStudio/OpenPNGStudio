@@ -18,7 +18,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/mman.h>
+#else
+#include <mman.h>
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <unuv.h>
@@ -83,7 +87,11 @@ int main()
 {
     char cpubuff[4] = {0};
     snprintf(cpubuff, 3, "%d", uv_available_parallelism());
+#ifdef _WIN32
+    SetEnvironmentVariable("UV_THREADPOOL_SIZE", cpubuff);
+#else
     setenv("UV_THREADPOOL_SIZE", cpubuff, 1);
+#endif
     /* CFG */
     ctx.loop = un_loop_new();
     filedialog_init(&ctx.dialog, 0);

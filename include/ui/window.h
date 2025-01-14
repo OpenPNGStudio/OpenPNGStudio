@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include <raylib-nuklear.h>
 #include <stdbool.h>
 
