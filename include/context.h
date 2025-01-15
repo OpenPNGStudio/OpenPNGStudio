@@ -62,6 +62,7 @@ struct context {
     struct microphone_data mic;
 
     enum program_mode mode;
+    bool hide_ui;
 };
 
 void context_load_image(struct context *ctx, const char *name,

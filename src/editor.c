@@ -5,6 +5,7 @@
 #include "raymath.h"
 #include "ui/window.h"
 #include "unuv.h"
+#include <ctype.h>
 #include <raylib-nuklear.h>
 #include <editor.h>
 #include <stdbool.h>
@@ -14,6 +15,7 @@ extern struct context ctx;
 
 static enum un_action update_talk_mask(un_timer *timer);
 static enum un_action update_pause_mask(un_timer *timer);
+static void hex_str_to_color(const char *str, Color *color);
 
 void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused)
 {
@@ -183,8 +185,17 @@ void editor_draw_stream(struct editor *editor, struct nk_context *ctx,
                     editor->background_color);
 
                 color = nk_color_picker(ctx, color, NK_RGB);
+                nk_layout_row_dynamic(ctx, 30, 1);
+                nk_edit_string(ctx, NK_EDIT_FIELD, editor->bg_color_in,
+                    &editor->bg_color_len, 7, nk_filter_hex);
 
                 editor->background_color = ColorFromNuklearF(color);
+
+                if (editor->bg_color_len == 6) {
+                    editor->bg_color_in[6] = 0;
+                    hex_str_to_color(editor->bg_color_in,
+                        &editor->background_color);
+                }
                 break;
             }
 
@@ -237,7 +248,6 @@ static enum un_action update_talk_mask(un_timer *timer)
 
     ed->talk_timer_running = false;
     ed->layer_manager.mask &= ~TALK;
-    ed->layer_manager.mask |= QUIET;
 
     return DISARM;
 }
@@ -257,4 +267,26 @@ static enum un_action update_pause_mask(un_timer *timer)
     ed->layer_manager.mask &= ~TALK;
 
     return DISARM;
+}
+
+static int hex_char_to_num(char c)
+{
+    c = toupper(c);
+
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+
+    return -1;
+}
+
+static void hex_str_to_color(const char *str, Color *color)
+{
+    color->r = hex_char_to_num(str[0]);
+    color->r = (color->r << 4) + hex_char_to_num(str[1]);
+    color->g = hex_char_to_num(str[2]);
+    color->g = (color->g << 4) + hex_char_to_num(str[3]);
+    color->b = hex_char_to_num(str[4]);
+    color->b = (color->b << 4) + hex_char_to_num(str[5]);
 }

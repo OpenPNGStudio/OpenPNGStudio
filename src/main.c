@@ -233,18 +233,23 @@ static enum un_action update(un_idle *task)
             ctx.mode = EDIT_MODE;
     }
 
+    if (IsKeyPressed(KEY_SPACE)) {
+        ctx.hide_ui = !ctx.hide_ui;
+    }
+
     set_key_mask(&ctx.editor.layer_manager.mask);
 
-    draw_menubar(&ui_focused);
-
-    nk_end(nk_ctx);
+    if (!ctx.hide_ui)
+        draw_menubar(&ui_focused);
 
     filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
 
-    if (ctx.mode == EDIT_MODE)
-        editor_draw(&ctx.editor, nk_ctx, &ui_focused);
-    else
-        editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+    if (!ctx.hide_ui) {
+        if (ctx.mode == EDIT_MODE)
+            editor_draw(&ctx.editor, nk_ctx, &ui_focused);
+        else
+            editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+    }
 
     editor_apply_mask(&ctx.editor);
 
@@ -277,7 +282,8 @@ static enum un_action update(un_idle *task)
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();
 
-    console_draw(nk_ctx, &ui_focused);
+    if (!ctx.hide_ui)
+        console_draw(nk_ctx, &ui_focused);
 
     if (!ctx.dialog.win.show) {
         if (ctx.dialog.selected_index != -1) {
@@ -399,6 +405,8 @@ static void draw_menubar(bool *ui_focused)
 
         nk_menubar_end(nk_ctx);
     }
+
+    nk_end(nk_ctx);
 }
 
 static void load_layer()
@@ -446,8 +454,8 @@ static enum un_action update_gif(un_timer *timer)
     struct model_layer *layer = prog->mgr->layers + prog->i;
 
     layer->previous_frame = layer->current_frame;
-    layer->current_frame = (layer->current_frame + 1) % layer->frames_count;
     un_timer_set_repeat(timer, layer->delays[layer->current_frame]);
+    layer->current_frame = (layer->current_frame + 1) % layer->frames_count;
 
     return REARM;
 }

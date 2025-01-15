@@ -26,6 +26,8 @@ struct editor {
     size_t previous_volume;
     size_t microphone_trigger;
     Color background_color;
+    char bg_color_in[7];
+    int bg_color_len;
     int timer_ttl;
 
     bool talk_timer_running;
