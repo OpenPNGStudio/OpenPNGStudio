@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <layermgr.h>
@@ -13,6 +14,7 @@
 static void reset_key_mask(uint64_t *mask);
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
 static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
+static bool test_mask(uint64_t mask, uint64_t layer);
 
 void layer_manager_deinit(struct layer_manager *mgr)
 {
@@ -122,20 +124,22 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
             }
         }
 
-        DrawTexturePro(texture, (Rectangle) {
-            .x = 1,
-            .y = 1,
-            .width = texture.width - 2,
-            .height = texture.height - 2,
-        }, (Rectangle) {
-            .x = width / 2.0f + layer->position_offset.x,
-            .y = height / 2.0f + (-layer->position_offset.y),
-            .width = texture.width,
-            .height = texture.height,
-        }, (Vector2) {
-            .x = texture.width / 2.0f,
-            .y = texture.height / 2.0f,
-        }, layer->rotation - 180, WHITE);
+        if (test_mask(mgr->mask, layer->mask)) {
+            DrawTexturePro(texture, (Rectangle) {
+                .x = 1,
+                .y = 1,
+                .width = texture.width - 2,
+                .height = texture.height - 2,
+            }, (Rectangle) {
+                .x = width / 2.0f + layer->position_offset.x,
+                .y = height / 2.0f + (-layer->position_offset.y),
+                .width = texture.width,
+                .height = texture.height,
+            }, (Vector2) {
+                .x = texture.width / 2.0f,
+                .y = texture.height / 2.0f,
+            }, layer->rotation - 180, WHITE);
+        }
     }
 }
 
@@ -215,12 +219,72 @@ static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
     nk_group_end(ctx);
 }
 
-static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode)
+static bool test_mask(uint64_t mask, uint64_t layer)
 {
-    if ((unicode >= 'a' && unicode <= 'z') || (unicode >= 'A' && unicode <= 'Z'))
-        return nk_true;
+    int states[] = {QUIET, TALK, PAUSE};
 
-    return nk_false;
+    bool res = false;
+    bool has_mask = false;
+
+    /* check state */
+    for (int i = 0; i < 3; i++) {
+        uint64_t extract_mask = mask & states[i];
+        uint64_t extract_layer = layer & states[i];
+
+        if (extract_layer == 0)
+            continue;
+
+        if (extract_mask == extract_layer) {
+            res = true;
+            break;
+        }
+
+        has_mask = true;
+    }
+
+    int mods[] = {SHIFT, CTRL, SUPER, META};
+
+    bool is_mod_set = false;
+    for (int i = 0; i < 4; i++) {
+        if (layer & mods[i]) {
+            is_mod_set = true;
+            break;
+        }
+    }
+
+    if (is_mod_set) {
+        for (int i = 0; i < 4; i++) {
+            uint64_t extract_mask = mask & mods[i];
+            uint64_t extract_layer = layer & mods[i];
+            if (extract_mask != extract_layer)
+                return false;
+        }
+
+        if (has_mask && res == true)
+            res = true;
+        else if (!has_mask && res == false)
+            res = true;
+    }
+
+    int has_key = -1;
+    for (int i = 0; i <= 26; i++) {
+        if (layer & (1ULL << (i + KEY_START))) {
+            has_key = i;
+            break;
+        }
+    }
+
+    if (has_key != -1) {
+        if (!(mask & (1ULL << (has_key + KEY_START))))
+            return false;
+
+        if (has_mask && res == true)
+            res = true;
+        else if (!has_mask && res == false)
+            res = true;
+    }
+
+    return res;
 }
 
 static void reset_key_mask(uint64_t *mask)
@@ -230,4 +294,12 @@ static void reset_key_mask(uint64_t *mask)
         new_mask |= 1ULL << i;
 
     *mask &= new_mask;
+}
+
+static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode)
+{
+    if ((unicode >= 'a' && unicode <= 'z') || (unicode >= 'A' && unicode <= 'Z'))
+        return nk_true;
+
+    return nk_false;
 }
