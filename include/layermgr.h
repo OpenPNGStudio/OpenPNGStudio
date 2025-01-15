@@ -16,6 +16,8 @@ struct model_layer {
     uint64_t mask;
     char input_key[2];
     int input_len;
+    int ttl;
+    bool alive;
 
     /* GIF related fields */
     uint32_t *delays;

@@ -1,8 +1,11 @@
 #include "console.h"
+#include "context.h"
 #include "line_edit.h"
 #include "mask.h"
 #include "raylib-nuklear.h"
 #include "raylib.h"
+#include "unuv.h"
+#include <limits.h>
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
@@ -11,10 +14,18 @@
 #include <stdlib.h>
 #include <layermgr.h>
 
+struct layer_alive {
+    struct layer_manager *mgr;
+    int i;
+};
+
+extern struct context ctx;
+
 static void reset_key_mask(uint64_t *mask);
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
 static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
 static bool test_mask(uint64_t mask, uint64_t layer);
+static enum un_action after_timeout(un_timer *timer);
 
 void layer_manager_deinit(struct layer_manager *mgr)
 {
@@ -124,7 +135,7 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
             }
         }
 
-        if (test_mask(mgr->mask, layer->mask)) {
+        if (layer->alive || test_mask(mgr->mask, layer->mask)) {
             DrawTexturePro(texture, (Rectangle) {
                 .x = 1,
                 .y = 1,
@@ -139,6 +150,18 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
                 .x = texture.width / 2.0f,
                 .y = texture.height / 2.0f,
             }, layer->rotation - 180, WHITE);
+
+            if (!layer->alive && layer->ttl > 0) {
+                /* spawn live timeout */
+                layer->alive = true;
+                struct layer_alive *a = calloc(1, sizeof(struct layer_alive));
+                a->mgr = mgr;
+                a->i = i;
+
+                un_timer *timer = un_timer_new(ctx.loop);
+                un_timer_set_data(timer, a);
+                un_timer_start(timer, layer->ttl, 0, after_timeout);
+            }
         }
     }
 }
@@ -173,6 +196,12 @@ static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
 
     if (holding_shift)
         layer->rotation = roundf(layer->rotation / 15.0f) * 15.0f;
+
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
+    nk_layout_row_push(ctx, 0.5f);
+    nk_label(ctx, "Time to live:", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.49f);
+    nk_property_int(ctx, "timeout (ms)", 0, &layer->ttl, INT_MAX, 1, 0.1f);
 
     nk_layout_row_dynamic(ctx, 2, 1);
     nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
@@ -285,6 +314,15 @@ static bool test_mask(uint64_t mask, uint64_t layer)
     }
 
     return res;
+}
+
+static enum un_action after_timeout(un_timer *timer)
+{
+    struct layer_alive *a = un_timer_get_data(timer);
+    a->mgr->layers[a->i].alive = false;
+
+    free(a);
+    return DISARM;
 }
 
 static void reset_key_mask(uint64_t *mask)
