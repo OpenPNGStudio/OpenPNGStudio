@@ -13,6 +13,7 @@ struct model_layer {
     float rotation;
     struct line_edit name;
     bool delete;
+    uint64_t mask;
 
     /* GIF related fields */
     uint32_t *delays;
@@ -25,6 +26,8 @@ struct layer_manager {
     size_t layer_count;
     struct model_layer *layers;
     int selected_index;
+
+    uint64_t mask;
 };
 
 void layer_manager_deinit(struct layer_manager *mgr);

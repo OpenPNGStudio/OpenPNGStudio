@@ -5,6 +5,7 @@
 #include "ui/window.h"
 #include <layermgr.h>
 #include <raylib-nuklear.h>
+#include <stdint.h>
 
 enum editor_tab_id {
     OVERVIEW = 0,
@@ -25,10 +26,12 @@ struct editor {
     size_t previous_volume;
     size_t microphone_trigger;
     Color background_color;
+    bool timer_running;
 };
 
 void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused);
 void editor_draw_stream(struct editor *editor, struct nk_context *ctx,
     bool *ui_focused);
+void editor_apply_mask(struct editor *editor);
 
 #endif

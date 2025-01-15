@@ -11,6 +11,7 @@
 #include <nk.h>
 
 #include <raylib-nuklear.h>
+#include "mask.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include <context.h>
@@ -48,6 +49,11 @@ static void load_layer();
 static void load_layer_file(uv_work_t *req);
 static void after_layer_loaded(uv_work_t *req, int status);
 static enum un_action update_gif(un_timer *timer);
+static void set_key_mask(uint64_t *mask);
+static void handle_key_mask(uint64_t *mask);
+
+/* tmp */
+static void print_mask(uint64_t mask);
 
 static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
@@ -206,6 +212,9 @@ static enum un_action draw(un_idle *task)
 
 static enum un_action update(un_idle *task)
 {
+    handle_key_mask(&ctx.editor.layer_manager.mask);
+    print_mask(ctx.editor.layer_manager.mask);
+
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
 
@@ -223,6 +232,8 @@ static enum un_action update(un_idle *task)
             ctx.mode = EDIT_MODE;
     }
 
+    set_key_mask(&ctx.editor.layer_manager.mask);
+
     draw_menubar(&ui_focused);
 
     nk_end(nk_ctx);
@@ -233,6 +244,8 @@ static enum un_action update(un_idle *task)
         editor_draw(&ctx.editor, nk_ctx, &ui_focused);
     else
         editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+
+    editor_apply_mask(&ctx.editor);
 
     gif_configurator_draw(&ctx.gif_cfg, nk_ctx, &ui_focused);
 
@@ -335,6 +348,8 @@ static enum un_action update(un_idle *task)
         free(work);
     }
 
+    print_mask(ctx.editor.layer_manager.mask);
+
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
 
@@ -435,4 +450,69 @@ static enum un_action update_gif(un_timer *timer)
     un_timer_set_repeat(timer, layer->delays[layer->current_frame]);
 
     return REARM;
+}
+
+static void print_mask(uint64_t mask)
+{
+    for (int i = 63; i >= 0; i--) {
+        if (mask & (1ULL << i)) {
+            printf("1");
+        } else {
+            printf("0");
+        }
+
+        if (i % 8 == 0)
+            printf(" ");
+    }
+    printf("\n");
+}
+
+static void set_key_mask(uint64_t *mask)
+{
+    int key = GetKeyPressed();
+    if (key >= 'A' && key <= 'Z')
+        *mask |= 1ULL << (key - 'A' + KEY_START);
+
+    if (IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT))
+        *mask |= SHIFT;
+
+    if (IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL))
+        *mask |= CTRL;
+
+    if (IsKeyPressed(KEY_LEFT_SUPER) || IsKeyPressed(KEY_RIGHT_SUPER))
+        *mask |= SUPER;
+
+    if (IsKeyPressed(KEY_LEFT_ALT) || IsKeyPressed(KEY_RIGHT_ALT))
+        *mask |= META;
+}
+
+static void handle_key_mask(uint64_t *mask)
+{
+    uint64_t m = *mask;
+    uint64_t new_mask = 0;
+
+    for (int i = 0; i <= 26; i++) {
+        uint64_t bit = (1ULL << (i + KEY_START));
+        if (m & bit) {
+            if (IsKeyDown(i + 'A'))
+                new_mask |= bit;
+        }
+    }
+
+    if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+        new_mask |= SHIFT;
+
+    if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+        new_mask |= CTRL;
+
+    if (IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER))
+        new_mask |= SUPER;
+
+    if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT))
+        new_mask |= META;
+
+    for (int i = 0; i < 3; i++)
+        new_mask |= 1ULL << i;
+
+    *mask &= new_mask;
 }

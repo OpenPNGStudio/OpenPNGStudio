@@ -553,7 +553,7 @@ static void init_content(struct filedialog *dialog)
             *full_buf = dialog->current_drive_letter;
 #endif
             if (stat(full_buf, &s) == -1) {
-                printf("Failing on '%s'\n", entry->d_name);
+                printf("Failing on '%s'\n", full_buf);
                 perror("stat");
                 abort();
             }
