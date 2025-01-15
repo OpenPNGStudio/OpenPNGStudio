@@ -26,7 +26,10 @@ struct editor {
     size_t previous_volume;
     size_t microphone_trigger;
     Color background_color;
-    bool timer_running;
+    int timer_ttl;
+
+    bool talk_timer_running;
+    bool pause_timer_running;
 };
 
 void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused);

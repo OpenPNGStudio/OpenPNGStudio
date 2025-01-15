@@ -12,7 +12,8 @@
 
 extern struct context ctx;
 
-static enum un_action update_mask(un_timer *timer);
+static enum un_action update_talk_mask(un_timer *timer);
+static enum un_action update_pause_mask(un_timer *timer);
 
 void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused)
 {
@@ -205,32 +206,55 @@ void editor_apply_mask(struct editor *editor)
 
     if (percentage > editor->microphone_trigger) {
         editor->layer_manager.mask &= ~QUIET;
-        editor->layer_manager.mask |= TALK;
-        if (!editor->timer_running) {
+        if (!editor->talk_timer_running) {
+            editor->layer_manager.mask |= TALK;
+            un_timer *timer = un_timer_new(ctx.loop);
+            un_timer_set_data(timer, editor);
+            int delay = editor->timer_ttl / 2;
+            un_timer_start(timer, delay, delay, update_talk_mask);
+            editor->talk_timer_running = true;
+        }
+
+        if (!editor->pause_timer_running) {
             editor->layer_manager.mask |= PAUSE;
             un_timer *timer = un_timer_new(ctx.loop);
             un_timer_set_data(timer, editor);
-            un_timer_start(timer, 1000, 1000, update_mask);
-            editor->timer_running = true;
+            int delay = editor->timer_ttl;
+            un_timer_start(timer, delay, delay, update_pause_mask);
+            editor->pause_timer_running = true;
         }
-    } else {
-        editor->layer_manager.mask &= ~TALK;
-        editor->layer_manager.mask |= QUIET;
     }
 }
 
-static enum un_action update_mask(un_timer *timer)
+static enum un_action update_talk_mask(un_timer *timer)
 {
     struct editor *ed = un_timer_get_data(timer);
-    size_t volume = atomic_load(&ed->mic->volume);
-    volume = Lerp(volume, ed->previous_volume, 0.75);
+    un_timer_set_repeat(timer, ed->timer_ttl / 2);
 
-    int percentage = (volume * 100) / 200;
+    int percentage = (ed->previous_volume * 100) / 200;
     if (percentage > ed->microphone_trigger)
         return REARM;
 
-    ed->timer_running = false;
+    ed->talk_timer_running = false;
+    ed->layer_manager.mask &= ~TALK;
+    ed->layer_manager.mask |= QUIET;
+
+    return DISARM;
+}
+
+static enum un_action update_pause_mask(un_timer *timer)
+{
+    struct editor *ed = un_timer_get_data(timer);
+    un_timer_set_repeat(timer, ed->timer_ttl);
+
+    int percentage = (ed->previous_volume * 100) / 200;
+    if (percentage > ed->microphone_trigger)
+        return REARM;
+
+    ed->pause_timer_running = false;
+    ed->layer_manager.mask |= QUIET;
     ed->layer_manager.mask &= ~PAUSE;
-    
+    ed->layer_manager.mask &= ~TALK;
+
     return DISARM;
 }

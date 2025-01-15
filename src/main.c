@@ -31,6 +31,8 @@
 
 #define PATH_START "../"
 #define DEFAULT_MULTIPLIER 2500
+#define DEFAULT_TIMER_TTL 2000
+#define DEFAULT_MASK (QUIET | TALK | PAUSE)
 
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 struct context ctx = {0};
@@ -52,8 +54,6 @@ static enum un_action update_gif(un_timer *timer);
 static void set_key_mask(uint64_t *mask);
 static void handle_key_mask(uint64_t *mask);
 
-/* tmp */
-static void print_mask(uint64_t mask);
 
 static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
@@ -118,6 +118,8 @@ int main()
     ctx.editor.layer_manager.selected_index = -1;
     ctx.editor.mic = &ctx.mic;
     ctx.editor.microphone_trigger = 40;
+    ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
+    ctx.editor.layer_manager.mask |= QUIET;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
@@ -213,7 +215,6 @@ static enum un_action draw(un_idle *task)
 static enum un_action update(un_idle *task)
 {
     handle_key_mask(&ctx.editor.layer_manager.mask);
-    print_mask(ctx.editor.layer_manager.mask);
 
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
@@ -321,6 +322,7 @@ static enum un_action update(un_idle *task)
         layer.frames_count = work->frames_count;
         layer.previous_frame = 0;
         layer.current_frame = 0;
+        layer.mask = DEFAULT_MASK;
         LOG_I("Loaded layer \"%s\"", work->name);
 
         struct model_layer *l = layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
@@ -347,8 +349,6 @@ static enum un_action update(un_idle *task)
         close(work->fd);
         free(work);
     }
-
-    print_mask(ctx.editor.layer_manager.mask);
 
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
@@ -450,21 +450,6 @@ static enum un_action update_gif(un_timer *timer)
     un_timer_set_repeat(timer, layer->delays[layer->current_frame]);
 
     return REARM;
-}
-
-static void print_mask(uint64_t mask)
-{
-    for (int i = 63; i >= 0; i--) {
-        if (mask & (1ULL << i)) {
-            printf("1");
-        } else {
-            printf("0");
-        }
-
-        if (i % 8 == 0)
-            printf(" ");
-    }
-    printf("\n");
 }
 
 static void set_key_mask(uint64_t *mask)

@@ -14,6 +14,8 @@ struct model_layer {
     struct line_edit name;
     bool delete;
     uint64_t mask;
+    char input_key[2];
+    int input_len;
 
     /* GIF related fields */
     uint32_t *delays;
