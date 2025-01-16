@@ -329,6 +329,7 @@ static enum un_action update(un_idle *task)
         layer.previous_frame = 0;
         layer.current_frame = 0;
         layer.mask = DEFAULT_MASK;
+        layer.gif_buffer = work->gif_buffer;
         LOG_I("Loaded layer \"%s\"", work->name);
 
         struct model_layer *l = layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
@@ -434,9 +435,11 @@ static void load_layer()
 static void load_layer_file(uv_work_t *req)
 {
     struct image_load_req *work = req->data;
-    if (strcmp(work->ext, ".gif") == 0)
+    if (strcmp(work->ext, ".gif") == 0) {
         work->img = LoadImageAnimFromMemory(work->ext, work->buffer,
             work->size, &work->frames_count);
+        memcpy(work->gif_buffer, work->buffer, work->size);
+    }
     else
         work->img = LoadImageFromMemory(work->ext, work->buffer, work->size);
 }

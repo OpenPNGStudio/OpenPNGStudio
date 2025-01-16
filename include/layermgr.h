@@ -20,6 +20,7 @@ struct model_layer {
     bool alive;
 
     /* GIF related fields */
+    uint8_t *gif_buffer; /* since stb cannot export GIF to mem, I will copy the file over */
     uint32_t *delays;
     int frames_count;
     int current_frame;

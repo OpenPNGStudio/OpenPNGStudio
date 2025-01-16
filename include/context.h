@@ -2,6 +2,7 @@
 #define _CONTEXT_H_
 
 
+#include <stdint.h>
 #ifdef _WIN32
 #include <raylib_win32.h>
 #endif
@@ -35,7 +36,8 @@ enum file_extension {
 struct image_load_req {
     Image img;
     uv_work_t req;
-    unsigned char *buffer;
+    uint8_t *buffer;
+    uint8_t *gif_buffer;
     size_t size;
     char *name;
     const char *ext;

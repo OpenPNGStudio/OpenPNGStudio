@@ -43,6 +43,9 @@ void context_load_image(struct context *ctx, const char *name,
     if (ctx->image_work_queue == NULL)
         ctx->image_work_queue = req;
 
+    if (strcmp(req->ext, ".gif") == 0)
+        req->gif_buffer = malloc(size);
+
     req->req.data = req;
     uv_queue_work((uv_loop_t*) ctx->loop, &req->req, work, after);
 }
