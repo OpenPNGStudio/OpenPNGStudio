@@ -1,0 +1,6 @@
+[layer]
+offset.x = 0
+offset.y = 0
+rotation = 0
+mask = 16516 # do not touch
+ttl = 100

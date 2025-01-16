@@ -59,6 +59,7 @@ void filedialog_init(struct filedialog *dialog, bool write)
 #endif
     filedialog_deinit(dialog);
     dialog->open_for_write = write;
+    dialog->file_out_name.cleanup = true;
     init_content(dialog);
 }
 
@@ -176,8 +177,11 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
             selected = dialog->dir_content[dialog->selected_index].name;
 
         int len = strlen(selected) + 1;
-
-        nk_edit_string(ctx, NK_EDIT_DEACTIVATED, (char*) selected, &len, len, nk_filter_default);
+        if (dialog->open_for_write) {
+            line_edit_draw(&dialog->file_out_name, ctx);
+        } else {
+            nk_edit_string(ctx, NK_EDIT_DEACTIVATED, (char*) selected, &len, len, nk_filter_default);
+        }
         nk_layout_row_push(ctx, 0.2f);
 
         struct nk_vec2 new_size = nk_widget_size(ctx);
@@ -218,16 +222,21 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
                     filedialog_enter(dialog, e->name);
                 else
                     dialog->win.show = false;
-            } else
-                dialog->msg_box = messagebox_error("Select a File",
-                    "Please select a file!");
+            } else {
+                if (dialog->open_for_write) {
+                    dialog->win.show = false;
+                    dialog->selected_index = -2;
+                } else
+                    dialog->msg_box = messagebox_error("Select a File",
+                        "Please select a file!");
+            }
         }
 
         nk_layout_row_end(ctx);
 
         if (dialog->msg_box.userdata == &dialog->new_file) {
             if (dialog->msg_box.res == 1) {
-                path_append_file(&dialog->current_directory,strdup(dialog->new_file.input.buffer));
+                path_append_file(&dialog->current_directory, strdup(dialog->new_file.input.buffer));
 
                 size_t sz = path_bufsz(&dialog->current_directory);
                 char tmpbuf[sz + 1];

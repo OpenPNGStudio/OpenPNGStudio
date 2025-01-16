@@ -10,6 +10,11 @@ cp = find_program('cp')
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
 
+libarchive_proj = subproject('libarchive', default_options: 
+  ['default_library=static', 'zstd=enabled'])
+libarchive = libarchive_proj.get_variable('libarchive_dep')
+
+libarchive = libarchive_proj.get_variable('libarchive_dep')
 if host_machine.system() == 'openbsd'
   crypto = dependency('libcrypto')
 else
@@ -55,7 +60,7 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c', 'src/ui/window.c', 
   'src/context.c', 'src/gif_config.c']
 
-deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto]
+deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libarchive]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')

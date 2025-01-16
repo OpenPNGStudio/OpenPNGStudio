@@ -1,0 +1,19 @@
+[model]
+layer_count = 7 # sample count
+
+[microphone]
+trigger = 5654
+sensitivity = 100 
+
+[scene]
+bg_color = 0xFFFFFF
+
+[[layer]]
+name = "body"
+index = 1
+is_animated = false
+
+[[layer]]
+name = "eyes"
+index = 2
+is_animated = true

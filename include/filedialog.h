@@ -45,6 +45,7 @@ struct filedialog {
         bool is_file;
     } new_file;
     struct line_edit search_filter;
+    struct line_edit file_out_name;
     bool show_hidden;
     bool submenu_new_open;
     bool context_menu_open;

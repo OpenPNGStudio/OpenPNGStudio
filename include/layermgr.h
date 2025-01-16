@@ -21,6 +21,7 @@ struct model_layer {
 
     /* GIF related fields */
     uint8_t *gif_buffer; /* since stb cannot export GIF to mem, I will copy the file over */
+    size_t gif_size;
     uint32_t *delays;
     int frames_count;
     int current_frame;
@@ -41,5 +42,6 @@ struct model_layer *layer_manager_add_layer(struct layer_manager *mgr, struct mo
 
 void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx);
 void layer_manager_draw_layers(struct layer_manager *mgr);
+char *layer_tomlify(struct model_layer *layer);
 
 #endif

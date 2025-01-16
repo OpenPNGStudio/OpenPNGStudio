@@ -1,3 +1,5 @@
+#include "archive.h"
+#include "archive_entry.h"
 #include "console.h"
 #include "editor.h"
 #include "gif_config.h"
@@ -11,12 +13,14 @@
 #include <nk.h>
 
 #include <raylib-nuklear.h>
+#include "line_edit.h"
 #include "mask.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include <context.h>
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifndef _WIN32
@@ -46,6 +50,7 @@ static enum un_action update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
 static void load_layer();
+static void write_model();
 
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
@@ -226,17 +231,6 @@ static enum un_action update(un_idle *task)
     ctx.width = GetScreenWidth();
     ctx.height = GetScreenHeight();
 
-    if (IsKeyPressed(KEY_TAB)) {
-        if (ctx.mode == EDIT_MODE) 
-            ctx.mode = STREAM_MODE;
-        else
-            ctx.mode = EDIT_MODE;
-    }
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        ctx.hide_ui = !ctx.hide_ui;
-    }
-
     set_key_mask(&ctx.editor.layer_manager.mask);
 
     if (!ctx.hide_ui)
@@ -289,11 +283,24 @@ static enum un_action update(un_idle *task)
         if (ctx.dialog.selected_index != -1) {
             if (ctx.loading_state == SELECTING_IMAGE) {
                 load_layer();
+            } else if (ctx.loading_state == WRITING_MODEL) {
+                write_model();
             }
         }
     }
 
     if (!ui_focused) {
+        if (IsKeyPressed(KEY_TAB)) {
+            if (ctx.mode == EDIT_MODE) 
+                ctx.mode = STREAM_MODE;
+            else
+                ctx.mode = EDIT_MODE;
+        }
+
+        if (IsKeyPressed(KEY_SPACE)) {
+            ctx.hide_ui = !ctx.hide_ui;
+        }
+
         if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
             Vector2 delta = GetMouseDelta();
             delta = Vector2Scale(delta, -1.0f/ctx.camera.zoom);
@@ -330,6 +337,7 @@ static enum un_action update(un_idle *task)
         layer.current_frame = 0;
         layer.mask = DEFAULT_MASK;
         layer.gif_buffer = work->gif_buffer;
+        layer.gif_size = work->size;
         LOG_I("Loaded layer \"%s\"", work->name);
 
         struct model_layer *l = layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
@@ -382,8 +390,15 @@ static void draw_menubar(bool *ui_focused)
                 LOG("I don't do anything yet", 0);
             if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
                 LOG("I don't do anything yet", 0);
-            if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT))
-                LOG("I don't do anything yet", 0);
+            if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
+                ctx.dialog.open_for_write = true;
+                ctx.dialog.filter = NULL;
+                filedialog_refresh(&ctx.dialog);
+                ctx.dialog.win.title = "Save Model As";
+                filedialog_show(&ctx.dialog);
+
+                ctx.loading_state = WRITING_MODEL;
+            }
 
             if (ctx.mode == EDIT_MODE) {
                 nk_layout_row_dynamic(nk_ctx, 2, 1);
@@ -392,6 +407,7 @@ static void draw_menubar(bool *ui_focused)
                 nk_layout_row_dynamic(nk_ctx, 25, 1);
 
                 if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
+                    ctx.dialog.open_for_write = false;
                     ctx.dialog.filter = image_filter;
                     filedialog_refresh(&ctx.dialog);
                     ctx.dialog.win.title = "Open Image File";
@@ -430,6 +446,124 @@ static void load_layer()
 
     context_load_image(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
         s.st_size, load_layer_file, after_layer_loaded);
+}
+
+static void write_model()
+{
+    if (ctx.dialog.selected_index == -2) {
+        path_append_file(&ctx.dialog.current_directory,
+            strdup(ctx.dialog.file_out_name.buffer));
+        size_t sz = path_bufsz(&ctx.dialog.current_directory);
+        char tmpbuf[sz + 1];
+        memset(tmpbuf, 0, sz + 1);
+        path_str(&ctx.dialog.current_directory, sz, tmpbuf);
+
+#ifdef _WIN32
+        *tmpbuf = ctx.dialog.current_drive_letter;
+#endif
+        filedialog_up(&ctx.dialog);
+        struct archive *a = archive_write_new();
+        struct archive_entry *en = archive_entry_new();
+
+        archive_write_add_filter_zstd(a);
+        archive_write_set_format_pax_restricted(a);
+        archive_write_open_filename(a, tmpbuf);
+
+        /* write */
+        char *out = editor_tomlify(&ctx.editor);
+        int str_len = strlen(out);
+        archive_entry_set_pathname(en, "manifest.toml");
+        archive_entry_set_size(en, str_len);
+        archive_entry_set_filetype(en, AE_IFREG);
+        archive_entry_set_perm(en, 0644);
+        archive_write_header(a, en);
+        archive_write_data(a, out, str_len);
+        archive_entry_free(en);
+
+        free(out);
+
+        en = archive_entry_new();
+        archive_entry_set_pathname(en, "layers");
+        archive_entry_set_filetype(en, AE_IFDIR);
+        archive_entry_set_perm(en, 0755);
+        archive_write_header(a, en);
+        archive_entry_free(en);
+
+        for (int i = 0; i < ctx.editor.layer_manager.layer_count; i++) {
+            struct model_layer *layer = ctx.editor.layer_manager.layers + i;
+            {
+                out = layer_tomlify(layer);
+                str_len = strlen(out);
+                int file_len = snprintf(NULL, 0, "layers/%s-%d.toml",
+                        layer->name.buffer, i + 1);
+                char name[file_len + 1];
+                memset(name, 0, file_len + 1);
+                snprintf(name, file_len + 1, "layers/%s-%d.toml",
+                        layer->name.buffer, i + 1);
+
+                en = archive_entry_new();
+                archive_entry_set_pathname(en, name);
+                archive_entry_set_size(en, str_len);
+                archive_entry_set_filetype(en, AE_IFREG);
+                archive_entry_set_perm(en, 0644);
+                archive_write_header(a, en);
+                archive_write_data(a, out, str_len);
+                archive_write_finish_entry(a);
+                archive_entry_free(en);
+
+                free(out);
+            }
+
+            if (layer->frames_count == 0) {
+                int file_len = snprintf(NULL, 0, "layers/%s-%d.png",
+                        layer->name.buffer, i + 1);
+                char name[file_len + 1];
+                memset(name, 0, file_len + 1);
+                snprintf(name, file_len + 1, "layers/%s-%d.png",
+                        layer->name.buffer, i + 1);
+
+                int filesize;
+                uint8_t *exported = ExportImageToMemory(layer->img, ".png",
+                    &filesize);
+
+                en = archive_entry_new();
+                archive_entry_set_pathname(en, name);
+                archive_entry_set_filetype(en, AE_IFREG);
+                archive_entry_set_size(en, filesize);
+                archive_entry_set_perm(en, 0644);
+                archive_write_header(a, en);
+                archive_write_data(a, exported, filesize);
+                archive_write_finish_entry(a);
+                archive_entry_free(en);
+
+                free(exported);
+            } else {
+                int file_len = snprintf(NULL, 0, "layers/%s-%d.gif",
+                        layer->name.buffer, i + 1);
+                char name[file_len + 1];
+                memset(name, 0, file_len + 1);
+                snprintf(name, file_len + 1, "layers/%s-%d.gif",
+                        layer->name.buffer, i + 1);
+
+                en = archive_entry_new();
+                archive_entry_set_pathname(en, name);
+                archive_entry_set_filetype(en, AE_IFREG);
+                archive_entry_set_size(en, layer->gif_size);
+                archive_entry_set_perm(en, 0644);
+                archive_write_header(a, en);
+                archive_write_data(a, layer->gif_buffer, layer->gif_size);
+                archive_write_finish_entry(a);
+                archive_entry_free(en);
+            }
+        }
+
+        archive_write_close(a);
+        archive_write_free(a);
+
+        ctx.dialog.file_out_name.cleanup = true;
+    } else {
+        LOG_E("Selection not yet implemented!", 0);
+    }
 }
 
 static void load_layer_file(uv_work_t *req)

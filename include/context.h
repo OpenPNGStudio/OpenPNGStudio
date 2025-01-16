@@ -24,6 +24,7 @@ enum program_mode {
 enum fileload_state {
     NOTHING,
     SELECTING_IMAGE,
+    WRITING_MODEL,
 };
 
 enum file_extension {
