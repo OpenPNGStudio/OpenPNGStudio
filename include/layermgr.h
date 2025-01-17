@@ -30,7 +30,7 @@ struct model_layer {
 
 struct layer_manager {
     size_t layer_count;
-    struct model_layer *layers;
+    struct model_layer **layers;
     int selected_index;
 
     uint64_t mask;

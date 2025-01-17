@@ -269,7 +269,7 @@ char *editor_tomlify(struct editor *editor)
               "name = \"%s\"\n"
               "index = %d\n"
               "is_animated = %s\n";
-        struct model_layer *layer = editor->layer_manager.layers + i;
+        struct model_layer *layer = editor->layer_manager.layers[i];
         int add_length = snprintf(NULL, 0, fmt, layer->name.buffer, i + 1,
             (layer->frames_count > 0) ? "true" : "false");
         buffer = realloc(buffer, len + add_length + 1);

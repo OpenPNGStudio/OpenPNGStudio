@@ -48,11 +48,6 @@ static char image_filter[] = "png;bmp;jpg;jpeg;gif";
 static char model_filter[] = "opng";
 struct context ctx = {0};
 
-struct gif_progress {
-    struct layer_manager *mgr;
-    int i;
-};
-
 struct layer_table {
     /* metadata */
     char *name;
@@ -298,12 +293,10 @@ static enum un_action update(un_idle *task)
         free(ctx.gif_cfg.inputs);
         ctx.gif_cfg.inputs = NULL;
 
-        struct gif_progress *prog = calloc(1, sizeof(struct gif_progress));
-        prog->i = ctx.editor.layer_manager.layer_count - 1;
-        prog->mgr = &ctx.editor.layer_manager;
+        int i = ctx.editor.layer_manager.layer_count - 1;
 
         un_timer *timer = un_timer_new(ctx.loop);
-        un_timer_set_data(timer, prog);
+        un_timer_set_data(timer, ctx.editor.layer_manager.layers[i]);
         uint32_t delay = ctx.gif_cfg.layer->delays[0];
         un_timer_start(timer, delay, delay, update_gif);
         ctx.gif_cfg.layer = NULL;
@@ -733,22 +726,21 @@ static void manifest_scaffold(struct manifest *manifest)
     ctx.editor.background_color.b = manifest->bg_color & 0xFF;
     LOG_I("Background configured", 0);
 
-    struct model_layer *layers = calloc(manifest->layer_count,
-        sizeof(struct model_layer));
+    struct model_layer **layers = calloc(manifest->layer_count,
+        sizeof(struct model_layer*));
+
+    for (int i = 0; i < manifest->layer_count; i++)
+        layers[i] = calloc(1, sizeof(struct model_layer));
 
     int i = 0;
     struct layer_table *lazy = manifest->table;
     while (lazy) {
-        struct model_layer *layer = layers + i;
+        struct model_layer *layer = layers[i];
         table_configure_layer(lazy, layer);
 
         if (lazy->is_animated) {
-            struct gif_progress *prog = calloc(1, sizeof(struct gif_progress));
-            prog->i = i;
-            prog->mgr = &ctx.editor.layer_manager;
-
             un_timer *timer = un_timer_new(ctx.loop);
-            un_timer_set_data(timer, prog);
+            un_timer_set_data(timer, layer);
             uint32_t delay = layer->delays[0];
             un_timer_start(timer, delay, delay, update_gif);
         }
@@ -924,7 +916,7 @@ static void write_model()
         archive_entry_free(en);
 
         for (int i = 0; i < ctx.editor.layer_manager.layer_count; i++) {
-            struct model_layer *layer = ctx.editor.layer_manager.layers + i;
+            struct model_layer *layer = ctx.editor.layer_manager.layers[i];
             {
                 out = layer_tomlify(layer);
                 str_len = strlen(out) + 1;
@@ -1021,8 +1013,7 @@ static void after_layer_loaded(uv_work_t *req, int status)
 
 static enum un_action update_gif(un_timer *timer)
 {
-    struct gif_progress *prog = un_timer_get_data(timer);
-    struct model_layer *layer = prog->mgr->layers + prog->i;
+    struct model_layer *layer = un_timer_get_data(timer);
 
     layer->previous_frame = layer->current_frame;
     un_timer_set_repeat(timer, layer->delays[layer->current_frame]);

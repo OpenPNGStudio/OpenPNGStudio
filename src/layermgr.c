@@ -14,11 +14,6 @@
 #include <stdlib.h>
 #include <layermgr.h>
 
-struct layer_alive {
-    struct layer_manager *mgr;
-    int i;
-};
-
 extern struct context ctx;
 
 static void reset_key_mask(uint64_t *mask);
@@ -34,9 +29,11 @@ void layer_manager_deinit(struct layer_manager *mgr)
 
 struct model_layer *layer_manager_add_layer(struct layer_manager *mgr, struct model_layer *layer)
 {
-    mgr->layers = realloc(mgr->layers, (++mgr->layer_count) * sizeof(*layer));
-    mgr->layers[mgr->layer_count - 1] = *layer;
-    return (mgr->layers + (mgr->layer_count - 1));
+    mgr->layers = realloc(mgr->layers, (++mgr->layer_count) * sizeof(struct model_layer*));
+    struct model_layer *new_layer = calloc(1, sizeof(struct model_layer));
+    *new_layer = *layer;
+    mgr->layers[mgr->layer_count - 1] = new_layer;
+    return new_layer;
 }
 
 void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
@@ -51,7 +48,7 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
     }
 
     for (int i = 0; i < mgr->layer_count; i++) {
-        struct model_layer *layer = mgr->layers + i;
+        struct model_layer *layer = mgr->layers[i];
         struct nk_rect bounds = nk_layout_widget_bounds(ctx);
         bounds.h *= 2;
 
@@ -72,9 +69,9 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
             nk_widget_disable_begin(ctx);
 
         if (nk_button_label(ctx, "UP")) {
-            struct model_layer prev = mgr->layers[i - 1];
-            *(mgr->layers + i - 1) = *layer;
-            *(mgr->layers + i) = prev;
+            struct model_layer *prev = mgr->layers[i - 1];
+            mgr->layers[i - 1] = layer;
+            mgr->layers[i] = prev;
             mgr->selected_index = -1;
         }
 
@@ -86,9 +83,9 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
 
         nk_layout_row_push(ctx, 0.33f);
         if (nk_button_label(ctx, "DOWN")) {
-            struct model_layer next = mgr->layers[i + 1];
-            *(mgr->layers + i + 1) = *layer;
-            *(mgr->layers + i) = next;
+            struct model_layer *next = mgr->layers[i + 1];
+            mgr->layers[i + 1] = layer;
+            mgr->layers[i] = next;
             mgr->selected_index = -1;
         }
 
@@ -121,7 +118,7 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
     float height = GetScreenHeight();
 
     for (int i = 0; i < mgr->layer_count; i++) {
-        struct model_layer *layer = mgr->layers + i;
+        struct model_layer *layer = mgr->layers[i];
         Image *img = &layer->img;
         Texture2D texture = layer->texture;
 
@@ -154,12 +151,8 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
             if (!layer->alive && layer->ttl > 0) {
                 /* spawn live timeout */
                 layer->alive = true;
-                struct layer_alive *a = calloc(1, sizeof(struct layer_alive));
-                a->mgr = mgr;
-                a->i = i;
-
                 un_timer *timer = un_timer_new(ctx.loop);
-                un_timer_set_data(timer, a);
+                un_timer_set_data(timer, layer);
                 un_timer_start(timer, layer->ttl, 0, after_timeout);
             }
         }
@@ -215,7 +208,7 @@ char *layer_tomlify(struct model_layer *layer)
 
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
 {
-    struct model_layer *layer = mgr->layers + mgr->selected_index;
+    struct model_layer *layer = mgr->layers[mgr->selected_index];
     bool holding_shift = nk_input_is_key_down(&ctx->input, NK_KEY_SHIFT);
 
     nk_layout_row_dynamic(ctx, 30, 1);
@@ -365,10 +358,9 @@ static bool test_mask(uint64_t mask, uint64_t layer)
 
 static enum un_action after_timeout(un_timer *timer)
 {
-    struct layer_alive *a = un_timer_get_data(timer);
-    a->mgr->layers[a->i].alive = false;
+    struct model_layer *layer = un_timer_get_data(timer);
+    layer->alive = false;
 
-    free(a);
     return DISARM;
 }
 
