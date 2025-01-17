@@ -569,7 +569,8 @@ static void init_content(struct filedialog *dialog)
              * Wake up Microsoft ... it's not 1957, don't be like Fortran or
              * Pascal! By adding case sensitivity there is really nothing to
              * lose. Smh, the fix is simple, just continue and behave the file
-             * doesn't exist lol
+             * doesn't exist lol. I had enough to put up with bad Microsoft 
+             * decisions
              */
             if (stat(full_buf, &s) == -1) {
                 printf("Failing on '%s'\n", full_buf);
