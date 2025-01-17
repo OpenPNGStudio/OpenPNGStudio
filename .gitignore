@@ -1,3 +1,5 @@
+src/toml.c
+include/toml.h
 build/
 build-mingw/
 subprojects/raylib/

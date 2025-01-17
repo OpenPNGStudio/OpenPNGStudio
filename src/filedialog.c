@@ -561,6 +561,16 @@ static void init_content(struct filedialog *dialog)
 #ifdef _WIN32
             *full_buf = dialog->current_drive_letter;
 #endif
+            /* FIX: NTFS can kiss my tail
+             * I will show you "invalid character"! I say file doesn't exist!
+             * "Next Technology" FileSystem, what an irony
+             * Same with 'Windows "NT"' kernel, another irony, can't even tell
+             * difference between A and a (it's case-insensitive)!
+             * Wake up Microsoft ... it's not 1957, don't be like Fortran or
+             * Pascal! By adding case sensitivity there is really nothing to
+             * lose. Smh, the fix is simple, just continue and behave the file
+             * doesn't exist lol
+             */
             if (stat(full_buf, &s) == -1) {
                 printf("Failing on '%s'\n", full_buf);
                 perror("stat");

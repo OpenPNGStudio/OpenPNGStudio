@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ebd8260..f57a7dc 100644
+index ebd8260..146d8a0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -3,6 +3,11 @@ if(MSVC)
@@ -27,3 +27,23 @@ index ebd8260..f57a7dc 100644
  # Emscripten's strlcat and strlcpy triggers ASAN errors
  if(NOT EMSCRIPTEN)
  	check_symbol_exists(strlcat "string.h" HAVE_STRLCAT)
+@@ -243,19 +242,9 @@ if(NOT EMSCRIPTEN)
+ 	endif()
+ endif()
+ 
+-check_symbol_exists(strndup "string.h" HAVE_STRNDUP)
+-if(HAVE_STRNDUP)
+-	add_definitions(-DHAVE_STRNDUP)
+-endif()
+-
+ if(WIN32)
+ 	set(HAVE_STRNLEN true)
+ 	add_definitions(-DHAVE_STRNLEN)
+-else()
+-	check_symbol_exists(strnlen "string.h" HAVE_STRNLEN)
+-	if(HAVE_STRNLEN)
+-		add_definitions(-DHAVE_STRNLEN)
+-	endif()
+ endif()
+ 
+ check_symbol_exists(strsep "string.h" HAVE_STRSEP)

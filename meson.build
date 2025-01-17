@@ -36,7 +36,8 @@ message('Downloading nuklear')
 
 headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h',
   'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h',
-  'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h']
+  'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h',
+  'https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h']
 
 if host_machine.system() == 'windows'
   headers += 'https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h'
@@ -52,13 +53,21 @@ foreach url : headers
   endif
 endforeach
 
+message('Downloading tomlc99')
+if not fs.exists('src/toml.c')
+  message('Downloading toml.c')
+  run_command(curl, '-L', '-o', 'src/toml.c',
+    'https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.c',
+    check: true)
+endif
+
 message('Copying raylib config')
 run_command(cp, 'raylib_config.h', 'subprojects/raylib/src/config.h', check:  true)
 
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
   'src/nuklear.c', 'src/ui/messagebox.c', 'src/console.c', 'src/layermgr.c',
   'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c', 'src/ui/window.c', 
-  'src/context.c', 'src/gif_config.c']
+  'src/context.c', 'src/gif_config.c', 'src/toml.c']
 
 deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libarchive]
 

@@ -4,8 +4,10 @@
 #include "editor.h"
 #include "gif_config.h"
 #include "layermgr.h"
+#include "toml.h"
 #include <fcntl.h>
 #include <filedialog.h>
+#include <sys/types.h>
 #ifdef _WIN32
 #include <raylib_win32.h>
 #endif
@@ -35,13 +37,15 @@
 #include <unistd.h>
 #include <unuv.h>
 #include <uv.h>
-
 #define PATH_START "../"
 #define DEFAULT_MULTIPLIER 2500
 #define DEFAULT_TIMER_TTL 2000
 #define DEFAULT_MASK (QUIET | TALK | PAUSE)
 
+#define TOML_ERR_LEN UINT8_MAX
+
 static char image_filter[] = "png;bmp;jpg;jpeg;gif";
+static char model_filter[] = "opng";
 struct context ctx = {0};
 
 struct gif_progress {
@@ -49,11 +53,40 @@ struct gif_progress {
     int i;
 };
 
+struct layer_table {
+    /* metadata */
+    char *name;
+    char *buffer; /* used for layer info toml file */
+    size_t index;
+    bool is_animated;
+
+    /* held image */
+    uint8_t *image_buffer;
+    size_t image_size;
+
+    struct layer_table *next;
+};
+
+struct manifest {
+    size_t layer_count;
+    size_t microphone_trigger;
+    int microphone_sensitivity;
+    int bg_color;
+    struct layer_table *table;
+};
+
 static enum un_action update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
 static void load_layer();
 static void write_model();
+static void load_model();
+static int manifest_load_layers(toml_table_t *conf, struct manifest *manifest);
+static struct layer_table *manifest_find_layer(struct manifest *manifest,
+    const char *filename);
+static void manifest_scaffold(struct manifest *manifest);
+static void table_configure_layer(struct layer_table *table,
+    struct model_layer *layer);
 
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
@@ -288,6 +321,8 @@ static enum un_action update(un_idle *task)
                 load_layer();
             } else if (ctx.loading_state == WRITING_MODEL) {
                 write_model();
+            } else if (ctx.loading_state == LOADING_MODEL) {
+                load_model();
             }
         }
     }
@@ -389,10 +424,19 @@ static void draw_menubar(bool *ui_focused)
 
         if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
             nk_layout_row_dynamic(nk_ctx, 25, 1);
-            if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT))
-                LOG("I don't do anything yet", 0);
+            if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT)) {
+                ctx.dialog.open_for_write = false;
+                ctx.dialog.filter = model_filter;
+                filedialog_refresh(&ctx.dialog);
+                ctx.dialog.win.title = "Load Model";
+                filedialog_show(&ctx.dialog);
+
+                ctx.loading_state = LOADING_MODEL;
+            }
+
             if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
                 LOG("I don't do anything yet", 0);
+
             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
                 ctx.dialog.open_for_write = true;
                 ctx.dialog.filter = NULL;
@@ -451,15 +495,402 @@ static void load_layer()
         s.st_size, load_layer_file, after_layer_loaded);
 }
 
+static void load_model()
+{
+    struct stat s;
+    size_t sz = filedialog_selsz(&ctx.dialog);
+    char buffer[sz + 1];
+    char errbuf[TOML_ERR_LEN];
+
+    memset(buffer, 0, sz + 1);
+    filedialog_selected(&ctx.dialog, sz, buffer);
+
+    if (stat(buffer, &s) == -1) {
+        perror("stat");
+        abort();
+    }
+
+    int fd = open(buffer, O_RDONLY);
+    void *mapped = mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (mapped == MAP_FAILED) {
+        perror("mmap");
+        abort();
+    }
+
+    LOG_I("Preparing to load %s", buffer);
+
+    struct archive *a = archive_read_new();
+    struct archive_entry *en;
+    int res;
+    struct manifest manifest = {0};
+
+    archive_read_support_filter_zstd(a);
+    archive_read_support_format_tar(a);
+    res = archive_read_open_memory(a, mapped, s.st_size);
+    if (res != ARCHIVE_OK) {
+        LOG_E("Something went wrong when reading archive! %s",
+            archive_error_string(a));
+        abort();
+    }
+
+    while ((archive_read_next_header(a, &en)) == ARCHIVE_OK) {
+        mode_t type = archive_entry_filetype(en);
+        const char *pathname = archive_entry_pathname(en);
+
+        if (type == AE_IFREG) {
+            if (pathname[0] == 'm' && strcmp(pathname, "manifest.toml") == 0) {
+                LOG_I("Reading model manifest", 0);
+                size_t size = archive_entry_size(en);
+                char *config_str = calloc(size, 1);
+                archive_read_data(a, config_str, size);
+
+                toml_table_t* conf = toml_parse(config_str, errbuf,
+                    TOML_ERR_LEN);
+                if (conf == NULL) {
+                    LOG_E("Unable to parse manifest file: %s!", errbuf);
+                    break;
+                }
+
+                toml_table_t *model = toml_table_in(conf, "model");
+                if (model == NULL) {
+                    LOG_E("Unable to find table [model] in manifest: %s!",
+                        errbuf);
+                    break;
+                }
+
+                toml_datum_t layer_count = toml_int_in(model, "layer_count");
+                if (!layer_count.ok) {
+                    LOG_E("Unable to get layer count: %s!", errbuf);
+                    break;
+                }
+                manifest.layer_count = layer_count.u.i;
+
+                toml_table_t *microphone = toml_table_in(conf, "microphone");
+                if (microphone == NULL) {
+                    LOG_E("Unable to find table [microphone] in manifest: %s!",
+                        errbuf);
+                    break;
+                }
+
+                toml_datum_t trigger = toml_int_in(microphone, "trigger");
+                if (!trigger.ok) {
+                    LOG_E("Unable to get microphone activation trigger: %s!",
+                        errbuf);
+                    break;
+                }
+                manifest.microphone_trigger = trigger.u.i;
+
+                toml_datum_t sensitivity = toml_int_in(microphone,
+                    "sensitivity");
+                if (!sensitivity.ok) {
+                    LOG_E("Unable to get microphone sensitivity: %s!", errbuf);
+                    break;
+                }
+                manifest.microphone_sensitivity = sensitivity.u.i;
+
+                toml_table_t *scene = toml_table_in(conf, "scene");
+                if (scene == NULL) {
+                    LOG_E("Unable to find table [scene] in manifest: %s!",
+                        errbuf);
+                    break;
+                }
+
+                toml_datum_t bg_color = toml_int_in(scene, "bg_color");
+                if (!bg_color.ok) {
+                    LOG_E("Unable to get background color: %s!", errbuf);
+                    break;
+                }
+                manifest.bg_color = bg_color.u.i;
+
+                if (!manifest_load_layers(conf, &manifest))
+                    break;
+
+                LOG_I("Parsed model manifest successfully!", 0);
+
+                toml_free(conf);
+                free(config_str);
+                continue;
+            } else if (pathname[0] == 'l' &&
+                strncmp(pathname, "layers/", 7) == 0) {
+                struct layer_table *layer = manifest_find_layer(&manifest,
+                    pathname);
+
+                if (layer != NULL) {
+                    const char *ext = strrchr(pathname, '.') + 1;
+                    size_t data_size = archive_entry_size(en);
+                    if (strcmp(ext, "toml") == 0) {
+                        layer->buffer = calloc(data_size, 1);
+                        archive_read_data(a, layer->buffer, data_size);
+                    } else {
+                        layer->image_size = data_size;
+                        layer->image_buffer = calloc(data_size, 1);
+                        archive_read_data(a, layer->image_buffer, data_size);
+                    }
+                } else {
+                    LOG_E("Unable to find layer %s! Is it defined in the "
+                        "manifest?", pathname);
+                    break;
+                }
+            } else
+                LOG_W("Stray file in model - %s???", pathname);
+        } else if (type == S_IFDIR) {
+            if (strcmp(pathname, "layers/") != 0)
+                LOG_W("Stray directory in model - %s???", pathname);
+        }
+
+        archive_read_data_skip(a);
+    }
+    archive_read_free(a);
+    munmap(mapped, s.st_size);
+    close(fd);
+
+    manifest_scaffold(&manifest);
+}
+
+static int manifest_load_layers(toml_table_t *conf, struct manifest *manifest)
+{
+    char errbuf[TOML_ERR_LEN];
+    struct layer_table *lazy = NULL;
+
+    toml_array_t *array = toml_array_in(conf, "layer");
+    if (array == NULL) {
+        LOG_E("Unable to find array [[layer]] in manifest: %s!", errbuf);
+        return 0;
+    }
+
+    for (size_t i = 0; i < manifest->layer_count; i++) {
+        struct layer_table *table = calloc(1, sizeof(struct layer_table));
+        toml_table_t *layer = toml_table_at(array, i);
+        if (layer == NULL) {
+            LOG_E("Unable to get layer info: %s!", errbuf);
+            free(table);
+            return 0;
+        }
+
+        toml_datum_t name = toml_string_in(layer, "name");
+        if (!name.ok) {
+            LOG_E("Unable to get layer name: %s!", errbuf);
+            free(table);
+            return 0;
+        }
+        table->name = name.u.s;
+
+        toml_datum_t index = toml_int_in(layer, "index");
+        if (!index.ok) {
+            LOG_E("Unable to get layer index: %s!", errbuf);
+            free(table);
+            return 0;
+        }
+        table->index = index.u.i;
+
+        toml_datum_t is_animated = toml_bool_in(layer, "is_animated");
+        if (!is_animated.ok) {
+            LOG_E("Unable to get if layer is animated: %s!", errbuf);
+            free(table);
+            return 0;
+        }
+        table->is_animated = is_animated.u.b;
+
+        if (lazy == NULL) {
+            manifest->table = table;
+            lazy = table;
+        } else {
+            lazy->next = table;
+            lazy = table;
+        }
+    }
+
+    return 1;
+}
+
+static struct layer_table *manifest_find_layer(struct manifest *manifest,
+    const char *filename)
+{
+    const char *start = strrchr(filename, '-') + 1;
+    size_t index = atoll(start);
+
+    struct layer_table *lazy = manifest->table;
+    while (lazy) {
+        if (lazy->index == index)
+            return lazy;
+
+        lazy = lazy->next;
+    }
+
+    return NULL;
+}
+
+static void manifest_scaffold(struct manifest *manifest)
+{
+    LOG_I("Configuring model", 0);
+
+    ctx.editor.microphone_trigger = manifest->microphone_trigger;
+    atomic_store(&ctx.mic.multiplier, manifest->microphone_sensitivity);
+    LOG_I("Microphone configured", 0);
+
+    ctx.editor.background_color.r = (manifest->bg_color >> 16) & 0xFF;
+    ctx.editor.background_color.g = (manifest->bg_color >> 8) & 0xFF;
+    ctx.editor.background_color.b = manifest->bg_color & 0xFF;
+    LOG_I("Background configured", 0);
+
+    struct model_layer *layers = calloc(manifest->layer_count,
+        sizeof(struct model_layer));
+
+    int i = 0;
+    struct layer_table *lazy = manifest->table;
+    while (lazy) {
+        struct model_layer *layer = layers + i;
+        table_configure_layer(lazy, layer);
+
+        if (lazy->is_animated) {
+            struct gif_progress *prog = calloc(1, sizeof(struct gif_progress));
+            prog->i = i;
+            prog->mgr = &ctx.editor.layer_manager;
+
+            un_timer *timer = un_timer_new(ctx.loop);
+            un_timer_set_data(timer, prog);
+            uint32_t delay = layer->delays[0];
+            un_timer_start(timer, delay, delay, update_gif);
+        }
+
+        lazy = lazy->next;
+        i++;
+    }
+
+    ctx.editor.layer_manager.layers = layers;
+    ctx.editor.layer_manager.layer_count = manifest->layer_count;
+    LOG_I("Layers configured", 0);
+    LOG_I("Model has been loaded!", 0);
+}
+
+/* FIX: Handle failure instead of abort */
+static void table_configure_layer(struct layer_table *table,
+    struct model_layer *layer)
+{
+    char errbuf[TOML_ERR_LEN];
+
+    toml_table_t *conf = toml_parse(table->buffer, errbuf, TOML_ERR_LEN);
+    if (conf == NULL) {
+        LOG_E("Unable to parse layer metadata: %s!", errbuf);
+        abort();
+    }
+
+    toml_table_t *lay = toml_table_in(conf, "layer");
+    if (lay == NULL) {
+        LOG_E("Unable to find table [layer] in metadata: %s!", errbuf);
+        abort();
+    }
+
+    toml_table_t *offset = toml_table_in(lay, "offset");
+    if (offset == NULL) {
+        LOG_E("Unable to find table offset in layer: %s!", errbuf);
+        abort();
+    }
+
+    toml_datum_t off_x = toml_double_in(offset, "x");
+    if (!off_x.ok) {
+        LOG_E("Unable to get x offset: %s!", errbuf);
+        abort();
+    }
+    layer->position_offset.x = off_x.u.d;
+
+    toml_datum_t off_y = toml_double_in(offset, "y");
+    if (!off_y.ok) {
+        LOG_E("Unable to get y offset: %s!", errbuf);
+        abort();
+    }
+    layer->position_offset.y = off_y.u.d;
+
+    toml_datum_t rotation = toml_double_in(lay, "rotation");
+    if (!rotation.ok) {
+        LOG_E("Unable to get layer rotation: %s!", errbuf);
+        abort();
+    }
+    layer->rotation = rotation.u.d;
+
+    toml_datum_t mask = toml_int_in(lay, "mask");
+    if (!mask.ok) {
+        LOG_E("Unable to get layer mask: %s!", errbuf);
+        abort();
+    }
+    layer->mask = mask.u.i;
+
+    toml_datum_t ttl = toml_int_in(lay, "ttl");
+    if (!ttl.ok) {
+        LOG_E("Unable to get time to live: %s!", errbuf);
+        abort();
+    }
+    layer->ttl = ttl.u.i;
+
+    if (!table->is_animated)
+        goto end;
+
+    toml_table_t *animation = toml_table_in(conf, "animation");
+    if (animation == NULL) {
+        LOG_E("Unable to find table [animation] in metadata: %s!", errbuf);
+        abort();
+    }
+
+    toml_datum_t frame_count = toml_int_in(animation, "frame_count");
+    if (!frame_count.ok) {
+        LOG_E("Unable to get frame count: %s!", errbuf);
+        abort();
+    }
+    layer->frames_count = frame_count.u.i;
+    layer->delays = calloc(layer->frames_count, sizeof(uint32_t));
+
+    toml_array_t *delays = toml_array_in(animation, "delays");
+    if (delays == NULL) {
+        LOG_E("Unable to get delays: %s!", errbuf);
+        abort();
+    }
+
+    for (size_t i = 0; i < layer->frames_count; i++) {
+        toml_datum_t delay = toml_int_at(delays, i);
+        if (!delay.ok) {
+            LOG_E("Unable to get %dth frame delay: %s!", i + 1, errbuf);
+            abort();
+        }
+        layer->delays[i] = delay.u.i;
+    }
+
+end:
+    if (table->is_animated)
+        layer->img = LoadImageAnimFromMemory(".gif", table->image_buffer,
+            table->image_size, &layer->frames_count);
+    else
+        layer->img = LoadImageFromMemory(".png", table->image_buffer,
+            table->image_size);
+
+    layer->texture = LoadTextureFromImage(layer->img);
+    layer->name.len = strlen(table->name);
+    layer->name.cleanup = false;
+    layer->name.buffer = table->name;
+    layer->previous_frame = 0;
+    layer->current_frame = 0;
+    layer->gif_buffer = table->image_buffer;
+    layer->gif_size = table->image_size;
+
+    if (!table->is_animated)
+        free(table->image_buffer);
+
+    toml_free(conf);
+    free(table->buffer);
+}
+
 static void write_model()
 {
     if (ctx.dialog.selected_index == -2) {
         path_append_file(&ctx.dialog.current_directory,
             strdup(ctx.dialog.file_out_name.buffer));
         size_t sz = path_bufsz(&ctx.dialog.current_directory);
-        char tmpbuf[sz + 1];
-        memset(tmpbuf, 0, sz + 1);
+        const char *ext = ".opng";
+        int ext_len = strlen(ext);
+
+        char tmpbuf[sz + ext_len + 1];
+        memset(tmpbuf, 0, sz + ext_len + 1);
         path_str(&ctx.dialog.current_directory, sz, tmpbuf);
+        strcat(tmpbuf, ext);
 
 #ifdef _WIN32
         *tmpbuf = ctx.dialog.current_drive_letter;
@@ -474,7 +905,7 @@ static void write_model()
 
         /* write */
         char *out = editor_tomlify(&ctx.editor);
-        int str_len = strlen(out);
+        int str_len = strlen(out) + 1;
         archive_entry_set_pathname(en, "manifest.toml");
         archive_entry_set_size(en, str_len);
         archive_entry_set_filetype(en, AE_IFREG);
@@ -496,7 +927,7 @@ static void write_model()
             struct model_layer *layer = ctx.editor.layer_manager.layers + i;
             {
                 out = layer_tomlify(layer);
-                str_len = strlen(out);
+                str_len = strlen(out) + 1;
                 int file_len = snprintf(NULL, 0, "layers/%s-%d.toml",
                         layer->name.buffer, i + 1);
                 char name[file_len + 1];

@@ -25,6 +25,7 @@ enum fileload_state {
     NOTHING,
     SELECTING_IMAGE,
     WRITING_MODEL,
+    LOADING_MODEL,
 };
 
 enum file_extension {
