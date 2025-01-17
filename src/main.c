@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include "archive.h"
 #include "archive_entry.h"
 #include "console.h"
@@ -8,9 +11,6 @@
 #include <fcntl.h>
 #include <filedialog.h>
 #include <sys/types.h>
-#ifdef _WIN32
-#include <raylib_win32.h>
-#endif
 #include <raylib.h>
 #include <stdatomic.h>
 #include <stdbool.h>
