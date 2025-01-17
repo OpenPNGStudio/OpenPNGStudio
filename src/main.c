@@ -6,6 +6,9 @@
 #include "layermgr.h"
 #include <fcntl.h>
 #include <filedialog.h>
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include <raylib.h>
 #include <stdatomic.h>
 #include <stdbool.h>
