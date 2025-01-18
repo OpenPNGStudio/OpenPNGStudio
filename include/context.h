@@ -1,7 +1,26 @@
+/*
+ * This file is part of OpenPNGStudio. 
+ * Copyright (C) 2024-2025 LowByteFox
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
 
+#include "ui/window.h"
 #include <stdint.h>
 #ifdef _WIN32
 #include <raylib_win32.h>
@@ -64,6 +83,7 @@ struct context {
     struct editor editor;
     struct gif_configurator gif_cfg;
     struct microphone_data mic;
+    struct window about_win;
 
     enum program_mode mode;
     bool hide_ui;
@@ -71,5 +91,7 @@ struct context {
 
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
+
+void context_about(struct context *context, struct nk_context *ctx);
 
 #endif
