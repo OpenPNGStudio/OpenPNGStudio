@@ -413,7 +413,7 @@ static void draw_menubar(bool *ui_focused)
 
         nk_menubar_begin(nk_ctx);
 
-        nk_layout_row_static(nk_ctx, 20, 40, 1);
+        nk_layout_row_static(nk_ctx, 20, 40, 2);
 
         if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
             nk_layout_row_dynamic(nk_ctx, 25, 1);
@@ -457,6 +457,15 @@ static void draw_menubar(bool *ui_focused)
                 }
             }
 
+            nk_menu_end(nk_ctx);
+        }
+
+        if (nk_menu_begin_label(nk_ctx, "Help", NK_TEXT_LEFT, nk_vec2(200, 200))) {
+            nk_layout_row_dynamic(nk_ctx, 25, 1);
+
+            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT)) {
+                LOG_W("I don't do anything yet", 0);
+            }
             nk_menu_end(nk_ctx);
         }
 
