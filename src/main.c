@@ -56,7 +56,12 @@
 #include <unistd.h>
 #include <unuv.h>
 #include <uv.h>
+
+#ifndef NDEBUG
 #define PATH_START "../"
+#else
+#define PATH_START "./"
+#endif
 #define DEFAULT_MULTIPLIER 2500
 #define DEFAULT_TIMER_TTL 2000
 #define DEFAULT_MASK (QUIET | TALK | PAUSE)

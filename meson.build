@@ -14,7 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-project('OpenPNGStudio', 'c')
+project('OpenPNGStudio', 'c', version: '0.1.0')
+
+buildtype = get_option('buildtype')
+
+if buildtype == 'release' or buildtype == 'debugoptimized'
+  add_project_arguments('-DNDEBUG', language: ['c', 'cpp'])
+endif
 
 cmake = import('cmake')
 fs = import('fs')
@@ -25,6 +31,9 @@ cp = find_program('cp')
 
 raylib_proj = cmake.subproject('raylib')
 raylib = raylib_proj.dependency('raylib')
+
+zstd_proj = subproject('zstd', default_options: ['default_library=static'])
+libzstd = zstd_proj.get_variable('libzstd_dep')
 
 libarchive_proj = subproject('libarchive', default_options: 
   ['default_library=static', 'zstd=enabled'])
@@ -85,7 +94,8 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c', 'src/ui/window.c', 
   'src/context.c', 'src/gif_config.c', 'src/toml.c', 'src/icon_db.c']
 
-deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libarchive]
+deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libzstd,
+  libarchive]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')

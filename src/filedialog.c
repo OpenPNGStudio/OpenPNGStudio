@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "console.h"
 #include "icon_db.h"
 #include "line_edit.h"
 #include "messagebox.h"
@@ -485,7 +486,7 @@ static void draw_ms_drives(struct filedialog *dialog, struct nk_context *ctx)
             char drive[] = {'A', ':', 0};
             drive[0] += i;
 
-            nk_image(ctx, images[DRIVE_IMG]);
+            nk_image(ctx, get_icon(DRIVE_ICON));
             if (nk_button_label_styled(ctx, &style, drive)) {
                 dialog->current_drive_letter = drive[0];
                 dialog->search_filter.cleanup = true;
@@ -586,9 +587,8 @@ static void init_content(struct filedialog *dialog)
              * decisions
              */
             if (stat(full_buf, &s) == -1) {
-                printf("Failing on '%s'\n", full_buf);
-                perror("stat");
-                abort();
+                LOG_E("Unable to stat file: %s! Skip!", full_buf);
+                continue;
             }
 
             if (S_ISDIR(s.st_mode)) {
