@@ -18,6 +18,7 @@
 
 #include "console.h"
 #include "context.h"
+#include "icon_db.h"
 #include "line_edit.h"
 #include "mask.h"
 #include "raylib-nuklear.h"
@@ -31,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <layermgr.h>
+#include <string.h>
 
 extern struct context ctx;
 
@@ -70,23 +72,28 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
         struct nk_rect bounds = nk_layout_widget_bounds(ctx);
         bounds.h *= 2;
 
-        nk_layout_row_template_begin(ctx, 32);
-        nk_layout_row_template_push_static(ctx, 64);
+        nk_layout_row_template_begin(ctx, 30);
+        nk_layout_row_template_push_static(ctx, 30);
         nk_layout_row_template_push_dynamic(ctx);
         nk_layout_row_template_end(ctx);
 
-        if (nk_button_label(ctx, "SEL"))
+        if (nk_button_image(ctx, get_icon(SELECT_ICON)))
             mgr->selected_index = i;
 
         line_edit_draw(&layer->name, ctx);
 
         /* UI controls */
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
-        nk_layout_row_push(ctx, 0.33f);
+        nk_layout_row_template_begin(ctx, 30);
+        nk_layout_row_template_push_static(ctx, 30);
+        nk_layout_row_template_push_static(ctx, 30);
+        nk_layout_row_template_push_dynamic(ctx);
+        nk_layout_row_template_push_static(ctx, 30);
+        nk_layout_row_template_end(ctx);
+
         if (i == 0)
             nk_widget_disable_begin(ctx);
 
-        if (nk_button_label(ctx, "UP")) {
+        if (nk_button_image(ctx, get_icon(UP_ICON))) {
             struct model_layer *prev = mgr->layers[i - 1];
             mgr->layers[i - 1] = layer;
             mgr->layers[i] = prev;
@@ -99,21 +106,22 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
         if (i == mgr->layer_count - 1)
             nk_widget_disable_begin(ctx);
 
-        nk_layout_row_push(ctx, 0.33f);
-        if (nk_button_label(ctx, "DOWN")) {
+        if (nk_button_image(ctx, get_icon(DOWN_ICON))) {
             struct model_layer *next = mgr->layers[i + 1];
             mgr->layers[i + 1] = layer;
             mgr->layers[i] = next;
             mgr->selected_index = -1;
         }
 
+        nk_spacer(ctx);
+
         if (i == mgr->layer_count - 1)
             nk_widget_disable_end(ctx);
 
-        nk_layout_row_push(ctx, 0.33f);
-        if (nk_button_label(ctx, "DEL"))
+        if (nk_button_image(ctx, get_icon(TRASH_ICON))) {
             layer->delete = true;
-        nk_layout_row_end(ctx);
+            mgr->selected_index = -1;
+        }
     }
 
     if (res)
@@ -127,7 +135,25 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
             draw_props(mgr, ctx);
     }
 
-    /* TODO cleanup */
+    for (int i = 0; i < mgr->layer_count;) {
+        struct model_layer *layer = mgr->layers[i];
+
+        if (layer->delete) {
+            if (i + 1 < mgr->layer_count)
+                memcpy(mgr->layers + i, mgr->layers + i + 1,
+                    sizeof(struct model_layer*) * (mgr->layer_count - i - 1));
+
+            mgr->layer_count--;
+            if (layer->alive || layer->frames_count > 0)
+                continue; /* it will get cleaned up in the respective fn */
+
+            cleanup_layer(layer);
+            continue;
+        }
+
+        /* if layer didn't get deleted */
+        i++;
+    }
 }
 
 void layer_manager_draw_layers(struct layer_manager *mgr)
@@ -222,6 +248,13 @@ char *layer_tomlify(struct model_layer *layer)
     }
 
     return buffer;
+}
+
+void cleanup_layer(struct model_layer *layer)
+{
+    UnloadImage(layer->img);
+    UnloadTexture(layer->texture);
+    free(layer);
 }
 
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
@@ -378,6 +411,11 @@ static enum un_action after_timeout(un_timer *timer)
 {
     struct model_layer *layer = un_timer_get_data(timer);
     layer->alive = false;
+
+    if (layer->delete) {
+        if (layer->frames_count == 0)
+            cleanup_layer(layer); /* not a GIF */
+    }
 
     return DISARM;
 }

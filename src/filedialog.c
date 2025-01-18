@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "icon_db.h"
 #include "line_edit.h"
 #include "messagebox.h"
 #include "str.h"
@@ -40,9 +41,6 @@
 #include <winerror.h>
 #define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
 #endif
-
-static struct nk_image images[IMG_TYPE_SZ] = {0};
-static char img_filter[] = "png;bmp;jpg;jpeg;gif;psd";
 
 /* UI fns */
 static void draw_titlebar(struct filedialog *dialog, struct nk_context *ctx);
@@ -304,7 +302,7 @@ static void draw_titlebar(struct filedialog *dialog, struct nk_context *ctx)
     nk_layout_row_template_push_static(ctx, 32);
     nk_layout_row_template_end(ctx);
 
-    if (nk_button_image(ctx, images[UP_IMG])) {
+    if (nk_button_image(ctx, get_icon(UP_ICON))) {
         filedialog_up(dialog);
         dialog->search_filter.cleanup = true;
         line_edit_cleanup(&dialog->search_filter);
@@ -323,7 +321,7 @@ static void draw_titlebar(struct filedialog *dialog, struct nk_context *ctx)
 
     nk_edit_string(ctx, NK_EDIT_DEACTIVATED, buf, &len, sz, nk_filter_default);
 
-    if (nk_button_image(ctx, images[REFRESH_IMG]))
+    if (nk_button_image(ctx, get_icon(LOOP_ICON)))
         filedialog_refresh(dialog);
 }
 
@@ -432,15 +430,12 @@ static void draw_files(struct filedialog *dialog, struct nk_context *ctx)
                 continue;
 
         nk_bool prev = e->selected;
-        enum image_type type = DIR_IMG;
+        enum icon_type type = DIR_ICON;
 
         if (e->is_file)
             type++;
 
-        if (filter_out(e->name, img_filter) != NULL)
-            type = IMG_IMG;
-
-        nk_image(ctx, images[type]);
+        nk_image(ctx, get_icon(type));
         nk_selectable_label(ctx, e->name, NK_TEXT_LEFT, &e->selected);
 
         if (e->selected)
@@ -782,11 +777,6 @@ static int hide_file(const char *path)
         return 1;
 #endif
     return 0;
-}
-
-void filedialog_register_icon(enum image_type type, struct nk_image img)
-{
-    images[type] = img;
 }
 
 static int entry_comparar(const void *p1, const void *p2)

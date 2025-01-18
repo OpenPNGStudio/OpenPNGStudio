@@ -27,16 +27,6 @@
 
 #include <raylib-nuklear.h>
 
-enum image_type {
-    UP_IMG,
-    REFRESH_IMG,
-    DIR_IMG,
-    FILE_IMG,
-    IMG_IMG,
-    DRIVE_IMG,
-    IMG_TYPE_SZ
-};
-
 struct dir_entry {
     char *name;
     bool is_file;
@@ -96,4 +86,3 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
 void filedialog_deinit(struct filedialog *dialog);
 
 void filedialog_refresh(struct filedialog *dialog);
-void filedialog_register_icon(enum image_type type, struct nk_image img);

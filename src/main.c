@@ -34,6 +34,7 @@
 #include <stdbool.h>
 #include <pathbuf.h>
 #include <nk.h>
+#include <icon_db.h>
 
 #include <raylib-nuklear.h>
 #include "line_edit.h"
@@ -177,15 +178,27 @@ int main()
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
-    Font font = LoadFont(PATH_START "assets/Ubuntu-R.ttf");
+    Font font = LoadFont(PATH_START "assets/fonts/Ubuntu-R.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
-    filedialog_register_icon(UP_IMG, LoadNuklearImage(PATH_START "assets/up.png"));
-    filedialog_register_icon(DRIVE_IMG, LoadNuklearImage(PATH_START "assets/drive.png"));
-    filedialog_register_icon(REFRESH_IMG, LoadNuklearImage(PATH_START "assets/refresh.png"));
-    filedialog_register_icon(DIR_IMG, LoadNuklearImage(PATH_START "assets/directory.png"));
-    filedialog_register_icon(FILE_IMG, LoadNuklearImage(PATH_START "assets/file.png"));
-    filedialog_register_icon(IMG_IMG, LoadNuklearImage(PATH_START "assets/image.png"));
+    register_icon(UP_ICON, LoadNuklearImage(PATH_START "assets/icons/up.png"));
+    register_icon(DOWN_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/down.png"));
+    register_icon(BACK_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/back.png"));
+    register_icon(LOOP_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/loop.png"));
+    register_icon(TRASH_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/trash.png"));
+    register_icon(SELECT_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/select.png"));
+
+    register_icon(DIR_ICON,
+        LoadNuklearImage(PATH_START "assets/images/dir.png"));
+    register_icon(FILE_ICON,
+        LoadNuklearImage(PATH_START "assets/images/file.png"));
+    register_icon(DRIVE_ICON,
+        LoadNuklearImage(PATH_START "assets/images/drive.png"));
 
     ctx.ctx = InitNuklearEx(font, 16);
     set_nk_font(font);
@@ -1047,6 +1060,13 @@ static enum un_action update_gif(un_timer *timer)
     layer->previous_frame = layer->current_frame;
     un_timer_set_repeat(timer, layer->delays[layer->current_frame]);
     layer->current_frame = (layer->current_frame + 1) % layer->frames_count;
+
+    if (layer->delete) {
+        if (!layer->alive) {
+            cleanup_layer(layer);
+            return DISARM;
+        }
+    }
 
     return REARM;
 }

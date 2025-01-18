@@ -61,5 +61,6 @@ struct model_layer *layer_manager_add_layer(struct layer_manager *mgr, struct mo
 void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx);
 void layer_manager_draw_layers(struct layer_manager *mgr);
 char *layer_tomlify(struct model_layer *layer);
+void cleanup_layer(struct model_layer *layer);
 
 #endif
