@@ -83,7 +83,11 @@ struct context {
     struct editor editor;
     struct gif_configurator gif_cfg;
     struct microphone_data mic;
+
+    /* separate components */
     struct window about_win;
+    struct window welcome_win;
+    struct window keybindings_win;
 
     enum program_mode mode;
     bool hide_ui;
@@ -93,5 +97,7 @@ void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
 
 void context_about(struct context *context, struct nk_context *ctx);
+void context_welcome(struct context *context, struct nk_context *ctx);
+void context_keybindings(struct context *context, struct nk_context *ctx);
 
 #endif

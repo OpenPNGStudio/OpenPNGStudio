@@ -175,9 +175,12 @@ int main()
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
     ctx.editor.layer_manager.mask |= QUIET;
+    ctx.welcome_win.show = true;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
+
+    SetExitKey(KEY_NULL);
     Font font = LoadFont(PATH_START "assets/fonts/Ubuntu-R.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
 
@@ -238,6 +241,7 @@ int main()
     un_loop_run(ctx.loop);
     un_loop_del(ctx.loop);
 
+    cleanup_icons();
     ma_device_uninit(&ctx.mic.device);
     filedialog_deinit(&ctx.dialog);
     console_deinit();
@@ -293,6 +297,13 @@ static enum un_action update(un_idle *task)
     ctx.width = GetScreenWidth();
     ctx.height = GetScreenHeight();
 
+    if (IsKeyPressed(KEY_TAB)) {
+        if (ctx.mode == EDIT_MODE) 
+            ctx.mode = STREAM_MODE;
+        else
+            ctx.mode = EDIT_MODE;
+    }
+
     set_key_mask(&ctx.editor.layer_manager.mask);
 
     if (!ctx.hide_ui)
@@ -336,11 +347,13 @@ static enum un_action update(un_idle *task)
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();
 
-    if (!ctx.hide_ui)
+    if (!ctx.hide_ui) {
         console_draw(nk_ctx, &ui_focused);
-
-    if (!ctx.hide_ui)
         context_about(&ctx, nk_ctx);
+        context_keybindings(&ctx, nk_ctx);
+    }
+
+    context_welcome(&ctx, nk_ctx);
 
     if (!ctx.dialog.win.show) {
         if (ctx.dialog.selected_index != -1) {
@@ -355,13 +368,6 @@ static enum un_action update(un_idle *task)
     }
 
     if (!ui_focused) {
-        if (IsKeyPressed(KEY_TAB)) {
-            if (ctx.mode == EDIT_MODE) 
-                ctx.mode = STREAM_MODE;
-            else
-                ctx.mode = EDIT_MODE;
-        }
-
         if (IsKeyPressed(KEY_SPACE)) {
             ctx.hide_ui = !ctx.hide_ui;
         }
@@ -462,7 +468,7 @@ static void draw_menubar(bool *ui_focused)
             }
 
             if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
-                LOG("I don't do anything yet", 0);
+                LOG_W("I don't do anything yet", 0);
 
             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
                 ctx.dialog.open_for_write = true;
@@ -496,9 +502,12 @@ static void draw_menubar(bool *ui_focused)
 
         if (nk_menu_begin_label(nk_ctx, "Help", NK_TEXT_LEFT, nk_vec2(200, 200))) {
             nk_layout_row_dynamic(nk_ctx, 25, 1);
+            if (nk_menu_item_label(nk_ctx, "Keybindings", NK_TEXT_LEFT))
+                ctx.keybindings_win.show = true;
 
             if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT))
                 ctx.about_win.show = true;
+
             nk_menu_end(nk_ctx);
         }
 
@@ -897,6 +906,7 @@ end:
             table->image_size);
 
     layer->texture = LoadTextureFromImage(layer->img);
+    SetTextureFilter(layer->texture, TEXTURE_FILTER_BILINEAR);
     layer->name.len = strlen(table->name);
     layer->name.cleanup = false;
     layer->name.buffer = table->name;

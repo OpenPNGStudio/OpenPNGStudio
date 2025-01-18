@@ -89,7 +89,7 @@ void context_about(struct context *context, struct nk_context *ctx)
     }
 
     if (window_begin(&context->about_win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE |
-        NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE)) {
+        NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE)) {
         nk_layout_row_dynamic(ctx, 30, 1);
         nk_label(ctx, "OpenPNGStudio", NK_TEXT_CENTERED);
         nk_layout_row_dynamic(ctx, 14, 1);
@@ -131,4 +131,86 @@ void context_about(struct context *context, struct nk_context *ctx)
 
     if (context->about_win.state != HIDE)
         window_end(&context->about_win);
+}
+
+void context_welcome(struct context *context, struct nk_context *ctx)
+{
+    if (context->welcome_win.ctx == NULL) {
+        int width = GetScreenWidth();
+        int height = GetScreenHeight();
+        float w = 384.0f * 2.0f;
+        float h = 384.0f;
+        float x = width / 2.0f - w / 2.0f;
+        float y = height / 2.0f - h / 2.0f;
+
+        context->welcome_win.geometry = nk_rect(x, y, w, h);
+        window_init(&context->welcome_win, ctx, "Welcome!");
+    }
+
+    if (window_begin(&context->welcome_win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE
+        | NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE)) {
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_label(ctx, "Welcome to OpenPNGStudio!", NK_TEXT_LEFT);
+        nk_layout_row_dynamic(ctx, 60, 1);
+        nk_label_wrap(ctx, "Before you start making PNG tubing models, "
+            "keep in mind that this is an early release build!"
+            " Meaning you can expect bugs, errors, crashes and worse O_O"
+            " ... yeah, but don't worry, it won't do anything to your system. "
+            "Anyways, hope you have fun!");
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_label_wrap(ctx, "You can find "
+            "keybindings in the \"help\" menu section");
+        nk_layout_row_dynamic(ctx, 60, 1);
+        nk_label_wrap(ctx, "To select a layer, "
+            "click on the + icon and below you'll be able to modify its "
+            "attributes");
+
+        struct nk_rect bounds = nk_window_get_content_region(ctx);
+
+        bounds.h -= 30 + 60 + 30 + 60 + 30 * 2;
+
+        nk_layout_row_dynamic(ctx, bounds.h, 1);
+        nk_label(ctx, " ", NK_TEXT_LEFT);
+
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+        nk_layout_row_push(ctx, 0.85f);
+        nk_spacing(ctx, 1);
+
+        nk_layout_row_push(ctx, 0.14f);
+        if (nk_button_label(ctx, "Ok"))
+            context->welcome_win.show = false;
+    }
+
+    if (context->welcome_win.state != HIDE)
+        window_end(&context->welcome_win);
+}
+
+void context_keybindings(struct context *context, struct nk_context *ctx)
+{
+    if (context->keybindings_win.ctx == NULL) {
+        int width = GetScreenWidth();
+        int height = GetScreenHeight();
+        float w = 384.0f * 2.0f;
+        float h = 384.0f;
+        float x = width / 2.0f - w / 2.0f;
+        float y = height / 2.0f - h / 2.0f;
+
+        context->keybindings_win.geometry = nk_rect(x, y, w, h);
+        window_init(&context->keybindings_win, ctx, "Keybindings");
+    }
+
+    if (window_begin(&context->keybindings_win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE
+        | NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE)) {
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_label_wrap(ctx, "Tab - switch between Edit mode and Streaming mode."
+            " You can tell modes apart using the grid");
+
+        nk_label_wrap(ctx, "Spacebar - toggle UI");
+        nk_label_wrap(ctx, "Shift + ~ - show debug console");
+        nk_label_wrap(ctx, "When changing position or rotation, you can hold "
+            "Shift to round up the value");
+    }
+
+    if (context->keybindings_win.state != HIDE)
+        window_end(&context->keybindings_win);
 }
