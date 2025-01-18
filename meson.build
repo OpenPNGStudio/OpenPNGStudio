@@ -36,7 +36,7 @@ zstd_proj = subproject('zstd', default_options: ['default_library=static'])
 libzstd = zstd_proj.get_variable('libzstd_dep')
 
 libarchive_proj = subproject('libarchive', default_options: 
-  ['default_library=static', 'zstd=enabled'])
+  ['default_library=static', 'zstd=enabled', 'progs=[]'])
 libarchive = libarchive_proj.get_variable('libarchive_dep')
 
 libarchive = libarchive_proj.get_variable('libarchive_dep')
