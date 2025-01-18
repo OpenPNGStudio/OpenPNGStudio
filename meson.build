@@ -102,6 +102,10 @@ if host_machine.system() == 'windows'
   deps += mman
 endif
 
+if host_machine.system() == 'freebsd'
+  deps += cc.find_library('iconv')
+endif
+
 executable('OpenPNGStudio', srcs,
   install: true,
   dependencies: deps,
