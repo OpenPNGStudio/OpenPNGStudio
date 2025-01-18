@@ -103,7 +103,7 @@ if host_machine.system() == 'windows'
 endif
 
 if host_machine.system() == 'freebsd'
-  deps += cc.find_library('iconv')
+  deps += cc.find_library('iconv', dirs: ['/usr/local/lib'])
 endif
 
 executable('OpenPNGStudio', srcs,
