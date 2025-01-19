@@ -37,6 +37,10 @@ struct model_layer {
     int ttl;
     bool alive;
 
+    bool toggle_timer_ticking;
+    bool has_toggle;
+    bool is_togged;
+
     /* GIF related fields */
     uint8_t *gif_buffer; /* since stb cannot export GIF to mem, I will copy the file over */
     size_t gif_size;

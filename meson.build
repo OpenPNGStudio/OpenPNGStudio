@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-project('OpenPNGStudio', 'c', version: '0.1.0')
+project('OpenPNGStudio', 'c', version: '0.2.0')
 
 buildtype = get_option('buildtype')
 

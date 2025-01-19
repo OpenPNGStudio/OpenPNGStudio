@@ -41,6 +41,7 @@ static void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
 static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
 static bool test_mask(uint64_t mask, uint64_t layer);
 static enum un_action after_timeout(un_timer *timer);
+static enum un_action after_toggle(un_timer *timer);
 
 void layer_manager_deinit(struct layer_manager *mgr)
 {
@@ -131,8 +132,13 @@ void layer_manager_draw_ui(struct layer_manager *mgr, struct nk_context *ctx)
         nk_layout_row_dynamic(ctx, 2, 1);
         nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
         nk_layout_row_dynamic(ctx, bounds.h, 1);
+        struct model_layer *layer = mgr->layers[mgr->selected_index];
+        uint64_t old_mask = layer->mask;
         if (nk_group_begin(ctx, "Layer Property Editor", 0))
             draw_props(mgr, ctx);
+
+        if (layer->mask != old_mask)
+            layer->is_togged = false;
     }
 
     for (int i = 0; i < mgr->layer_count;) {
@@ -176,7 +182,9 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
             }
         }
 
-        if (layer->alive || test_mask(mgr->mask, layer->mask)) {
+        bool mask_test = test_mask(mgr->mask, layer->mask);
+
+        if ((layer->alive || layer->is_togged) || mask_test) {
             DrawTexturePro(texture, (Rectangle) {
                 .x = 1,
                 .y = 1,
@@ -192,12 +200,22 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
                 .y = texture.height / 2.0f,
             }, layer->rotation - 180, WHITE);
 
-            if (!layer->alive && layer->ttl > 0) {
-                /* spawn live timeout */
-                layer->alive = true;
-                un_timer *timer = un_timer_new(ctx.loop);
-                un_timer_set_data(timer, layer);
-                un_timer_start(timer, layer->ttl, 0, after_timeout);
+            if (!layer->has_toggle) {
+                if (!layer->alive && layer->ttl > 0) {
+                    /* spawn live timeout */
+                    layer->alive = true;
+                    un_timer *timer = un_timer_new(ctx.loop);
+                    un_timer_set_data(timer, layer);
+                    un_timer_start(timer, layer->ttl, 0, after_timeout);
+                }
+            } else {
+                if (!layer->toggle_timer_ticking && mask_test) {
+                    layer->is_togged = !layer->is_togged;
+                    layer->toggle_timer_ticking = true;
+                    un_timer *timer = un_timer_new(ctx.loop);
+                    un_timer_set_data(timer, layer);
+                    un_timer_start(timer, 250, 0, after_toggle);
+                }
             }
         }
     }
@@ -210,14 +228,17 @@ char *layer_tomlify(struct model_layer *layer)
                       "offset.y = %f\n"
                       "rotation = %f\n"
                       "mask = %ld\n"
-                      "ttl = %d\n";
+                      "ttl = %d\n"
+                      "has_toggle = %s\n";
 
     int len = snprintf(NULL, 0, fmt, layer->position_offset.x,
-        layer->position_offset.y, layer->rotation, layer->mask, layer->ttl);
+        layer->position_offset.y, layer->rotation, layer->mask, layer->ttl,
+        layer->has_toggle == true ? "true" : "false");
 
     char *buffer = calloc(1, len + 1);
     snprintf(buffer, len + 1, fmt, layer->position_offset.x,
-        layer->position_offset.y, layer->rotation, layer->mask, layer->ttl);
+        layer->position_offset.y, layer->rotation, layer->mask, layer->ttl,
+        layer->has_toggle == true ? "true" : "false");
 
     if (layer->frames_count > 0) {
         fmt = "[animation]\n"
@@ -288,11 +309,20 @@ static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
     if (holding_shift)
         layer->rotation = roundf(layer->rotation / 15.0f) * 15.0f;
 
+    nk_layout_row_dynamic(ctx, 30, 1);
+    nk_checkbox_label(ctx, "Enable toggle mode", &layer->has_toggle);
+
+    if (layer->has_toggle)
+        nk_widget_disable_begin(ctx);
+
     nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
     nk_layout_row_push(ctx, 0.5f);
     nk_label(ctx, "Time to live:", NK_TEXT_LEFT);
     nk_layout_row_push(ctx, 0.49f);
     nk_property_int(ctx, "timeout (ms)", 0, &layer->ttl, INT_MAX, 1, 0.1f);
+
+    if (layer->has_toggle)
+        nk_widget_disable_end(ctx);
 
     nk_layout_row_dynamic(ctx, 2, 1);
     nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
@@ -416,6 +446,14 @@ static enum un_action after_timeout(un_timer *timer)
         if (layer->frames_count == 0)
             cleanup_layer(layer); /* not a GIF */
     }
+
+    return DISARM;
+}
+
+static enum un_action after_toggle(un_timer *timer)
+{
+    struct model_layer *layer = un_timer_get_data(timer);
+    layer->toggle_timer_ticking = false;
 
     return DISARM;
 }
