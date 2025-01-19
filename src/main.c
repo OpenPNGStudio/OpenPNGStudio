@@ -403,6 +403,8 @@ static enum un_action update(un_idle *task)
         LOG_I("Sending image \"%s\" to the GPU", work->name);
         layer.texture = LoadTextureFromImage(work->img);
         SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
+        GenTextureMipmaps(&layer.texture);
+        SetTextureWrap(layer.texture, TEXTURE_WRAP_CLAMP);
         layer.name.len = strlen(work->name);
         layer.name.cleanup = false;
         layer.name.buffer = work->name;
@@ -863,12 +865,28 @@ static void table_configure_layer(struct layer_table *table,
     }
     layer->mask = mask.u.i;
 
+    for (int i = 0; i <= 26; i++) {
+        uint64_t mask = 1ULL << (i + KEY_START);
+        if (layer->mask & mask) {
+            layer->input_key[0] = 'A' + i;
+            layer->input_len = 1;
+            break;
+        }
+    }
+
     toml_datum_t ttl = toml_int_in(lay, "ttl");
     if (!ttl.ok) {
         LOG_E("Unable to get time to live: %s!", errbuf);
         abort();
     }
     layer->ttl = ttl.u.i;
+
+    toml_datum_t has_toggle = toml_bool_in(lay, "has_toggle");
+    if (!has_toggle.ok) {
+        LOG_E("Unable to get has toggle: %s!", errbuf);
+        abort();
+    }
+    layer->has_toggle = has_toggle.u.b;
 
     if (!table->is_animated)
         goto end;
@@ -912,6 +930,8 @@ end:
 
     layer->texture = LoadTextureFromImage(layer->img);
     SetTextureFilter(layer->texture, TEXTURE_FILTER_BILINEAR);
+    GenTextureMipmaps(&layer->texture);
+    SetTextureWrap(layer->texture, TEXTURE_WRAP_CLAMP);
     layer->name.len = strlen(table->name);
     layer->name.cleanup = false;
     layer->name.buffer = table->name;

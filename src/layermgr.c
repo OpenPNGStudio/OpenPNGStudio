@@ -186,10 +186,10 @@ void layer_manager_draw_layers(struct layer_manager *mgr)
 
         if ((layer->alive || layer->is_togged) || mask_test) {
             DrawTexturePro(texture, (Rectangle) {
-                .x = 1,
-                .y = 1,
-                .width = texture.width - 2,
-                .height = texture.height - 2,
+                .x = 0,
+                .y = 0,
+                .width = texture.width,
+                .height = texture.height,
             }, (Rectangle) {
                 .x = width / 2.0f + layer->position_offset.x,
                 .y = height / 2.0f + (-layer->position_offset.y),
