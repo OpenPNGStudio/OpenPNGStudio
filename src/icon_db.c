@@ -34,5 +34,6 @@ struct nk_image get_icon(enum icon_type type)
 
 void cleanup_icons()
 {
-    LOG_W("Not implemented", 0);
+    for (int i = 0; i < ICON_DB_SIZE; i++)
+        UnloadNuklearImage(db[i]);
 }

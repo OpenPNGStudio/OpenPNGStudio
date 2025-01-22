@@ -10,6 +10,7 @@ subprojects/libuv-v1.49.1/
 subprojects/mman-win32/
 subprojects/libressl/
 subprojects/packagecache/
+subprojects/LuaJIT-04dca7911ea255f37be799c18d74c305b921c1a6/
 include/nuklear.h
 include/raylib-nuklear.h
 include/miniaudio.h

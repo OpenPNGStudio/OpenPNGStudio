@@ -27,5 +27,6 @@ mman-win32: https://github.com/boldowa/mman-win32
 raylib: https://github.com/raysan5/raylib
 zstd: https://github.com/facebook/zstd
 tomlc99: https://github.com/cktan/tomlc99
+luajit: https://github.com/LuaJIT/LuaJIT
 ubuntu-font: http://font.ubuntu.com
 papirus-icon-theme: https://github.com/PapirusDevelopmentTeam/papirus-icon-theme
