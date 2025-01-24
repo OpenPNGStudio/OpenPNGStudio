@@ -56,6 +56,10 @@
 #include <unistd.h>
 #include <unuv.h>
 #include <uv.h>
+#include <lua_ctx.h>
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
 
 #ifndef NDEBUG
 #define PATH_START "../"
@@ -235,7 +239,16 @@ int main()
         return -1;
     }
 
+    /* LUA */
+    context_init_lua(&ctx);
+    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.lua");
+    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.so");
+    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.dll");
+    bind_logger_functions(ctx.L);
+
     ctx.editor.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
+
+    luaL_dostring(ctx.L, "local log = require('ops@log')\nlog.error('UwU')");
 
     SetTargetFPS(60);
 

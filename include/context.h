@@ -34,6 +34,7 @@
 #include <filedialog.h>
 #include <gif_config.h>
 #include <microphone.h>
+#include <lua.h>
 
 enum program_mode {
     EDIT_MODE,
@@ -69,9 +70,11 @@ struct image_load_req {
 };
 
 struct context {
+    /* STATE */
     enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
     bool configuring_gif;
+    lua_State *L;
 
     un_loop *loop;
     struct nk_context *ctx;
@@ -99,5 +102,7 @@ void context_load_image(struct context *ctx, const char *name,
 void context_about(struct context *context, struct nk_context *ctx);
 void context_welcome(struct context *context, struct nk_context *ctx);
 void context_keybindings(struct context *context, struct nk_context *ctx);
+
+void context_init_lua(struct context *context);
 
 #endif

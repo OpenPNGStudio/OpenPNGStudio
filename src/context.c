@@ -34,6 +34,10 @@
 #include <mman.h>
 #endif
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after)
 {
@@ -213,4 +217,10 @@ void context_keybindings(struct context *context, struct nk_context *ctx)
 
     if (context->keybindings_win.state != HIDE)
         window_end(&context->keybindings_win);
+}
+
+void context_init_lua(struct context *context)
+{
+    context->L = luaL_newstate();
+    luaL_openlibs(context->L);
 }

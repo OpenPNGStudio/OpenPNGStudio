@@ -96,7 +96,8 @@ run_command(cp, 'raylib_config.h', 'subprojects/raylib/src/config.h', check:  tr
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
   'src/nuklear.c', 'src/ui/messagebox.c', 'src/console.c', 'src/layermgr.c',
   'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c', 'src/ui/window.c', 
-  'src/context.c', 'src/gif_config.c', 'src/toml.c', 'src/icon_db.c']
+  'src/context.c', 'src/gif_config.c', 'src/toml.c', 'src/icon_db.c',
+  'src/lua_ctx.c', 'src/lua/logger.c']
 
 deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libzstd,
   libarchive, lua]
