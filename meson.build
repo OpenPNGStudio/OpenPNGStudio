@@ -35,8 +35,9 @@ raylib = raylib_proj.dependency('raylib')
 zstd_proj = subproject('zstd', default_options: ['default_library=static'])
 libzstd = zstd_proj.get_variable('libzstd_dep')
 
-luajit_dep = subproject('luajit', default_options:
-  ['default_library=static', 'sysmalloc=true'])
+lua_proj = subproject('lua', default_options:
+  ['default_library=static', 'loadlib=enabled'])
+lua = lua_proj.get_variable('lua_dep')
 
 libarchive_proj = subproject('libarchive', default_options: 
   ['default_library=static', 'zstd=enabled', 'progs=[]'])
@@ -98,7 +99,7 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/context.c', 'src/gif_config.c', 'src/toml.c', 'src/icon_db.c']
 
 deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libzstd,
-  libarchive, dependency('luajit')]
+  libarchive, lua]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')
