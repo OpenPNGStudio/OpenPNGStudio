@@ -21,6 +21,21 @@
 
 #include <lua.h>
 
+struct lua_script {
+    struct line_edit name;
+
+    size_t buffer_size;
+    char *buffer;
+    bool is_mmaped;
+};
+
+struct script_mgr {
+    size_t script_count;
+    struct lua_script **scripts;
+
+    const char *to_import;
+};
+
 #define LUA_PRIV_PREFIX "__OpenPNGStudio_DO_NOT_POKE_"
 
 void expand_import_path(lua_State *L, const char *path);
