@@ -44,6 +44,7 @@ enum program_mode {
 enum fileload_state {
     NOTHING,
     SELECTING_IMAGE,
+    SELECTING_SCRIPT,
     WRITING_MODEL,
     LOADING_MODEL,
 };
@@ -69,12 +70,24 @@ struct image_load_req {
     bool ready;
 };
 
+struct script_load_req {
+    uv_work_t req;
+    uint8_t *buffer;
+    size_t size;
+    char *name;
+    struct script_load_req *next;
+    int fd;
+    bool is_mmapped;
+    bool ready;
+};
+
 struct context {
     /* STATE */
     enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
     bool configuring_gif;
     lua_State *L;
+    struct script_load_req *script_work_queue;
 
     un_loop *loop;
     struct nk_context *ctx;
@@ -97,6 +110,8 @@ struct context {
 };
 
 void context_load_image(struct context *ctx, const char *name,
+    int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
+void context_load_script(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
 
 void context_about(struct context *context, struct nk_context *ctx);

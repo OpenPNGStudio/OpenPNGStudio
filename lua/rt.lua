@@ -68,11 +68,11 @@ end
 local rt = coroutine.create(runtime)
 local scripts = {}
 
-local function speen()
-    local req = script_load_req() -- nil or string for script name
+function __OpenPNGStudio_DO_NOT_POKE_rt_spin_once()
+    local req = __OpenPNGStudio_DO_NOT_POKE_script_load_req() -- nil or string for script name
     if req ~= nil then
         local script = {
-            mod = require(req)
+            mod = require(req),
             update_prom = nil
         }
 
@@ -87,7 +87,7 @@ local function speen()
 
     for _, script in pairs(scripts) do
         if script.mod.update ~= nil then
-            if script.update_prom.status = SUCCESS then
+            if script.update_prom.status == SUCCESS then
                 -- restart async
                 script.update_prom = async(script.mod.update)
             end

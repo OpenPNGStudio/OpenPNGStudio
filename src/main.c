@@ -72,8 +72,9 @@
 
 #define TOML_ERR_LEN UINT8_MAX
 
-static char image_filter[] = "png;bmp;jpg;jpeg;gif";
-static char model_filter[] = "opng";
+static char image_filter[] = "png;bmp;jpg;jpeg;gif;";
+static char script_filter[] = "lua;";
+static char model_filter[] = "opng;";
 struct context ctx = {0};
 
 struct layer_table {
@@ -104,6 +105,7 @@ static void draw_menubar(bool *ui_focused);
 static void load_layer();
 static void write_model();
 static void load_model();
+static void load_script();
 static int manifest_load_layers(toml_table_t *conf, struct manifest *manifest);
 static struct layer_table *manifest_find_layer(struct manifest *manifest,
     const char *filename);
@@ -114,6 +116,8 @@ static void table_configure_layer(struct layer_table *table,
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
 static void after_layer_loaded(uv_work_t *req, int status);
+static void load_script_file(uv_work_t *req);
+static void after_script_loaded(uv_work_t *req, int status);
 static enum un_action update_gif(un_timer *timer);
 static void set_key_mask(uint64_t *mask);
 static void handle_key_mask(uint64_t *mask);
@@ -241,14 +245,28 @@ int main()
 
     /* LUA */
     context_init_lua(&ctx);
+
+    lua_getglobal(ctx.L, "package");
+    lua_getfield(ctx.L, -1, "searchers");
+    const size_t length = lua_rawlen(ctx.L, -1);
+    lua_pushcfunction(ctx.L, lua_script_loader);
+    lua_rawseti(ctx.L, -2, length + 1);
+    lua_pop(ctx.L, 2);
+
     expand_import_path(ctx.L, ";" PATH_START "lua/?/init.lua");
     expand_import_path(ctx.L, ";" PATH_START "lua/?/init.so");
     expand_import_path(ctx.L, ";" PATH_START "lua/?/init.dll");
     bind_logger_functions(ctx.L);
+    lua_register(ctx.L, LUA_PRIV_PREFIX "script_load_req",
+        lua_script_load_req);
+
+    if (luaL_dofile(ctx.L, PATH_START "lua/rt.lua")) {
+        LOG_E("Lua error: %s", lua_tostring(ctx.L, -1));
+        lua_pop(ctx.L, 1);
+    } else
+        LOG_I("Lua runtime loaded successfuly!", 0);
 
     ctx.editor.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
-
-    luaL_dostring(ctx.L, "local log = require('ops@log')\nlog.error('UwU')");
 
     SetTargetFPS(60);
 
@@ -381,6 +399,11 @@ static enum un_action update(un_idle *task)
                 write_model();
             } else if (ctx.loading_state == LOADING_MODEL) {
                 load_model();
+            } else if (ctx.loading_state == SELECTING_SCRIPT) {
+                load_script();
+            }else {
+                LOG_W("Unknown state %d", ctx.loading_state);
+                ctx.loading_state = NOTHING;
             }
         }
     }
@@ -406,6 +429,19 @@ static enum un_action update(un_idle *task)
             if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
             ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
+    }
+
+    /* execute lua once */
+    lua_getglobal(ctx.L, LUA_PRIV_PREFIX "rt_spin_once");
+
+    if (lua_isfunction(ctx.L, -1)) {
+        if (lua_pcall(ctx.L, 0, 0, 0) != LUA_OK) {
+            LOG_E("Something went wrong: %s", lua_tostring(ctx.L, -1));
+            lua_pop(ctx.L, 1);
+        }
+    } else {
+        LOG_E("Something happened with %s! Abort!", LUA_PRIV_PREFIX "rt_spin_once");
+        abort();
     }
 
     /* check for pending work */
@@ -452,6 +488,26 @@ static enum un_action update(un_idle *task)
         ctx.image_work_queue = work->next;
         ctx.loading_state = NOTHING;
         munmap(work->buffer, work->size);
+        close(work->fd);
+        free(work);
+    }
+
+    if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
+        struct script_load_req *work = ctx.script_work_queue;
+        struct lua_script script = {0};
+        script.name.len = strlen(work->name);
+        script.name.cleanup = false;
+        script.name.buffer = work->name;
+        script.buffer_size = work->size;
+        script.buffer = (char*) work->buffer;
+        script.is_mmapped = work->is_mmapped;
+        LOG_I("Loaded script \"%s\"", work->name);
+
+        script_manager_add_script(&ctx.editor.script_manager, &script);
+
+        /* cleanup */
+        ctx.script_work_queue = work->next;
+        ctx.loading_state = NOTHING;
         close(work->fd);
         free(work);
     }
@@ -514,6 +570,20 @@ static void draw_menubar(bool *ui_focused)
                     filedialog_show(&ctx.dialog);
                     
                     ctx.loading_state = SELECTING_IMAGE;
+                }
+
+                if (nk_menu_item_label(nk_ctx, "Load Script", NK_TEXT_LEFT)) {
+                    if (ctx.editor.script_manager.to_import == NULL) {
+                        ctx.dialog.open_for_write = false;
+                        ctx.dialog.filter = script_filter;
+                        filedialog_refresh(&ctx.dialog);
+                        ctx.dialog.win.title = "Open Script";
+                        filedialog_show(&ctx.dialog);
+                        
+                        ctx.loading_state = SELECTING_SCRIPT;
+                    } else {
+                        LOG_W("Script is being loaded!", 0);
+                    }
                 }
             }
 
@@ -1082,6 +1152,28 @@ static void write_model()
     }
 }
 
+static void load_script()
+{
+    /* submit to queue */
+    struct stat s;
+    size_t sz = filedialog_selsz(&ctx.dialog);
+    char buffer[sz + 1];
+    memset(buffer, 0, sz + 1);
+    filedialog_selected(&ctx.dialog, sz, buffer);
+
+    if (stat(buffer, &s) == -1) {
+        perror("stat");
+        abort();
+    }
+
+    int fd = open(buffer, O_RDONLY);
+
+    LOG_I("Preparing script of size %ld to be loaded", s.st_size);
+
+    context_load_script(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
+        s.st_size, load_script_file, after_script_loaded);
+}
+
 static void load_layer_file(uv_work_t *req)
 {
     struct image_load_req *work = req->data;
@@ -1099,6 +1191,20 @@ static void after_layer_loaded(uv_work_t *req, int status)
     struct image_load_req *work = req->data;
     work->ready = true;
     LOG_I("Image \"%s\" loaded, now to turn it into a layer", work->name);
+}
+
+static void load_script_file(uv_work_t *req)
+{
+    struct script_load_req *work = req->data;
+    if (!work->is_mmapped)
+        read(work->fd, work->buffer, work->size);
+}
+
+static void after_script_loaded(uv_work_t *req, int status)
+{
+    struct script_load_req *work = req->data;
+    work->ready = true;
+    LOG_I("Script \"%s\" loaded, now to hook it up", work->name);
 }
 
 static enum un_action update_gif(un_timer *timer)

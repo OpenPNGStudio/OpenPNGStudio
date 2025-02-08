@@ -48,7 +48,8 @@ void layer_manager_deinit(struct layer_manager *mgr)
     /* TODO */
 }
 
-struct model_layer *layer_manager_add_layer(struct layer_manager *mgr, struct model_layer *layer)
+struct model_layer *layer_manager_add_layer(struct layer_manager *mgr,
+    struct model_layer *layer)
 {
     mgr->layers = realloc(mgr->layers, (++mgr->layer_count) * sizeof(struct model_layer*));
     struct model_layer *new_layer = calloc(1, sizeof(struct model_layer));
