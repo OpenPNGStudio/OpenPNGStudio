@@ -1,0 +1,2 @@
+#!/bin/sh
+LIBUV_INCLUDE=../_libuv/include/ ./configure

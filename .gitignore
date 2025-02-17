@@ -16,3 +16,4 @@ include/raylib-nuklear.h
 include/miniaudio.h
 include/raylib_win32.h
 .cache/
+deps/_*/
