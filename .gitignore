@@ -1,5 +1,5 @@
-src/toml.c
-include/toml.h
+src/vendor/toml.c
+include/vendor/toml.h
 build/
 build-mingw/
 subprojects/raylib/
@@ -11,8 +11,8 @@ subprojects/mman-win32/
 subprojects/libressl/
 subprojects/packagecache/
 subprojects/lua-5.4.6/
-include/nuklear.h
-include/raylib-nuklear.h
-include/miniaudio.h
-include/raylib_win32.h
+include/vendor/nuklear.h
+include/vendor/raylib-nuklear.h
+include/vendor/miniaudio.h
+include/vendor/raylib_win32.h
 .cache/
