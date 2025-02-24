@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <str.h>
+#include <core/str.h>
 
 size_t sized_strncpy(char *dest, const char *src, size_t n)
 {

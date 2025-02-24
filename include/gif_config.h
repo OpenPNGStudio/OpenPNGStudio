@@ -18,16 +18,22 @@
 
 #pragma once
 
-#include "layermgr.h"
-#include "ui/window.h"
+/* 4294967295 - 10 characters + 2 backup */
+#define INT_MAX_STR_SZ 12
+
+#include <layer/manager.h>
+#include <ui/window.h>
 
 struct gif_configurator {
     struct window win;
-    struct model_layer *layer;
+    struct animated_layer *layer;
     char **inputs;
     int *lengths;
     bool global_delay;
 };
+
+void gif_configurator_prepare(struct gif_configurator *cfg,
+    struct animated_layer *layer);
 
 void gif_configurator_draw(struct gif_configurator *cfg,
     struct nk_context *ctx, bool *ui_focused);

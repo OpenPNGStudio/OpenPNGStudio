@@ -16,20 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "console.h"
-#include "icon_db.h"
-#include "line_edit.h"
-#include "messagebox.h"
-#include "str.h"
-#include "ui/window.h"
+#include <console.h>
+#include <core/icon_db.h>
+#include <ui/line_edit.h>
+#include <ui/messagebox.h>
+#include <core/str.h>
+#include <ui/window.h>
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <pathbuf.h>
+#include <core/pathbuf.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <filedialog.h>
+#include <ui/filedialog.h>
 #include <string.h>
 #include <sys/stat.h>
 

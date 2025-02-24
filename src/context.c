@@ -123,6 +123,36 @@ void context_load_script(struct context *ctx, const char *name,
     uv_queue_work((uv_loop_t*) ctx->loop, &req->req, work, after);
 }
 
+void context_after_img_load(struct context *ctx, struct image_load_req *req)
+{
+    struct layer *layer = NULL;
+    struct animated_layer *anim_layer = NULL;
+
+    if (req->gif_buffer != NULL)
+        layer = layer_new_animated(req->img, req->frames_count,
+            req->gif_buffer, req->size);
+    else
+        layer = layer_new(req->img);
+    
+    LOG_I("Loaded layer \"%s\"", req->name);
+    layer_override_name(layer, req->name);
+
+    layer_manager_add_layer(&ctx->editor.layer_manager, layer);
+
+    if ((anim_layer = layer_get_animated(layer)) != NULL) {
+        ctx->configuring_gif = true;
+
+        gif_configurator_prepare(&ctx->gif_cfg, anim_layer);
+    }
+
+    /* cleanup */
+    ctx->image_work_queue = req->next;
+    ctx->loading_state = NOTHING;
+    munmap(req->buffer, req->size);
+    close(req->fd);
+    free(req);
+}
+
 void context_about(struct context *context, struct nk_context *ctx)
 {
     bool is_on = false;

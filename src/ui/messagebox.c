@@ -17,10 +17,10 @@
  */
 
 #include "raylib.h"
-#include <nk.h>
+#include <core/nk.h>
 #include <stddef.h>
 #include <raylib-nuklear.h>
-#include <messagebox.h>
+#include <ui/messagebox.h>
 #include <stdio.h>
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

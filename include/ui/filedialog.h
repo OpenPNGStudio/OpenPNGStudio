@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "line_edit.h"
-#include "ui/window.h"
-#include <messagebox.h>
-#include <pathbuf.h>
+#include <ui/line_edit.h>
+#include <ui/window.h>
+#include <ui/messagebox.h>
+#include <core/pathbuf.h>
 #include <stdbool.h>
 #include <stddef.h>
 

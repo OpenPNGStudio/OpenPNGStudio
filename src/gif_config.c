@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "console.h"
-#include "ui/window.h"
+#include <console.h>
+#include <ui/window.h>
 #include <assert.h>
 #include <limits.h>
 #include <gif_config.h>
@@ -27,6 +27,22 @@
 #include <string.h>
 
 static nk_bool nk_filter_delay(const struct nk_text_edit *box, nk_rune unicode);
+
+void gif_configurator_prepare(struct gif_configurator *cfg,
+    struct animated_layer *layer)
+{
+    uint64_t frame_count = layer->properties.number_of_frames;
+
+    cfg->layer = layer;
+    cfg->inputs = calloc(sizeof(char*), frame_count);
+    cfg->lengths = calloc(sizeof(int), frame_count);
+
+    for (uint64_t i = 0; i < frame_count; i++)
+        cfg->inputs = calloc(sizeof(char), INT_MAX_STR_SZ);
+
+    layer->properties.frame_delays = calloc(sizeof(uint32_t), frame_count);
+    cfg->win.show = true;
+}
 
 void gif_configurator_draw(struct gif_configurator *cfg,
     struct nk_context *ctx, bool *ui_focused)
@@ -63,7 +79,7 @@ void gif_configurator_draw(struct gif_configurator *cfg,
 
         if (nk_group_begin(ctx, "Frames", NK_WINDOW_BORDER)) {
             nk_layout_row_dynamic(ctx, 30, 2);
-            for (int i = 0; i < cfg->layer->frames_count; i++) {
+            for (int i = 0; i < cfg->layer->properties.number_of_frames; i++) {
                 char name_buffer[32] = {0};
                 snprintf(name_buffer, 32, "Frame %d", i + 1);
 
@@ -95,9 +111,10 @@ void gif_configurator_draw(struct gif_configurator *cfg,
                 assert(value < UINT_MAX &&
                     "User needs to see the error, TODO");
                 if (cfg->global_delay)
-                    cfg->layer->delays[i] = (uint32_t) atoll(cfg->inputs[0]);
+                    cfg->layer->properties.frame_delays[i] = (uint32_t)
+                        atoll(cfg->inputs[0]);
                 else
-                    cfg->layer->delays[i] = (uint32_t) value;
+                    cfg->layer->properties.frame_delays[i] = (uint32_t) value;
             }
             nk_group_end(ctx);
         }

@@ -17,8 +17,9 @@
  */
 
 #include <stddef.h>
-#include <line_edit.h>
 #include <stdlib.h>
+
+#include <ui/line_edit.h>
 
 void line_edit_draw(struct line_edit *edit, struct nk_context *ctx)
 {

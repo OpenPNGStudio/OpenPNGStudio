@@ -24,23 +24,23 @@
 #include "console.h"
 #include "editor.h"
 #include "gif_config.h"
-#include "layermgr.h"
+#include <layer/manager.h>
 #include "toml.h"
 #include <fcntl.h>
-#include <filedialog.h>
+#include <ui/filedialog.h>
 #include <sys/types.h>
 #include <raylib.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <pathbuf.h>
-#include <nk.h>
-#include <icon_db.h>
+#include <core/pathbuf.h>
+#include <core/nk.h>
+#include <core/icon_db.h>
 
 #include <raylib-nuklear.h>
-#include "line_edit.h"
-#include "mask.h"
-#include "raymath.h"
-#include "rlgl.h"
+#include <ui/line_edit.h>
+#include <core/mask.h>
+#include <raymath.h>
+#include <rlgl.h>
 #include <context.h>
 
 #include <stdint.h>
@@ -111,7 +111,7 @@ static struct layer_table *manifest_find_layer(struct manifest *manifest,
     const char *filename);
 static void manifest_scaffold(struct manifest *manifest);
 static void table_configure_layer(struct layer_table *table,
-    struct model_layer *layer);
+    struct layer *layer);
 
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
@@ -183,11 +183,11 @@ int main()
     filedialog_refresh(&ctx.dialog);
 
     ctx.camera.zoom = 1.0f;
-    ctx.editor.layer_manager.selected_index = -1;
+    ctx.editor.layer_manager.selected_layer = -1;
     ctx.editor.mic = &ctx.mic;
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
-    ctx.editor.layer_manager.mask |= QUIET;
+    ctx.mask |= QUIET;
     ctx.welcome_win.show = true;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
@@ -306,7 +306,7 @@ static enum un_action draw(un_idle *task)
 
     BeginMode2D(ctx.camera);
 
-    layer_manager_draw_layers(&ctx.editor.layer_manager);
+    layer_manager_render(&ctx.editor.layer_manager);
 
     EndMode2D();
 
@@ -321,7 +321,7 @@ static enum un_action draw(un_idle *task)
 
 static enum un_action update(un_idle *task)
 {
-    handle_key_mask(&ctx.editor.layer_manager.mask);
+    handle_key_mask(&ctx.mask);
 
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
@@ -340,7 +340,7 @@ static enum un_action update(un_idle *task)
             ctx.mode = EDIT_MODE;
     }
 
-    set_key_mask(&ctx.editor.layer_manager.mask);
+    set_key_mask(&ctx.mask);
 
     if (!ctx.hide_ui)
         draw_menubar(&ui_focused);
@@ -366,7 +366,7 @@ static enum un_action update(un_idle *task)
         free(ctx.gif_cfg.lengths);
         ctx.gif_cfg.lengths = NULL;
 
-        for (int i = 0; i < ctx.gif_cfg.layer->frames_count; i++)
+        for (int i = 0; i < ctx.gif_cfg.layer->properties.number_of_frames; i++)
             free(ctx.gif_cfg.inputs[i]);
         free(ctx.gif_cfg.inputs);
         ctx.gif_cfg.inputs = NULL;
@@ -375,7 +375,7 @@ static enum un_action update(un_idle *task)
 
         un_timer *timer = un_timer_new(ctx.loop);
         un_timer_set_data(timer, ctx.editor.layer_manager.layers[i]);
-        uint32_t delay = ctx.gif_cfg.layer->delays[0];
+        uint32_t delay = ctx.gif_cfg.layer->properties.frame_delays[0];
         un_timer_start(timer, delay, delay, update_gif);
         ctx.gif_cfg.layer = NULL;
     }
@@ -446,51 +446,8 @@ static enum un_action update(un_idle *task)
 
     /* check for pending work */
     if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready &&
-        !ctx.configuring_gif) {
-        struct image_load_req *work = ctx.image_work_queue;
-        struct model_layer layer = {0};
-        LOG_I("Sending image \"%s\" to the GPU", work->name);
-        layer.texture = LoadTextureFromImage(work->img);
-        SetTextureFilter(layer.texture, TEXTURE_FILTER_BILINEAR);
-        GenTextureMipmaps(&layer.texture);
-        SetTextureWrap(layer.texture, TEXTURE_WRAP_CLAMP);
-        layer.name.len = strlen(work->name);
-        layer.name.cleanup = false;
-        layer.name.buffer = work->name;
-        layer.rotation = 180.0f;
-        layer.img = work->img;
-        layer.frames_count = work->frames_count;
-        layer.previous_frame = 0;
-        layer.current_frame = 0;
-        layer.mask = DEFAULT_MASK;
-        layer.gif_buffer = work->gif_buffer;
-        layer.gif_size = work->size;
-        LOG_I("Loaded layer \"%s\"", work->name);
-
-        struct model_layer *l = layer_manager_add_layer(&ctx.editor.layer_manager, &layer);
-
-        if (layer.frames_count > 0) {
-            ctx.configuring_gif = true;
-            ctx.gif_cfg.layer = l;
-            ctx.gif_cfg.inputs = calloc(layer.frames_count, sizeof(char*));
-            ctx.gif_cfg.lengths = calloc(layer.frames_count, sizeof(int));
-            /* 4294967295 - 10 characters + 2 backup */
-            for (int i = 0; i < layer.frames_count; i++)
-                ctx.gif_cfg.inputs[i] = calloc(12, sizeof(char));
-
-            ctx.gif_cfg.layer->delays = calloc(layer.frames_count,
-                sizeof(uint32_t));
-
-            ctx.gif_cfg.win.show = true;
-        }
-
-        /* cleanup */
-        ctx.image_work_queue = work->next;
-        ctx.loading_state = NOTHING;
-        munmap(work->buffer, work->size);
-        close(work->fd);
-        free(work);
-    }
+        !ctx.configuring_gif)
+        context_after_img_load(&ctx, ctx.image_work_queue);
 
     if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
         struct script_load_req *work = ctx.script_work_queue;

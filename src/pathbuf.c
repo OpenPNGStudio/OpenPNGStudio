@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "str.h"
+#include <core/str.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pathbuf.h>
+#include <core/pathbuf.h>
 
 void path_append_dir(struct path *path, char *new_path)
 {

@@ -35,9 +35,10 @@ struct animated_layer {
 };
 
 struct layer *layer_new(Image image);
-struct later *layer_new_animated(Image image);
+struct layer *layer_new_animated(Image image, uint64_t number_of_frames,
+    uint8_t *buffer, uint64_t size);
 
-void layer_override_name(struct *layer layer, char *name);
+void layer_override_name(struct layer *layer, char *name);
 
 /* if layer is not animated, retuns NULL, otherwise layer */
 struct animated_layer *layer_get_animated(struct layer *layer);

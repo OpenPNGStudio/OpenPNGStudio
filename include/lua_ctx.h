@@ -20,7 +20,7 @@
 /* TODO: possibly lua API wrappers and utils */
 
 #include <lua.h>
-#include <line_edit.h>
+#include <ui/line_edit.h>
 #include <stdbool.h>
 
 struct lua_script {

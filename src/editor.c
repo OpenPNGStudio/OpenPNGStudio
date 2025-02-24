@@ -16,20 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "archive.h"
-#include "console.h"
-#include "context.h"
-#include "layermgr.h"
-#include "mask.h"
-#include "raymath.h"
-#include "ui/window.h"
-#include "unuv.h"
+#include <archive.h>
+#include <console.h>
+#include <context.h>
+#include <layer/manager.h>
+#include <core/mask.h>
+#include <raymath.h>
+#include <ui/window.h>
+#include <unuv.h>
 #include <ctype.h>
 #include <raylib-nuklear.h>
 #include <editor.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <nk.h>
+#include <core/nk.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -16,14 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "console.h"
-#include "context.h"
-#include "icon_db.h"
-#include "line_edit.h"
-#include "mask.h"
-#include "raylib-nuklear.h"
-#include "raylib.h"
-#include "unuv.h"
+#include <console.h>
+#include <context.h>
+#include <core/icon_db.h>
+#include <ui/line_edit.h>
+#include <core/mask.h>
+#include <raylib-nuklear.h>
+#include <raylib.h>
+#include <unuv.h>
 #include <limits.h>
 #include <ctype.h>
 #include <float.h>
@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <layermgr.h>
+#include <layer/manager.h>
 #include <string.h>
 
 extern struct context ctx;

@@ -20,9 +20,9 @@
 #define _EDITOR_H_
 
 #include <archive.h>
-#include "microphone.h"
+#include <core/microphone.h>
 #include "ui/window.h"
-#include <layermgr.h>
+#include <layer/manager.h>
 #include <lua_ctx.h>
 #include <raylib-nuklear.h>
 #include <stdint.h>

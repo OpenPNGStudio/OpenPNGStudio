@@ -18,7 +18,7 @@
 
 #include <raylib-nuklear.h>
 #include <console.h>
-#include <icon_db.h>
+#include <core/icon_db.h>
 
 static struct nk_image db[ICON_DB_SIZE] = {0};
 
