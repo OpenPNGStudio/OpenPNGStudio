@@ -1,6 +1,0 @@
-#!/bin/sh
-mkdir _build && cd _build
-# TODO: ZSTD
-# ZSTD_INCLUDE_DIR=
-# ZSTD_LIBRARY=
-cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF 

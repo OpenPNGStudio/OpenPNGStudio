@@ -1,8 +1,0 @@
-libarchive  https://github.com/libarchive/libarchive.git
-libressl    https://github.com/libressl/portable.git
-libunuv     https://codeberg.org/LowByteFox/libunuv.git
-libuv       https://github.com/libuv/libuv.git
-lua         https://github.com/lua/lua.git
-raylib      https://github.com/raysan5/raylib.git
-zstd        https://github.com/facebook/zstd.git
-mman-win32  https://github.com/boldowa/mman-win32.git

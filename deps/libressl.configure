@@ -1,4 +1,0 @@
-#!/bin/sh
-LIBRESSL_GIT_OPTIONS="--depth 1" ./autogen.sh
-mkdir build && cd build
-cmake .. -DLIBRESSL_APPS=OFF -DLIBRESSL_TESTS=OFF
