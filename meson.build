@@ -75,7 +75,7 @@ if host_machine.system() == 'windows'
 endif
 
 foreach url : headers
-  file = 'include/' + fs.name(url)
+  file = 'include/vendor/' + fs.name(url)
   if not fs.exists(file)
     message('Downloading ' + file)
     run_command(curl, '-L', '-o', file, url, check: true)
@@ -83,9 +83,9 @@ foreach url : headers
 endforeach
 
 message('Downloading tomlc99')
-if not fs.exists('src/toml.c')
+if not fs.exists('src/vendor/toml.c')
   message('Downloading toml.c')
-  run_command(curl, '-L', '-o', 'src/toml.c',
+  run_command(curl, '-L', '-o', 'src/vendor/toml.c',
     'https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.c',
     check: true)
 endif
@@ -94,10 +94,14 @@ message('Copying raylib config')
 run_command(cp, 'raylib_config.h', 'subprojects/raylib/src/config.h', check:  true)
 
 srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c', 
-  'src/nuklear.c', 'src/ui/messagebox.c', 'src/console.c', 'src/layermgr.c',
-  'src/editor.c', 'src/line_edit.c', 'src/miniaudio.c', 'src/ui/window.c', 
-  'src/context.c', 'src/gif_config.c', 'src/toml.c', 'src/icon_db.c',
-  'src/lua_ctx.c', 'src/lua/logger.c']
+  'src/ui/messagebox.c', 'src/console.c', 'src/layermgr.c',
+  'src/editor.c', 'src/line_edit.c', 'src/ui/window.c', 
+  'src/context.c', 'src/gif_config.c', 'src/icon_db.c',
+  'src/lua_ctx.c', 'src/lua/logger.c',
+
+  'src/wrappers/nuklear.c', 'src/wrappers/miniaudio.c',
+
+  'src/vendor/toml.c']
 
 deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libzstd,
   libarchive, lua]
@@ -114,7 +118,7 @@ endif
 executable('OpenPNGStudio', srcs,
   install: true,
   dependencies: deps,
-  include_directories : include_directories('include/'),
+  include_directories : ['include/', 'include/vendor/'],
 )
 
 install_subdir('assets', install_dir: 'share/openpngstudio')
