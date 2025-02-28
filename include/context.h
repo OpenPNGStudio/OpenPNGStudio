@@ -21,6 +21,7 @@
 
 
 #include "ui/window.h"
+#include <work/scheduler.h>
 #include <stdint.h>
 #ifdef _WIN32
 #include <raylib_win32.h>
@@ -89,6 +90,8 @@ struct context {
     bool configuring_gif;
     lua_State *L;
     struct script_load_req *script_work_queue;
+
+    struct work_scheduler sched;
 
     un_loop *loop;
     struct nk_context *ctx;
