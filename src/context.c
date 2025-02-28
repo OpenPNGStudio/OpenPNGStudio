@@ -24,6 +24,7 @@
 #include "console.h"
 #include "ui/window.h"
 
+#include <assert.h>
 #include "uv.h"
 #include <context.h>
 #include <stdlib.h>
@@ -121,6 +122,11 @@ void context_load_script(struct context *ctx, const char *name,
 
     req->req.data = req;
     uv_queue_work((uv_loop_t*) ctx->loop, &req->req, work, after);
+}
+
+void context_submit_work(struct context *ctx, ...)
+{
+    assert(0 && "Not implemented yet!");
 }
 
 void context_after_img_load(struct context *ctx, struct image_load_req *req)

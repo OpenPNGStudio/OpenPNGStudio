@@ -117,6 +117,8 @@ void context_load_image(struct context *ctx, const char *name,
 void context_load_script(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
 
+void context_submit_work(struct context *ctx, ...);
+
 void context_after_img_load(struct context *ctx, struct image_load_req *req);
 
 void context_about(struct context *context, struct nk_context *ctx);

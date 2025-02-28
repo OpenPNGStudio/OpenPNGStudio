@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <model/model.h>
 #ifndef _WIN32
 #include <sys/mman.h>
 #else
@@ -102,9 +103,11 @@ struct manifest {
 static enum un_action update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
+
 static void load_layer();
 static void write_model();
 static void load_model();
+
 static void load_script();
 static int manifest_load_layers(toml_table_t *conf, struct manifest *manifest);
 static struct layer_table *manifest_find_layer(struct manifest *manifest,
