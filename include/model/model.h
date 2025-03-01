@@ -1,10 +1,10 @@
 #pragma once
 
-#include <context.h>
 #include <editor.h>
+#include <work/scheduler.h>
 
 struct model {
-    struct context *ctx;
+    struct work_scheduler *scheduler;
     struct editor *editor;
 };
 

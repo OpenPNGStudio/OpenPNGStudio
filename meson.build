@@ -99,8 +99,10 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/context.c', 'src/gif_config.c', 'src/icon_db.c',
   'src/lua_ctx.c', 'src/lua/logger.c',
 
+  'src/core/mask.c',
+
   'src/work/work.c', 'src/work/queue.c', 'src/work/scheduler.c',
-  'src/model/model.c',
+  'src/model/model.c', 'src/model/write.c', 'src/model/load.c',
 
   'src/wrappers/nuklear.c', 'src/wrappers/miniaudio.c',
 

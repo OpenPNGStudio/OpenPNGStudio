@@ -39,7 +39,6 @@ extern struct context ctx;
 static void reset_key_mask(uint64_t *mask);
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
 static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
-static bool test_mask(uint64_t mask, uint64_t layer);
 static enum un_action after_timeout(un_timer *timer);
 static enum un_action after_toggle(un_timer *timer);
 
@@ -368,74 +367,6 @@ static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
         reset_key_mask(&layer->mask);
 
     nk_group_end(ctx);
-}
-
-static bool test_mask(uint64_t mask, uint64_t layer)
-{
-    int states[] = {QUIET, TALK, PAUSE};
-
-    bool res = false;
-    bool has_mask = false;
-
-    /* check state */
-    for (int i = 0; i < 3; i++) {
-        uint64_t extract_mask = mask & states[i];
-        uint64_t extract_layer = layer & states[i];
-
-        if (extract_layer == 0)
-            continue;
-
-        if (extract_mask == extract_layer) {
-            res = true;
-            break;
-        }
-
-        has_mask = true;
-    }
-
-    int mods[] = {SHIFT, CTRL, SUPER, META};
-
-    bool is_mod_set = false;
-    for (int i = 0; i < 4; i++) {
-        if (layer & mods[i]) {
-            is_mod_set = true;
-            break;
-        }
-    }
-
-    if (is_mod_set) {
-        for (int i = 0; i < 4; i++) {
-            uint64_t extract_mask = mask & mods[i];
-            uint64_t extract_layer = layer & mods[i];
-            if (extract_mask != extract_layer)
-                return false;
-        }
-
-        if (has_mask && res == true)
-            res = true;
-        else if (!has_mask && res == false)
-            res = true;
-    }
-
-    int has_key = -1;
-    for (int i = 0; i <= 26; i++) {
-        if (layer & (1ULL << (i + KEY_START))) {
-            has_key = i;
-            break;
-        }
-    }
-
-    if (has_key != -1) {
-        if (!(mask & (1ULL << (has_key + KEY_START))))
-            return false;
-
-        if (has_mask && res == true)
-            res = true;
-        else if (!has_mask && res == false)
-            res = true;
-    }
-
-    return res;
 }
 
 static enum un_action after_timeout(un_timer *timer)

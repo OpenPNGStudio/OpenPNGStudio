@@ -37,6 +37,7 @@
 #include <core/microphone.h>
 #include <lua.h>
 #include <core/mask.h>
+#include <model/model.h>
 
 enum program_mode {
     EDIT_MODE,
@@ -92,6 +93,7 @@ struct context {
     struct script_load_req *script_work_queue;
 
     struct work_scheduler sched;
+    struct model model;
 
     un_loop *loop;
     struct nk_context *ctx;
