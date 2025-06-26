@@ -43,17 +43,12 @@ libarchive_proj = subproject('libarchive', default_options:
   ['default_library=static', 'zstd=enabled', 'progs=[]'])
 libarchive = libarchive_proj.get_variable('libarchive_dep')
 
-libarchive = libarchive_proj.get_variable('libarchive_dep')
-if host_machine.system() == 'openbsd'
-  crypto = dependency('libcrypto')
-else
-  libressl_opt = cmake.subproject_options()
-  libressl_opt.add_cmake_defines({'LIBRESSL_APPS': false})
-  libressl_opt.add_cmake_defines({'LIBRESSL_TESTS': false})
+wolfssl_opt = cmake.subproject_options()
+wolfssl_opt.add_cmake_defines({'WOLFSSL_DEBUG': 'on'})
+wolfssl_opt.add_cmake_defines({'BUILD_SHARED_LIBS': false})
 
-  libressl_proj = cmake.subproject('libressl', options: libressl_opt)
-  crypto = libressl_proj.dependency('crypto')
-endif
+wolfssl_proj = cmake.subproject('wolfssl', options: wolfssl_opt)
+wolfssl = wolfssl_proj.dependency('wolfssl')
 
 libuv_proj = subproject('libuv', default_options: ['default_library=static', 'build_tests=false'])
 libuv = libuv_proj.get_variable('libuv_dep')
@@ -108,7 +103,7 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
 
   'src/vendor/toml.c']
 
-deps = [raylib, libunuv, libuv, cc.find_library('m'), crypto, libzstd,
+deps = [raylib, libunuv, libuv, cc.find_library('m'), wolfssl, libzstd,
   libarchive, lua]
 
 if host_machine.system() == 'windows'
