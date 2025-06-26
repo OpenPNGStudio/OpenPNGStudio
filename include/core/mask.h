@@ -52,6 +52,8 @@ enum mask_key {
     KEY_START = 7,
 };
 
+#define DEFAULT_MASK (QUIET | TALK | PAUSE)
+
 void set_current_mask(mask_t mask);
 mask_t get_current_mask();
 

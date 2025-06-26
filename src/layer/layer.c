@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "unuv.h"
 #include <layer/layer.h>
 #include <core/mask.h>
 
@@ -24,11 +25,12 @@
 #include <stdbool.h>
 
 static void layer_defaults(struct layer *layer);
+static enum un_action update_animation(un_timer *timer);
 
 struct layer *layer_new(Image image)
 {
     struct layer *l = calloc(sizeof(*l), 1);
-    l->properties.img = image;
+    l->properties.image = image;
     layer_defaults(l);
 
     return l;
@@ -38,13 +40,13 @@ struct layer *layer_new_animated(Image image, uint64_t number_of_frames,
     uint8_t *buffer, uint64_t size)
 {
     struct animated_layer *a = calloc(sizeof(*a), 1);
-    l->layer.properties.img = image;
+    a->layer.properties.image = image;
     layer_defaults(&a->layer);
-    l->layer.properties.is_animated = true;
+    a->layer.properties.is_animated = true;
 
-    l->properties.number_of_frames = number_of_frames;
-    l->properties.gif_file_content = buffer;
-    l->properties.gif_file_size = size;
+    a->properties.number_of_frames = number_of_frames;
+    a->properties.gif_file_content = buffer;
+    a->properties.gif_file_size = size;
 
     return &a->layer;
 }
@@ -58,10 +60,16 @@ void layer_override_name(struct layer *layer, char *name)
 
 struct animated_layer *layer_get_animated(struct layer *layer)
 {
-    if (layer->properties.is_animated)
-        return (void*) layer;
-    
-    return NULL;
+    assert(layer->properties.is_animated == true && "layer is not animated");
+    return (void*) layer;
+}
+
+void layer_animated_start(struct animated_layer *layer, un_loop *loop)
+{
+    un_timer *timer = un_timer_new(loop);
+    un_timer_set_data(timer, layer);
+    uint32_t delay = layer->properties.frame_delays[0];
+    un_timer_start(timer, delay, 0, update_animation);
 }
 
 char *layer_stringify(struct layer *layer)
@@ -76,8 +84,8 @@ void layer_cleanup(struct layer *layer)
 
 static void layer_defaults(struct layer *layer)
 {
-    layer->properties.texture = LoadTextureFromImage(layer->properties.img);
-    SetTextureFilayerter(layer->properties.texture, TEXTURE_FILTER_BILINEAR);
+    layer->properties.texture = LoadTextureFromImage(layer->properties.image);
+    SetTextureFilter(layer->properties.texture, TEXTURE_FILTER_BILINEAR);
     GenTextureMipmaps(&layer->properties.texture);
     SetTextureWrap(layer->properties.texture, TEXTURE_WRAP_CLAMP);
 
@@ -85,3 +93,21 @@ static void layer_defaults(struct layer *layer)
     layer->properties.rotation = 180.0f;
 }
 
+static enum un_action update_animation(un_timer *timer)
+{
+    struct animated_layer *layer = un_timer_get_data(timer);
+
+    layer->properties.previous_frame_index = layer->properties.current_frame_index;
+    un_timer_set_repeat(timer, layer->properties.frame_delays[layer->properties.current_frame_index]);
+    layer->properties.current_frame_index = (layer->properties.current_frame_index + 1) %
+        layer->properties.number_of_frames;
+
+    if (layer->layer.state.prepare_for_deletion) {
+        if (!layer->layer.state.active) {
+            layer_cleanup(&layer->layer);
+            return DISARM;
+        }
+    }
+
+    return REARM;
+}

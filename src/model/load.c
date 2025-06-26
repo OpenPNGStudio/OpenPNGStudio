@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <toml.h>
 #include <archive.h>
 #include <archive_entry.h>
@@ -12,9 +13,11 @@
 
 enum read_state {
     READER_READ_MANIFEST,
+    READER_LAYER_PREPARE,
     READER_READ_LAYER_INFO,
     READER_READ_LAYER_IMG,
     READER_READ_DONE,
+    READER_SETUP_TIMERS,
     READER_READ_FAIL,
 };
 
@@ -26,6 +29,8 @@ struct layer_info {
 
     uint8_t *image_buffer;
     size_t image_size;
+    Image img;
+    int frame_count;
 
     struct layer_info *next;
 };
@@ -39,11 +44,16 @@ struct model_manifest {
 };
 
 struct model_reader {
+    un_loop *loop;
     struct model *model;
     struct model_manifest manifest;
     struct archive *archive;
     struct archive_entry *entry;
     enum read_state state;
+
+    struct layer **layers;
+    int current_layer;
+    struct layer_info *current;
 
     int fd;
     void *mmaped;
@@ -54,10 +64,11 @@ static void read_archive(struct work *work);
 static void after_read(struct work *work);
 
 static int parse_manifest(struct model_reader *rd);
+static int parse_layer_info(struct model_reader *rd);
 static int manifest_load_layers(struct model_manifest *manifest, toml_table_t *conf);
 static struct layer_info *manifest_find_layer(struct model_manifest *manifest, const char *pathname);
 
-void model_load(struct model *model, const char *path)
+void model_load(un_loop *loop, struct model *model, const char *path)
 {
     struct stat s;
     stat(path, &s);
@@ -72,11 +83,15 @@ void model_load(struct model *model, const char *path)
     LOG_I("Preparing to load %s", path);
 
     struct model_reader *rd = calloc(1, sizeof(struct model_reader));
+    rd->loop = loop;
     rd->model = model;
     rd->archive = archive_read_new();
     rd->fd = fd;
     rd->mmaped = mmaped;
     rd->mmaped_size = s.st_size;
+    rd->layers = NULL;
+    rd->current_layer = 0;
+    rd->current = NULL;
 
     archive_read_support_filter_zstd(rd->archive);
     archive_read_support_format_tar(rd->archive);
@@ -95,10 +110,11 @@ static void read_archive(struct work *work)
     switch (rd->state) {
     case READER_READ_MANIFEST: {
         if ((archive_read_next_header(rd->archive, &rd->entry)) != ARCHIVE_OK) {
+            archive_read_close(rd->archive);
             archive_read_free(rd->archive);
             munmap(rd->mmaped, rd->mmaped_size);
             close(rd->fd);
-            rd->state = READER_READ_LAYER_INFO;
+            rd->state = READER_LAYER_PREPARE;
             return;
         }
 
@@ -141,8 +157,48 @@ static void read_archive(struct work *work)
         archive_read_data_skip(rd->archive);
         break;
     }
+    case READER_LAYER_PREPARE: {
+        LOG_I("Configuring Model", 0);
+        rd->model->editor->microphone_trigger = rd->manifest.microphone_trigger;
+        atomic_store(&rd->model->mic->multiplier, rd->manifest.microphone_sensitivity);
+
+        LOG_I("Microphone Configured", 0);
+        rd->model->editor->background_color.r = (rd->manifest.background_color >> 16) & 0xFF;
+        rd->model->editor->background_color.g = (rd->manifest.background_color >> 8) & 0xFF;
+        rd->model->editor->background_color.b = rd->manifest.background_color & 0xFF;
+        LOG_I("Background Configured", 0);
+
+        rd->layers = calloc(rd->manifest.number_of_layers, sizeof(struct layer*));
+        rd->current = rd->manifest.layers;
+        break;
+    }
     case READER_READ_LAYER_INFO:
-    case READER_READ_LAYER_IMG:
+        if (parse_layer_info(rd))
+            rd->state = READER_READ_FAIL;
+        rd->current = rd->current->next;
+        rd->current_layer++;
+        if (rd->current == NULL)
+            rd->state = READER_SETUP_TIMERS;
+        break;
+    case READER_READ_LAYER_IMG: {
+        assert(rd->current != NULL && "Was the model not prepared?");
+        if (rd->current->is_animated) {
+            rd->current->img = LoadImageAnimFromMemory(".gif", rd->current->image_buffer,
+                rd->current->image_size, &rd->current->frame_count);
+        } else {
+            rd->current->img = LoadImageFromMemory(".png", rd->current->image_buffer,
+                rd->current->image_size);
+        }
+        break;
+    }
+    case READER_SETUP_TIMERS:
+        for (int i = 0; i < rd->manifest.number_of_layers; i++) {
+            struct layer *layer = rd->layers[i];
+            if (layer->properties.is_animated)
+                layer_animated_start(layer_get_animated(layer), rd->loop);
+        }
+        rd->state = READER_READ_DONE;
+        break;
     case READER_READ_DONE:
     case READER_READ_FAIL:
         break;
@@ -152,6 +208,186 @@ static void read_archive(struct work *work)
 static void after_read(struct work *work)
 {
     struct model_reader *rd = work->ctx;
+    switch (rd->state) {
+    case READER_LAYER_PREPARE: 
+    case READER_READ_LAYER_INFO: {
+        rd->state = READER_READ_LAYER_IMG;
+        struct work *wrk = work_new(read_archive, after_read, true);
+        work_set_context(wrk, rd);
+
+        work_scheduler_add_work(rd->model->scheduler, wrk);
+        return;
+    }
+    case READER_READ_LAYER_IMG: {
+        rd->state = READER_READ_LAYER_INFO;
+        struct work *wrk = work_new(read_archive, after_read, false);
+        work_set_context(wrk, rd);
+
+        work_scheduler_add_work(rd->model->scheduler, wrk);
+        return;
+    }
+    case READER_READ_DONE:
+        rd->model->editor->layer_manager.layers = rd->layers;
+        rd->model->editor->layer_manager.layer_count = rd->manifest.number_of_layers;
+        LOG_I("Layers configured", 0);
+        LOG_I("Model has been loaded!", 0);
+        free(rd);
+        return;
+    case READER_READ_MANIFEST:
+    case READER_READ_FAIL:
+    case READER_SETUP_TIMERS:
+        break;
+    }
+
+    /* re-schedule */
+    work_scheduler_add_work(rd->model->scheduler, work);
+}
+
+static int parse_layer_info(struct model_reader *rd)
+{
+    char errbuf[TOML_ERR_LEN];
+    double x, y, rot;
+    int msk, to_live, n_frames;
+    uint32_t *delays;
+    char in;
+    bool toggle;
+
+    toml_table_t *conf = toml_parse(rd->current->buffer, errbuf, TOML_ERR_LEN);
+    if (conf == NULL) {
+        LOG_E("Unable to parse layer metadata: %s!", errbuf);
+        return 1;
+    }
+
+    toml_table_t *lay = toml_table_in(conf, "layer");
+    if (lay == NULL) {
+        LOG_E("Unable to find table [layer] in metadata: %s!", errbuf);
+        return 1;
+    }
+
+    toml_table_t *offset = toml_table_in(lay, "offset");
+    if (offset == NULL) {
+        LOG_E("Unable to find table offset in layer: %s!", errbuf);
+        return 1;
+    }
+
+    toml_datum_t off_x = toml_double_in(offset, "x");
+    if (!off_x.ok) {
+        LOG_E("Unable to get x offset: %s!", errbuf);
+        return 1;
+    }
+    x = off_x.u.d;
+
+    toml_datum_t off_y = toml_double_in(offset, "y");
+    if (!off_y.ok) {
+        LOG_E("Unable to get y offset: %s!", errbuf);
+        return 1;
+    }
+    y = off_y.u.d;
+
+    toml_datum_t rotation = toml_double_in(lay, "rotation");
+    if (!rotation.ok) {
+        LOG_E("Unable to get layer rotation: %s!", errbuf);
+        return 1;
+    }
+    rot = rotation.u.d;
+
+    toml_datum_t mask = toml_int_in(lay, "mask");
+    if (!mask.ok) {
+        LOG_E("Unable to get layer mask: %s!", errbuf);
+        return 1;
+    }
+    msk = mask.u.i;
+
+    for (int i = 0; i <= 26; i++) {
+        uint64_t mask = 1ULL << (i + KEY_START);
+        if (msk & mask) {
+            in = 'A' + i;
+            break;
+        }
+    }
+
+    toml_datum_t ttl = toml_int_in(lay, "ttl");
+    if (!ttl.ok) {
+        LOG_E("Unable to get time to live: %s!", errbuf);
+        return 1;
+    }
+    to_live = ttl.u.i;
+
+    toml_datum_t has_toggle = toml_bool_in(lay, "has_toggle");
+    if (!has_toggle.ok) {
+        LOG_E("Unable to get has toggle: %s!", errbuf);
+        abort();
+    }
+    toggle = has_toggle.u.b;
+
+    if (!rd->current->is_animated)
+        goto end;
+
+    toml_table_t *animation = toml_table_in(conf, "animation");
+    if (animation == NULL) {
+        LOG_E("Unable to find table [animation] in metadata: %s!", errbuf);
+        return 1;
+    }
+
+    toml_datum_t frame_count = toml_int_in(animation, "frame_count");
+    if (!frame_count.ok) {
+        LOG_E("Unable to get frame count: %s!", errbuf);
+        return 1;
+    }
+    n_frames = frame_count.u.i;
+    delays = calloc(n_frames, sizeof(uint32_t));
+
+    toml_array_t *delays_toml = toml_array_in(animation, "delays");
+    if (delays == NULL) {
+        LOG_E("Unable to get delays: %s!", errbuf);
+        free(delays);
+        return 1;
+    }
+
+    for (size_t i = 0; i < n_frames; i++) {
+        toml_datum_t delay = toml_int_at(delays_toml, i);
+        if (!delay.ok) {
+            LOG_E("Unable to get %dth frame delay: %s!", i + 1, errbuf);
+            free(delays);
+            return 1;
+        }
+        delays[i] = delay.u.i;
+    }
+
+end:
+    if (rd->current->is_animated) {
+        rd->layers[rd->current_layer] = layer_new_animated(rd->current->img, rd->current->frame_count,
+            (uint8_t*) rd->current->buffer, rd->current->image_size);
+    } else {
+        rd->layers[rd->current_layer] = layer_new(rd->current->img);
+    }
+
+    struct layer *c = rd->layers[rd->current_layer];
+    c->properties.offset.x = x;
+    c->properties.offset.y = y;
+    c->properties.rotation = rot;
+    c->state.mask = msk;
+    c->input_key_buffer[0] = in;
+    c->input_key_length = 1;
+    c->state.time_to_live = to_live;
+    c->properties.has_toggle = toggle;
+    layer_override_name(c, rd->current->name);
+
+    if (c->properties.is_animated) {
+        struct animated_layer *ac = layer_get_animated(c);
+        ac->properties.number_of_frames = n_frames;
+        ac->properties.frame_delays = delays;
+        ac->properties.previous_frame_index = 0;
+        ac->properties.current_frame_index = 0;
+        ac->properties.gif_file_content = rd->current->image_buffer;
+        ac->properties.gif_file_size = rd->current->image_size;
+    } else
+        free(rd->current->image_buffer);
+
+    toml_free(conf);
+    free(rd->current->buffer);
+
+    return 0;
 }
 
 static int parse_manifest(struct model_reader *rd)

@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include "unuv.h"
 #include <layer/properties.h>
 #include <layer/state.h>
 #include <layer/animated_properties.h>
@@ -40,8 +41,8 @@ struct layer *layer_new_animated(Image image, uint64_t number_of_frames,
 
 void layer_override_name(struct layer *layer, char *name);
 
-/* if layer is not animated, retuns NULL, otherwise layer */
 struct animated_layer *layer_get_animated(struct layer *layer);
+void layer_animated_start(struct animated_layer *layer, un_loop *loop);
 
 char *layer_stringify(struct layer *layer);
 void layer_cleanup(struct layer *layer);

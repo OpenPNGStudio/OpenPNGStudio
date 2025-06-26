@@ -27,4 +27,3 @@ struct animated_layer_properties {
     uint64_t current_frame_index;
     uint64_t previous_frame_index;
 };
-
