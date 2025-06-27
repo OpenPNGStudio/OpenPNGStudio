@@ -105,8 +105,18 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
 
   'src/vendor/toml.c']
 
+prog_c3c = find_program('c3c')
+
+c3_gen = custom_target('libOpenPNGStudio.a',
+  input: [],
+  output: ['libOpenPNGStudio.a'],
+  command: [prog_c3c, 'build'],
+  build_always_stale: true)
+
+OpenPNGStudio_dep = declare_dependency(link_with : c3_gen)
+
 deps = [raylib, libunuv, libuv, cc.find_library('m'), wolfssl, libzstd,
-  libarchive, lua]
+  libarchive, lua, OpenPNGStudio_dep]
 
 if host_machine.system() == 'windows'
   deps += cc.find_library('winmm')

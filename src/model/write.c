@@ -1,3 +1,4 @@
+#include "console.h"
 #include <model/model.h>
 #include <archive_entry.h>
 #include <stdbool.h>
@@ -34,6 +35,8 @@ void model_write(struct model *model, const char *path)
     wr->archive = archive_write_new();
     wr->model = model;
 
+    LOG_I("Preparing to write %s", path);
+
     archive_write_add_filter_zstd(wr->archive);
     archive_write_set_format_pax_restricted(wr->archive);
     archive_write_open_filename(wr->archive, path);
@@ -50,6 +53,7 @@ static void write_archive(struct work *work)
     struct model_writer *wr = work->ctx;
     switch (wr->state) {
     case WRITER_WRITE_MANIFEST:
+        LOG_I("Writing Manifest", 0);
         write_string_to_archive(wr, "manifest.toml",
             model_generate_manifest(wr->model));
         add_directory_to_archive(wr, "layers");
@@ -59,6 +63,9 @@ static void write_archive(struct work *work)
             wr->state = WRITER_WRITE_DONE;
             break;
         }
+        LOG_I("Writing layer %s",
+            wr->model->editor->layer_manager.layers[wr->layer_index]
+            ->properties.name.buffer);
         struct layer *layer = wr->model->editor->layer_manager.layers[wr->layer_index];
         int pathname_len = snprintf(NULL, 0, "layers/%s-%d.toml",
             layer->properties.name.buffer, wr->layer_index + 1);
@@ -72,10 +79,12 @@ static void write_archive(struct work *work)
         break;
     }
     case WRITER_WRITE_LAYER_IMG: {
+        LOG_I("Wrinting Layer Image", 0);
         struct layer *layer = wr->model->editor->layer_manager.layers[wr->layer_index];
         struct animated_layer *animated_layer = NULL;
 
-        if ((animated_layer = layer_get_animated(layer)) != NULL) {
+        if (layer->properties.is_animated) {
+            animated_layer = layer_get_animated(layer);
             int length = snprintf(NULL, 0, "layers/%s-%d.gif",
                 layer->properties.name.buffer, wr->layer_index + 1);
             char pathname[length + 1];
@@ -122,6 +131,7 @@ static void after_write(struct work *work)
     case WRITER_WRITE_DONE:
         archive_write_close(wr->archive);
         archive_write_free(wr->archive);
+        LOG_I("Model has been saved!", 0);
         free(wr);
         return;
     }

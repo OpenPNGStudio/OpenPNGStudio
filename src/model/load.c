@@ -9,7 +9,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define TOML_ERR_LEN 128
+#define TOML_ERR_LEN 255
 
 enum read_state {
     READER_READ_MANIFEST,

@@ -91,9 +91,45 @@ void layer_toggle(struct layer *layer, un_loop *loop)
     un_timer_start(timer, 250, 0, after_toggle);
 }
 
+/* C3 types */
+struct c3_layer {
+    double x, y, rotation;
+    mask_t mask;
+    int time_to_live;
+    bool has_toggle;
+};
+
+struct c3_anim_layer {
+    struct c3_layer layer;
+    uint64_t number_of_frames;
+    uint32_t *frame_delays;
+};
+
+extern char *layer_stringify_static(struct c3_layer layer);
+extern char *layer_stringify_anim(struct c3_anim_layer layer);
+
 char *layer_stringify(struct layer *layer)
 {
-    assert(0 && "Not implemented yet!");
+    if (layer->properties.is_animated) {
+        struct animated_layer *al = layer_get_animated(layer);
+
+        return layer_stringify_anim((struct c3_anim_layer) {
+                .layer = (struct c3_layer) { .x = layer->properties.offset.x,
+                    .y = layer->properties.offset.y,
+                    .rotation = layer->properties.rotation,
+                    .mask = layer->state.mask,
+                    .time_to_live = layer->state.time_to_live,
+                    .has_toggle = layer->properties.has_toggle
+                }, .number_of_frames = al->properties.number_of_frames,
+                .frame_delays = al->properties.frame_delays
+            });
+    }
+
+    return layer_stringify_static((struct c3_layer) { .x = layer->properties.offset.x,
+        .y = layer->properties.offset.y, .rotation = layer->properties.rotation,
+        .mask = layer->state.mask, .time_to_live = layer->state.time_to_live,
+        .has_toggle = layer->properties.has_toggle
+    });
 }
 
 void layer_cleanup(struct layer *layer)
