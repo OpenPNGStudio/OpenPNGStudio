@@ -99,7 +99,7 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
                 nk_label(ctx, "Model Information: ", NK_TEXT_LEFT);
                 break;
             case LAYERS:
-                layer_manager_draw_ui(&editor->layer_manager, ctx);
+                layer_manager_ui(&editor->layer_manager, ctx);
                 break;
             case SCRIPTS:
                 nk_layout_row_dynamic(ctx, 30, 1);
@@ -237,11 +237,12 @@ void editor_apply_mask(struct editor *editor)
     volume = Lerp(volume, editor->previous_volume, 0.75);
 
     int percentage = (volume * 100) / 200;
+    mask_t mask = get_current_mask();
 
     if (percentage > editor->microphone_trigger) {
-        editor->layer_manager.mask &= ~QUIET;
+        mask &= ~QUIET;
         if (!editor->talk_timer_running) {
-            editor->layer_manager.mask |= TALK;
+            mask |= TALK;
             un_timer *timer = un_timer_new(ctx.loop);
             un_timer_set_data(timer, editor);
             int delay = editor->timer_ttl / 2;
@@ -250,7 +251,7 @@ void editor_apply_mask(struct editor *editor)
         }
 
         if (!editor->pause_timer_running) {
-            editor->layer_manager.mask |= PAUSE;
+            mask |= PAUSE;
             un_timer *timer = un_timer_new(ctx.loop);
             un_timer_set_data(timer, editor);
             int delay = editor->timer_ttl;
@@ -258,47 +259,48 @@ void editor_apply_mask(struct editor *editor)
             editor->pause_timer_running = true;
         }
     }
+    set_current_mask(mask);
 }
 
-char *editor_tomlify(struct editor *editor)
-{
-    int sensitivity = atomic_load(&editor->mic->multiplier);
-    const char *fmt = "[model]\n"
-                      "layer_count = %ld\n"
-                      "[microphone]\n"
-                      "trigger = %ld\n"
-                      "sensitivity = %d\n"
-                      "[scene]\n"
-                      "bg_color = 0x%06X\n";
-    int color = 0;
-    color |= editor->background_color.r << 16;
-    color |= editor->background_color.g << 8;
-    color |= editor->background_color.b;
-
-    int len = snprintf(NULL, 0, fmt, editor->layer_manager.layer_count,
-        editor->microphone_trigger, sensitivity, color);
-
-    char *buffer = calloc(1, len + 1);
-    snprintf(buffer, len + 1, fmt, editor->layer_manager.layer_count,
-        editor->microphone_trigger, sensitivity, color);
-
-    for (int i = 0; i < editor->layer_manager.layer_count; i++) {
-        fmt = "\n[[layer]]\n"
-              "name = \"%s\"\n"
-              "index = %d\n"
-              "is_animated = %s\n";
-        struct model_layer *layer = editor->layer_manager.layers[i];
-        int add_length = snprintf(NULL, 0, fmt, layer->name.buffer, i + 1,
-            (layer->frames_count > 0) ? "true" : "false");
-        buffer = realloc(buffer, len + add_length + 1);
-
-        snprintf(buffer + len, add_length + 1, fmt, layer->name.buffer, i + 1,
-            (layer->frames_count > 0) ? "true" : "false");
-        len += add_length;
-    }
-
-    return buffer;
-}
+// char *editor_tomlify(struct editor *editor)
+// {
+//     int sensitivity = atomic_load(&editor->mic->multiplier);
+//     const char *fmt = "[model]\n"
+//                       "layer_count = %ld\n"
+//                       "[microphone]\n"
+//                       "trigger = %ld\n"
+//                       "sensitivity = %d\n"
+//                       "[scene]\n"
+//                       "bg_color = 0x%06X\n";
+//     int color = 0;
+//     color |= editor->background_color.r << 16;
+//     color |= editor->background_color.g << 8;
+//     color |= editor->background_color.b;
+//
+//     int len = snprintf(NULL, 0, fmt, editor->layer_manager.layer_count,
+//         editor->microphone_trigger, sensitivity, color);
+//
+//     char *buffer = calloc(1, len + 1);
+//     snprintf(buffer, len + 1, fmt, editor->layer_manager.layer_count,
+//         editor->microphone_trigger, sensitivity, color);
+//
+//     for (int i = 0; i < editor->layer_manager.layer_count; i++) {
+//         fmt = "\n[[layer]]\n"
+//               "name = \"%s\"\n"
+//               "index = %d\n"
+//               "is_animated = %s\n";
+//         struct model_layer *layer = editor->layer_manager.layers[i];
+//         int add_length = snprintf(NULL, 0, fmt, layer->name.buffer, i + 1,
+//             (layer->frames_count > 0) ? "true" : "false");
+//         buffer = realloc(buffer, len + add_length + 1);
+//
+//         snprintf(buffer + len, add_length + 1, fmt, layer->name.buffer, i + 1,
+//             (layer->frames_count > 0) ? "true" : "false");
+//         len += add_length;
+//     }
+//
+//     return buffer;
+// }
 
 static enum un_action update_talk_mask(un_timer *timer)
 {
@@ -310,7 +312,9 @@ static enum un_action update_talk_mask(un_timer *timer)
         return REARM;
 
     ed->talk_timer_running = false;
-    ed->layer_manager.mask &= ~TALK;
+    mask_t mask = get_current_mask();
+    mask &= ~TALK;
+    set_current_mask(mask);
 
     return DISARM;
 }
@@ -325,9 +329,11 @@ static enum un_action update_pause_mask(un_timer *timer)
         return REARM;
 
     ed->pause_timer_running = false;
-    ed->layer_manager.mask |= QUIET;
-    ed->layer_manager.mask &= ~PAUSE;
-    ed->layer_manager.mask &= ~TALK;
+    mask_t mask = get_current_mask();
+    mask |= QUIET;
+    mask &= ~PAUSE;
+    mask &= ~TALK;
+    set_current_mask(mask);
 
     return DISARM;
 }

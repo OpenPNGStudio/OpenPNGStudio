@@ -1,5 +1,3 @@
-#pragma once
-
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unuv.h>
@@ -15,6 +13,7 @@ struct work *work_new(work_fn perform, work_done when_finished, bool run_on_thre
     w->perform = perform;
     w->finished = when_finished;
     w->thread_safe = run_on_thread;
+    w->req.data = w;
 
     return w;
 }

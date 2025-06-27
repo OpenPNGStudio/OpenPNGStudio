@@ -211,6 +211,8 @@ static void after_read(struct work *work)
     switch (rd->state) {
     case READER_LAYER_PREPARE: 
     case READER_READ_LAYER_INFO: {
+        if (rd->current == NULL && rd->state == READER_LAYER_PREPARE)
+            break;
         rd->state = READER_READ_LAYER_IMG;
         struct work *wrk = work_new(read_archive, after_read, true);
         work_set_context(wrk, rd);

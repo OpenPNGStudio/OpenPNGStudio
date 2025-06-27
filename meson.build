@@ -99,6 +99,8 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/work/work.c', 'src/work/queue.c', 'src/work/scheduler.c',
   'src/model/model.c', 'src/model/write.c', 'src/model/load.c',
 
+  'src/layer/layer.c',
+
   'src/wrappers/nuklear.c', 'src/wrappers/miniaudio.c',
 
   'src/vendor/toml.c']

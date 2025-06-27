@@ -26,6 +26,8 @@
 
 static void layer_defaults(struct layer *layer);
 static enum un_action update_animation(un_timer *timer);
+static enum un_action after_timeout(un_timer *timer);
+static enum un_action after_toggle(un_timer *timer);
 
 struct layer *layer_new(Image image)
 {
@@ -72,6 +74,23 @@ void layer_animated_start(struct animated_layer *layer, un_loop *loop)
     un_timer_start(timer, delay, 0, update_animation);
 }
 
+void layer_start_timeout(struct layer *layer, un_loop *loop)
+{
+    layer->state.active = true;
+    un_timer *timer = un_timer_new(loop);
+    un_timer_set_data(timer, layer);
+    un_timer_start(timer, layer->state.time_to_live, 0, after_timeout);
+}
+
+void layer_toggle(struct layer *layer, un_loop *loop)
+{
+    layer->state.is_toggled = !layer->state.is_toggled;
+    layer->state.is_toggle_timer_ticking = true;
+    un_timer *timer = un_timer_new(loop);
+    un_timer_set_data(timer, layer);
+    un_timer_start(timer, 250, 0, after_toggle);
+}
+
 char *layer_stringify(struct layer *layer)
 {
     assert(0 && "Not implemented yet!");
@@ -110,4 +129,25 @@ static enum un_action update_animation(un_timer *timer)
     }
 
     return REARM;
+}
+
+static enum un_action after_timeout(un_timer *timer)
+{
+    struct layer *layer = un_timer_get_data(timer);
+    layer->state.active = false;
+
+    if (layer->state.prepare_for_deletion) {
+        if (!layer->properties.is_animated)
+            layer_cleanup(layer); /* not a GIF */
+    }
+
+    return DISARM;
+}
+
+static enum un_action after_toggle(un_timer *timer)
+{
+    struct layer *layer = un_timer_get_data(timer);
+    layer->state.is_toggle_timer_ticking = false;
+
+    return DISARM;
 }

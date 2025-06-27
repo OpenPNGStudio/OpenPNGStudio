@@ -119,8 +119,6 @@ static void load_layer_file(uv_work_t *req);
 static void after_layer_loaded(uv_work_t *req, int status);
 static void load_script_file(uv_work_t *req);
 static void after_script_loaded(uv_work_t *req, int status);
-static enum un_action update_gif(un_timer *timer);
-
 
 static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
     struct microphone_data* data = device->pUserData;
@@ -188,6 +186,12 @@ int main()
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
     ctx.mask |= QUIET;
     ctx.welcome_win.show = true;
+
+    /* scheduler */
+    ctx.sched.loop = ctx.loop;
+    ctx.model.scheduler = &ctx.sched;
+    ctx.model.editor = &ctx.editor;
+    ctx.model.mic = &ctx.mic;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
@@ -372,10 +376,8 @@ static enum un_action update(un_idle *task)
 
         int i = ctx.editor.layer_manager.layer_count - 1;
 
-        un_timer *timer = un_timer_new(ctx.loop);
-        un_timer_set_data(timer, ctx.editor.layer_manager.layers[i]);
-        uint32_t delay = ctx.gif_cfg.layer->properties.frame_delays[0];
-        un_timer_start(timer, delay, delay, update_gif);
+        struct layer *l = ctx.editor.layer_manager.layers[i];
+        layer_animated_start(layer_get_animated(l), ctx.loop);
         ctx.gif_cfg.layer = NULL;
     }
 
@@ -429,6 +431,8 @@ static enum un_action update(un_idle *task)
             ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
         }
     }
+
+    work_scheduler_run(&ctx.sched);
 
     /* execute lua once */
     lua_getglobal(ctx.L, LUA_PRIV_PREFIX "rt_spin_once");
