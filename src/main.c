@@ -324,7 +324,8 @@ static enum un_action draw(un_idle *task)
 
 static enum un_action update(un_idle *task)
 {
-    handle_key_mask(&ctx.mask);
+    mask_t mask = get_current_mask();
+    handle_key_mask(&mask);
 
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
@@ -343,7 +344,8 @@ static enum un_action update(un_idle *task)
             ctx.mode = EDIT_MODE;
     }
 
-    set_key_mask(&ctx.mask);
+    set_key_mask(&mask);
+    set_current_mask(mask);
 
     if (!ctx.hide_ui)
         draw_menubar(&ui_focused);

@@ -251,7 +251,7 @@ static int parse_layer_info(struct model_reader *rd)
     double x, y, rot;
     int msk, to_live, n_frames;
     uint32_t *delays;
-    char in;
+    char in = 0;
     bool toggle;
 
     toml_table_t *conf = toml_parse(rd->current->buffer, errbuf, TOML_ERR_LEN);
@@ -369,8 +369,10 @@ end:
     c->properties.offset.y = y;
     c->properties.rotation = rot;
     c->state.mask = msk;
-    c->input_key_buffer[0] = in;
-    c->input_key_length = 1;
+    if (in > 0) {
+        c->input_key_buffer[0] = in;
+        c->input_key_length = 1;
+    }
     c->state.time_to_live = to_live;
     c->properties.has_toggle = toggle;
     layer_override_name(c, rd->current->name);

@@ -71,7 +71,7 @@ void layer_animated_start(struct animated_layer *layer, un_loop *loop)
     un_timer *timer = un_timer_new(loop);
     un_timer_set_data(timer, layer);
     uint32_t delay = layer->properties.frame_delays[0];
-    un_timer_start(timer, delay, 0, update_animation);
+    un_timer_start(timer, delay, delay, update_animation);
 }
 
 void layer_start_timeout(struct layer *layer, un_loop *loop)
