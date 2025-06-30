@@ -7,7 +7,7 @@
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
   "test-sources": [ "test/**" ],
-  "output": ".build",
+  "output": "build",
   "targets": {
     "libOpenPNGStudio": {
       "type": "static-lib"
