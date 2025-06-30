@@ -1,0 +1,11 @@
+{
+  "provides" : "novacrash",
+  "sources" : [ "src/**" ],
+  "targets" : {
+    "linux-x64" : {
+      "link-args" : [],
+      "dependencies" : ["raylib55", "raygui"],
+      "linked-libraries" : []
+    }
+  }
+}

@@ -1,0 +1,3 @@
+module novacrash;
+
+// extern fn int some_library_function();

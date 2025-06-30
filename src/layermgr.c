@@ -209,57 +209,6 @@ void layer_manager_render(struct layer_manager *mgr)
     }
 }
 
-// char *layer_tomlify(struct model_layer *layer)
-// {
-//     const char *fmt = "[layer]\n"
-//                       "offset.x = %f\n"
-//                       "offset.y = %f\n"
-//                       "rotation = %f\n"
-//                       "mask = %ld\n"
-//                       "ttl = %d\n"
-//                       "has_toggle = %s\n";
-//
-//     int len = snprintf(NULL, 0, fmt, layer->position_offset.x,
-//         layer->position_offset.y, layer->rotation, layer->mask, layer->ttl,
-//         layer->has_toggle == true ? "true" : "false");
-//
-//     char *buffer = calloc(1, len + 1);
-//     snprintf(buffer, len + 1, fmt, layer->position_offset.x,
-//         layer->position_offset.y, layer->rotation, layer->mask, layer->ttl,
-//         layer->has_toggle == true ? "true" : "false");
-//
-//     if (layer->frames_count > 0) {
-//         fmt = "[animation]\n"
-//               "frame_count = %d\n"
-//               "delays = [ ";
-//         int add_length = snprintf(NULL, 0, fmt, layer->frames_count);
-//         buffer = realloc(buffer, len + add_length + 1);
-//
-//         snprintf(buffer + len, add_length + 1, fmt, layer->frames_count);
-//         len += add_length;
-//
-//         fmt = "%d, ";
-//         int i;
-//         for (i = 0; i < layer->frames_count - 1; i++) {
-//             add_length = snprintf(NULL, 0, fmt, layer->delays[i]);
-//             buffer = realloc(buffer, len + add_length + 1);
-//
-//             snprintf(buffer + len, add_length + 1, fmt, layer->delays[i]);
-//             len += add_length;
-//         }
-//
-//         fmt = "%d ]\n";
-//         add_length = snprintf(NULL, 0, fmt, layer->delays[i]);
-//         buffer = realloc(buffer, len + add_length + 1);
-//
-//         snprintf(buffer + len, add_length + 1, fmt, layer->delays[i]);
-//         len += add_length;
-//     }
-//
-//     return buffer;
-// }
-//
-
 static void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
 {
     struct layer *layer = mgr->layers[mgr->selected_layer];

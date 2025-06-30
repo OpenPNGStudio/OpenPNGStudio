@@ -1,6 +1,7 @@
 src/vendor/*
 include/vendor/*
 build/
+.build/
 build-mingw/
 subprojects/raylib/
 subprojects/libunuv/

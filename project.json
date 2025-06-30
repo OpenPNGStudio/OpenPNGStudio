@@ -2,17 +2,18 @@
   "langrev": "1",
   "warnings": [ "no-unused" ],
   "dependency-search-paths": [ "lib" ],
-  "dependencies": [ ],
+  "dependencies": [ "raylib55", "raygui", "novacrash" ],
   "authors": [ "LowByteFox" ],
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
   "test-sources": [ "test/**" ],
-  "output": "build",
+  "output": ".build",
   "targets": {
     "libOpenPNGStudio": {
       "type": "static-lib"
     }
   },
+  "debug-info": "full",
   "cpu": "generic",
   "opt": "O0"
 }

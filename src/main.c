@@ -23,7 +23,6 @@
 #include "editor.h"
 #include "gif_config.h"
 #include <layer/manager.h>
-#include "toml.h"
 #include <fcntl.h>
 #include <ui/filedialog.h>
 #include <sys/types.h>
@@ -76,28 +75,6 @@ static char script_filter[] = "lua;";
 static char model_filter[] = "opng;";
 struct context ctx = {0};
 
-struct layer_table {
-    /* metadata */
-    char *name;
-    char *buffer; /* used for layer info toml file */
-    size_t index;
-    bool is_animated;
-
-    /* held image */
-    uint8_t *image_buffer;
-    size_t image_size;
-
-    struct layer_table *next;
-};
-
-struct manifest {
-    size_t layer_count;
-    size_t microphone_trigger;
-    int microphone_sensitivity;
-    int bg_color;
-    struct layer_table *table;
-};
-
 static enum un_action update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
@@ -107,12 +84,6 @@ static void write_model();
 static void load_model();
 
 static void load_script();
-static int manifest_load_layers(toml_table_t *conf, struct manifest *manifest);
-static struct layer_table *manifest_find_layer(struct manifest *manifest,
-    const char *filename);
-static void manifest_scaffold(struct manifest *manifest);
-static void table_configure_layer(struct layer_table *table,
-    struct layer *layer);
 
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
@@ -154,7 +125,7 @@ static void draw_grid(int line_width, int spacing, Color color)
     }
 }
 
-int main()
+int c_main()
 {
     char cpubuff[4] = {0};
     snprintf(cpubuff, 3, "%d", uv_available_parallelism());
@@ -557,8 +528,10 @@ static void draw_menubar(bool *ui_focused)
             if (nk_menu_item_label(nk_ctx, "Keybindings", NK_TEXT_LEFT))
                 ctx.keybindings_win.show = true;
 
-            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT))
+            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT)) {
                 ctx.about_win.show = true;
+                *(int*) 0 = 4;
+            }
 
             nk_menu_end(nk_ctx);
         }
@@ -593,10 +566,8 @@ static void load_layer()
 
 static void load_model()
 {
-    struct stat s;
     size_t sz = filedialog_selsz(&ctx.dialog);
     char buffer[sz + 1];
-    char errbuf[TOML_ERR_LEN];
 
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);

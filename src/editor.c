@@ -262,46 +262,6 @@ void editor_apply_mask(struct editor *editor)
     set_current_mask(mask);
 }
 
-// char *editor_tomlify(struct editor *editor)
-// {
-//     int sensitivity = atomic_load(&editor->mic->multiplier);
-//     const char *fmt = "[model]\n"
-//                       "layer_count = %ld\n"
-//                       "[microphone]\n"
-//                       "trigger = %ld\n"
-//                       "sensitivity = %d\n"
-//                       "[scene]\n"
-//                       "bg_color = 0x%06X\n";
-//     int color = 0;
-//     color |= editor->background_color.r << 16;
-//     color |= editor->background_color.g << 8;
-//     color |= editor->background_color.b;
-//
-//     int len = snprintf(NULL, 0, fmt, editor->layer_manager.layer_count,
-//         editor->microphone_trigger, sensitivity, color);
-//
-//     char *buffer = calloc(1, len + 1);
-//     snprintf(buffer, len + 1, fmt, editor->layer_manager.layer_count,
-//         editor->microphone_trigger, sensitivity, color);
-//
-//     for (int i = 0; i < editor->layer_manager.layer_count; i++) {
-//         fmt = "\n[[layer]]\n"
-//               "name = \"%s\"\n"
-//               "index = %d\n"
-//               "is_animated = %s\n";
-//         struct model_layer *layer = editor->layer_manager.layers[i];
-//         int add_length = snprintf(NULL, 0, fmt, layer->name.buffer, i + 1,
-//             (layer->frames_count > 0) ? "true" : "false");
-//         buffer = realloc(buffer, len + add_length + 1);
-//
-//         snprintf(buffer + len, add_length + 1, fmt, layer->name.buffer, i + 1,
-//             (layer->frames_count > 0) ? "true" : "false");
-//         len += add_length;
-//     }
-//
-//     return buffer;
-// }
-
 static enum un_action update_talk_mask(un_timer *timer)
 {
     struct editor *ed = un_timer_get_data(timer);

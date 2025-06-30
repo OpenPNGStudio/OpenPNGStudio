@@ -59,6 +59,5 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
 void editor_draw_stream(struct editor *editor, struct nk_context *ctx,
     bool *ui_focused);
 void editor_apply_mask(struct editor *editor);
-char *editor_tomlify(struct editor *editor);
 
 #endif

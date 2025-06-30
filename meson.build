@@ -44,7 +44,11 @@ libarchive_proj = subproject('libarchive', default_options:
 libarchive = libarchive_proj.get_variable('libarchive_dep')
 
 wolfssl_opt = cmake.subproject_options()
-wolfssl_opt.add_cmake_defines({'WOLFSSL_DEBUG': 'on'})
+wolfssl_opt.add_cmake_defines({'WOLFSSL_DEBUG': true})
+wolfssl_opt.add_cmake_defines({'WOLFSSL_ASYNC_THREADS': true})
+wolfssl_opt.add_cmake_defines({'WOLFSSL_ED25519': true})
+wolfssl_opt.add_cmake_defines({'WOLFSSL_CURVE25519': true})
+wolfssl_opt.add_cmake_defines({'WOLFSSL_EXAMPLES': false})
 wolfssl_opt.add_cmake_defines({'BUILD_SHARED_LIBS': false})
 
 wolfssl_proj = cmake.subproject('wolfssl', options: wolfssl_opt)
@@ -61,7 +65,8 @@ message('Downloading nuklear')
 headers = ['https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h',
   'https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h',
   'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h',
-  'https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h']
+  'https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h',
+  'https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h']
 
 if host_machine.system() == 'windows'
   headers += 'https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h'
@@ -92,7 +97,7 @@ srcs = ['src/main.c', 'src/pathbuf.c', 'src/str.c', 'src/filedialog.c',
   'src/ui/messagebox.c', 'src/console.c', 'src/layermgr.c',
   'src/editor.c', 'src/line_edit.c', 'src/ui/window.c', 
   'src/context.c', 'src/gif_config.c', 'src/icon_db.c',
-  'src/lua_ctx.c', 'src/lua/logger.c',
+  'src/lua_ctx.c', 'src/lua/logger.c', 'src/raygui.c',
 
   'src/core/mask.c',
 

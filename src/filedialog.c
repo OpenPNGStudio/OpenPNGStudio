@@ -618,8 +618,8 @@ static void init_content(struct filedialog *dialog)
 #endif
     }
 
-    /* sort */
-    qsort(dialog->dir_content, dialog->content_size, sizeof(struct dir_entry), entry_comparar);
+    if (dialog->content_size > 0)
+        qsort(dialog->dir_content, dialog->content_size, sizeof(struct dir_entry), entry_comparar);
 
     closedir(dir);
 }
