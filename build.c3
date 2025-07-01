@@ -5,13 +5,14 @@ import std::core::string, std::io, std::core::env;
 import std::os;
 import std::os::process;
 import std::collections::list;
+import std::io::file;
 
 /* dirs */
 String cwd;
 String build_dir;
 
 /* programs */
-Program cmake, ninja, git, cp, make, curl, tar, sh;
+Program cmake, ninja, git, cp, make, curl, tar, sh, cc, ar, c3c;
 
 extern fn int symlink(char *target, char *path);
 
@@ -22,13 +23,21 @@ fn int main(String[] args)
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
         "console.c", "layermgr.c", "editor.c", "line_edit.c", "context.c",
         "gif_config.c", "icon_db.c", "lua_ctx.c", "raygui.c",
-        "ui/messagebox.c", "ui/window.c",
+        "ui/messagebox.c", "ui/window.c", "core/mask.c",
         "lua/logger.c",
         "work/work.c", "work/queue.c", "work/scheduler.c",
         "model/model.c", "model/write.c", "model/load.c",
         "layer/layer.c",
         "wrappers/nuklear.c", "wrappers/miniaudio.c",
         "vendor/toml.c"});
+
+    String[] headers = {
+        "https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h",
+        "https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h",
+        "https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h",
+        "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h",
+        "https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h",
+    };
 
     Target[] deps = {
         cmake_dep_init("https://github.com/facebook/zstd.git",
@@ -56,73 +65,134 @@ fn int main(String[] args)
         unuv_init(),
     };
 
-    /* libarchive depends on zstd */
-    deps[1].add_dependency(deps[0]);
-    /* libunuv depends on libuv */
-    deps[6].add_dependency(deps[2]);
+    bool skip_deps = false;
 
-    foreach (dep : deps) {
+    @pool() {
+        Path b = build_dir.to_tpath()!!;
+        b = b.tappend(".deplock")!!;
+
+        if (path::exists(b)) skip_deps = true;
+    };
+
+    if (!skip_deps) {
+        /* libarchive depends on zstd */
+        deps[1].add_dependency(deps[0]);
+        /* libunuv depends on libuv */
+        deps[6].add_dependency(deps[2]);
+
+        foreach (dep : deps) {
+            @pool() {
+                Path b = build_dir.to_tpath()!!;
+                b = b.tappend("deps")!!;
+
+                path::chdir(b)!!;
+                if (!dep.fetch(b)!!) {
+                    log_err("Unable to fetch a dependency!")!!;
+                    return 1;
+                }
+                path::chdir(cwd.to_tpath()!!)!!;
+            };
+        }
+
         @pool() {
+            Path cfg = path::tcwd()!!;
+            cfg = cfg.tappend("raylib_config.h")!!;
+
             Path b = build_dir.to_tpath()!!;
             b = b.tappend("deps")!!;
+            b = b.tappend("raylib")!!;
+            b = b.tappend("src")!!;
+            b = b.tappend("config.h")!!;
+            cp.exec(cfg.str_view(), b.str_view())!!;
+            log_info("Copying over custom raylib config")!!;
+        };
 
-            path::chdir(b)!!;
-            if (!dep.fetch(b)!!) {
-                log_err("Unable to fetch a dependency!")!!;
-                return 1;
+        foreach (dep : deps) {
+            @pool() {
+                Path b = build_dir.to_tpath()!!;
+                Path miniroot = b.tappend("miniroot")!!;
+
+                if (!dep.configure(miniroot)!!) {
+                    log_err("Unable to configure a dependency!")!!;
+                    return 1;
+                }
+                if (!dep.build()!!) {
+                    log_err("Unable to build a dependency!")!!;
+                    return 1;
+                }
+                if (!dep.install(miniroot)!!) {
+                    log_err("Unable to configure a dependency!")!!;
+                    return 1;
+                }
+                path::chdir(cwd.to_tpath()!!)!!;
+            };
+        }
+
+        @pool() {
+            Path b = build_dir.to_tpath()!!;
+            b = b.tappend(".deplock")!!;
+            File f = file::open_path(b, "w")!!;
+            f.close()!!;
+        };
+    }
+
+    foreach (header : headers) {
+        @pool() {
+            Path p = header.to_tpath()!!;
+            Path maybe = string::tformat("include/vendor/%s",
+                p.basename()).to_tpath()!!;
+
+            if (!path::exists(maybe)) {
+                if (curl.exec("-L", "-o", maybe.str_view(), header,
+                    output: true)!! != 0) {
+                    log_err("Unable to fetch header!")!!;
+                    return 1;
+                }
             }
-            path::chdir(cwd.to_tpath()!!)!!;
         };
     }
 
     @pool() {
-        Path cfg = path::tcwd()!!;
-        cfg = cfg.tappend("raylib_config.h")!!;
-
-        Path b = build_dir.to_tpath()!!;
-        b = b.tappend("deps")!!;
-        b = b.tappend("raylib")!!;
-        b = b.tappend("src")!!;
-        b = b.tappend("config.h")!!;
-        cp.exec(cfg.str_view(), b.str_view())!!;
-        log_info("Copying over custom raylib config")!!;
+        Path maybe = "src/vendor/toml.c".to_tpath()!!;
+        if (!path::exists(maybe)) {
+            if (curl.exec("-L", "-o", maybe.str_view(),
+                "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.c",
+                output: true)!! != 0) {
+                log_err("Unable to fetch toml.c!")!!;
+                return 1;
+            }
+        }
     };
 
-    foreach (dep : deps) {
-        @pool() {
-            Path b = build_dir.to_tpath()!!;
-            Path miniroot = b.tappend("miniroot")!!;
+    StrList objs;
+    objs.init(mem);
+    defer objs.free();
 
-            if (!dep.configure(miniroot)!!) {
-                log_err("Unable to configure a dependency!")!!;
-                return 1;
-            }
-            path::chdir(cwd.to_tpath()!!)!!;
+    objs.push("rcs");
+    objs.push(string::format(mem, "%s/miniroot/lib/libOpenPNGStudio.a", build_dir));
+
+    foreach (source : sources) {
+        @pool() {
+            String full = cwd.tconcat("/").tconcat(source);
+            String out = build_dir.tconcat("/").tconcat(source).tconcat(".o");
+            objs.push(out.copy(mem));
+
+            log_info("Compiling %s", source)!!;
+
+            Path out_path = out.to_tpath()!!;
+            path::mkdir(out_path.dirname().to_tpath(), recursive: true)!!;
+
+            cc.exec("-Wall", "-Wextra", "-Iinclude", "-Iinclude/vendor",
+                "-Ibuild/miniroot/include", "-c", full, "-o", out,
+                output: true)!!;
         };
     }
 
-    foreach (dep : deps) {
-        @pool() {
-            if (!dep.build()!!) {
-                log_err("Unable to build a dependency!")!!;
-                return 1;
-            }
-            path::chdir(cwd.to_tpath()!!)!!;
-        };
-    }
+    @pool() {
+        ar.exec_array(objs.to_tarray(), output: true)!!;
+    };
 
-    foreach (dep : deps) {
-        @pool() {
-            Path b = build_dir.to_tpath()!!;
-            Path miniroot = b.tappend("miniroot")!!;
-
-            if (!dep.install(miniroot)!!) {
-                log_err("Unable to configure a dependency!")!!;
-                return 1;
-            }
-            path::chdir(cwd.to_tpath()!!)!!;
-        };
-    }
+    c3c.exec("build", output: true)!!;
 
     return 0;
 }
@@ -145,6 +215,9 @@ fn void init()
     curl = find_program("curl")!!;
     tar = find_program("tar")!!;
     sh = find_program("sh")!!;
+    cc = find_program("cc")!!;
+    ar = find_program("ar")!!;
+    c3c = find_program("c3c")!!;
 
     /* prepare miniroot */
     @pool() {

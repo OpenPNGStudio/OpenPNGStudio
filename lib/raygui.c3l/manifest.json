@@ -11,7 +11,7 @@
         // },
         "linux-x64" : {
             "link-args" : [],
-            "linked-libraries" : ["raygui"]
+            "linked-libraries" : []
         },
         // "freebsd-x64" : {
         //     "link-args" : [],

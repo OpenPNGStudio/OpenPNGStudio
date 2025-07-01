@@ -6,11 +6,14 @@
   "authors": [ "LowByteFox" ],
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
+  "linker-search-paths": [ "build/miniroot/lib" ],
+  "linked-libraries": [ "OpenPNGStudio", "archive", "lua", "raylib", "unuv", "uv", "wolfssl",
+        "zstd" ],
   "test-sources": [ "test/**" ],
   "output": "build",
   "targets": {
-    "libOpenPNGStudio": {
-      "type": "static-lib"
+    "OpenPNGStudio": {
+      "type": "executable"
     }
   },
   "debug-info": "full",

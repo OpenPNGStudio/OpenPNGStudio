@@ -1,5 +1,7 @@
 src/vendor/*
+!src/vendor/.gitkeep
 include/vendor/*
+!include/vendor/.gitkeep
 build/
 .build/
 build-mingw/

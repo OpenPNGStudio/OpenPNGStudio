@@ -179,7 +179,7 @@ extern fn CInt guiColorPanelHSV(Rectangle bounds, char *text, Vector3 *colorHsv)
 // NOTE(HM) zstr is the ID string for the "#iconID#sometext" ability.
 // If you need the id as a integer, use the enum ordinal, like so:
 // FILE_OPEN.ordinal;
-enum GuiIconName : int (inline ZString zstr)  {
+enum GuiIconName : int (ZString zstr)  {
 	ICON_NONE                = "#0#",
 	FOLDER_FILE_OPEN         = "#1#",
 	FILE_SAVE_CLASSIC        = "#2#",

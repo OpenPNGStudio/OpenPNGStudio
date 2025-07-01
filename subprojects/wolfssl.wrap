@@ -1,4 +1,0 @@
-[wrap-git]
-url = https://github.com/wolfSSL/wolfssl.git
-revision = v5.8.0-stable
-depth = 1

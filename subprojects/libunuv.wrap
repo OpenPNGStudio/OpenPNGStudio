@@ -1,4 +1,0 @@
-[wrap-git]
-url = https://codeberg.org/LowByteFox/libunuv.git
-revision = main
-depth = 1
