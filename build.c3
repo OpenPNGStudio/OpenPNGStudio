@@ -4,6 +4,7 @@ import libc;
 import std::core::string, std::io, std::core::env;
 import std::os;
 import std::os::process;
+import std::collections::list;
 
 String cwd;
 String build_dir;
@@ -23,33 +24,67 @@ fn void main(String[] args)
         "wrappers/nuklear.c", "wrappers/miniaudio.c",
         "vendor/toml.c"});
 
-    String[] repos = {
-        "https://github.com/libarchive/libarchive.git",
-        "https://github.com/libuv/libuv.git",
-        "https://github.com/raysan5/raylib.git",
-        "https://github.com/wolfSSL/wolfssl.git",
-        "https://github.com/facebook/zstd.git",
-        };
-    String[][] flags = {};
+    CMakeDependency[] cmake_deps = {
+        { "https://github.com/facebook/zstd.git",           {} },
+        /* needs zstd (just to not depend on the distro) */
+        { "https://github.com/libarchive/libarchive.git",   {} },
+        { "https://github.com/libuv/libuv.git",             {} },
+        { "https://github.com/raysan5/raylib.git",          {} },
+        { "https://github.com/wolfSSL/wolfssl.git",         {} },
+    };
 
+    /* zstd */
+    @dep_init(cmake_deps[0], {"-DZSTD_BUILD_SHARED=OFF"});
+
+    /* libarchive */
+    @dep_init(cmake_deps[1], {"-DENABLE_OPENSSL=OFF", "-DENABLE_LIBB2=OFF",
+        "-DENABLE_LZ4=OFF", "-DENABLE_LZMA=OFF", "-DENABLE_ZLIB=OFF",
+        "-DENABLE_BZip2=OFF", "-DENABLE_LIBXML2=OFF", "-DENABLE_EXPAT=OFF",
+        "-DENABLE_WIN32_XMLLITE=OFF", "-DENABLE_PCREPOSIX=OFF",
+        "-DENABLE_PCRE2POSIX=OFF", "-DENABLE_LIBGCC=OFF", "-DENABLE_CNG=OFF",
+        "-DENABLE_CPIO=OFF", "-DENABLE_CAT=OFF",  "-DENABLE_UNZIP=OFF",
+        "-DENABLE_ICONV=OFF"});
+
+    /* libuv */
+    @dep_init(cmake_deps[2], {"-DLIBUV_BUILD_SHARED=OFF"});
+
+    /* raylib */
+    @dep_init(cmake_deps[3], {"-DBUILD_EXAMPLES=OFF"});
+
+    /* wolfssl */
+    @dep_init(cmake_deps[4], {"-DWOLFSSL_DEBUG=ON", "-DWOLFSSL_ED25519=ON",
+        "-DWOLFSSL_CURVE25519=ON", "-DWOLFSSL_EXAMPLES=OFF",
+        "-DBUILD_SHARED_LIBS=ON"});
+
+    /* programs */
+    CMake cmake = find_program("cmake")!!;
+    find_program("ninja")!!; /* while unused, required for cmake deps */
     Program git = find_program("git")!!;
+    Program cp = find_program("cp")!!;
 
-    foreach (i, repo : repos) {
+    foreach (dep : cmake_deps) { @pool() { cmake.fetch(git, dep); }; }
+
+    @pool() {
+        Path cfg = path::tcwd()!!;
+        cfg = cfg.tappend("raylib_config.h")!!;
+
+        Path b = build_dir.to_tpath()!!;
+        b = b.tappend("deps")!!;
+        b = b.tappend("raylib")!!;
+        b = b.tappend("src")!!;
+        b = b.tappend("config.h")!!;
+        cp.exec(cfg.str_view(), b.str_view())!!;
+        log_info("Copying over custom raylib config")!!;
+    };
+
+    /* configure and build deps */
+    foreach(dep : cmake_deps) {
+        if (dep.repo.contains("libarchive.git")) {
+            log_info("LibArchive must be configured after zstd was built!")!!;
+            continue;
+        }
         @pool() {
-            Path b = build_dir.to_tpath()!!;
-            b = b.tappend("deps")!!;
-
-            if (try usz start = repo.rindex_of_char('/')) {
-                if (try usz end = repo.rindex_of_char('.')) {
-                    Path local = b.tappend(repo[start + 1..end - 1])!!;
-                    if (path::exists(local)) continue;
-                        
-                }
-            }
-
-            path::chdir(b)!!;
-            git.exec("clone", "--depth=1", repo, output: true)!!;
-            path::chdir(cwd.to_tpath()!!)!!;
+            cmake.configure(dep);
         };
     }
 }
@@ -74,12 +109,71 @@ fn void init()
     };
 }
 
+alias StrList = List{String};
 alias Program = String;
+alias CMake = Program;
+
+macro @dep_init(#dep, #arr) => #dep.flags.init_with_array(mem, #arr);
+
+fn void CMake.fetch(&self, Program git, CMakeDependency dep)
+{
+    Path b = build_dir.to_tpath()!!;
+    b = b.tappend("deps")!!;
+
+    if (try usz start = dep.repo.rindex_of_char('/')) {
+        if (try usz end = dep.repo.rindex_of_char('.')) {
+            Path local = b.tappend(dep.repo[start + 1..end - 1])!!;
+            if (path::exists(local)) return;
+        }
+    }
+
+    path::chdir(b)!!;
+    git.exec("clone", "--depth=1", dep.repo, output: true)!!;
+    path::chdir(cwd.to_tpath()!!)!!;
+}
+
+fn void CMake.configure(&self, CMakeDependency dep)
+{
+    Path b = build_dir.to_tpath()!!;
+    b = b.tappend("deps")!!;
+
+    usz start = dep.repo.rindex_of_char('/')!!;
+    usz end = dep.repo.rindex_of_char('.')!!;
+    String repo_name = dep.repo[start + 1..end - 1];
+    b = b.tappend(repo_name)!!;
+
+    path::chdir(b)!!;
+    @pool() {
+        StrList args;
+        args.tinit();
+        if (repo_name == "zstd") {
+            foreach (String arg : {"-B", "build", "-S", "build/cmake", "-G",
+                "Ninja"}) {
+                args.push(arg);
+            }
+        } else {
+            foreach (String arg : {"-B", "build", "-G", "Ninja"}) {
+                args.push(arg);
+            }
+        }
+        foreach (flag : dep.flags) {
+            args.push(flag);
+        }
+        log_info("Configuring %s", repo_name)!!;
+        self.exec_array(args.to_tarray(), output: true)!!;
+    };
+    path::chdir(cwd.to_tpath()!!)!!;
+}
+
+struct CMakeDependency {
+    String repo;
+    StrList flags;
+}
 
 struct Compiler {
     Program exe;
-    String[] cflags;
-    String[] ldflags;
+    StrList cflags;
+    StrList ldflags;
 }
 
 macro src($arr) {
@@ -93,6 +187,8 @@ macro src($arr) {
 fn Compiler? make_compiler(String exe) {
     Compiler cmp;
     cmp.exe = find_program(env_fallback("CC", exe))!;
+    cmp.cflags.init(mem);
+    cmp.ldflags.init(mem);
 
     return cmp;
 }
@@ -134,6 +230,18 @@ fn int? Program.exec(self, String... args, bool output = false) => @pool() {
     cmdline[1..] = args[..];
     SubProcess process = process::create(cmdline, {
         .inherit_stdio = output,
+        .inherit_environment = true,
+    })!;
+    return process.join()!;
+}
+
+fn int? Program.exec_array(self, String[] args, bool output = false) => @pool() {
+    String[] cmdline = mem::temp_array(String, args.len + 1);
+    cmdline[0] = self;
+    cmdline[1..] = args[..];
+    SubProcess process = process::create(cmdline, {
+        .inherit_stdio = output,
+        .inherit_environment = true,
     })!;
     return process.join()!;
 }

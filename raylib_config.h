@@ -6,7 +6,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018-2024 Ahmad Fatoum & Ramon Santamaria (@raysan5)
+*   Copyright (c) 2018-2025 Ahmad Fatoum & Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -35,22 +35,22 @@
 #define SUPPORT_MODULE_RSHAPES          1
 #define SUPPORT_MODULE_RTEXTURES        1
 #define SUPPORT_MODULE_RTEXT            1       // WARNING: It requires SUPPORT_MODULE_RTEXTURES to load sprite font textures
-#define SUPPORT_MODULE_RMODELS          1
-#define SUPPORT_MODULE_RAUDIO           1
+#define SUPPORT_MODULE_RMODELS          0
+#define SUPPORT_MODULE_RAUDIO           0
 
 //------------------------------------------------------------------------------------
 // Module: rcore - Configuration Flags
 //------------------------------------------------------------------------------------
 // Camera module is included (rcamera.h) and multiple predefined cameras are available: free, 1st/3rd person, orbital
-#define SUPPORT_CAMERA_SYSTEM           1
+#define SUPPORT_CAMERA_SYSTEM           0
 // Gestures module is included (rgestures.h) to support gestures detection: tap, hold, swipe, drag
-#define SUPPORT_GESTURES_SYSTEM         1
+#define SUPPORT_GESTURES_SYSTEM         0
 // Include pseudo-random numbers generator (rprand.h), based on Xoshiro128** and SplitMix64
-#define SUPPORT_RPRAND_GENERATOR        1
+#define SUPPORT_RPRAND_GENERATOR        0
 // Mouse gestures are directly mapped like touches and processed by gestures system
-#define SUPPORT_MOUSE_GESTURES          1
+#define SUPPORT_MOUSE_GESTURES          0
 // Reconfigure standard input to receive key inputs, works with SSH connection.
-#define SUPPORT_SSH_KEYBOARD_RPI        1
+#define SUPPORT_SSH_KEYBOARD_RPI        0
 // Setting a higher resolution can improve the accuracy of time-out intervals in wait functions.
 // However, it can also reduce overall system performance, because the thread scheduler switches tasks more often.
 #define SUPPORT_WINMM_HIGHRES_TIMER     1
@@ -71,6 +71,31 @@
 // Enabling this flag allows manual control of the frame processes, use at your own risk
 //#define SUPPORT_CUSTOM_FRAME_CONTROL    1
 
+// Support for clipboard image loading
+// NOTE: Only working on SDL3, GLFW (Windows) and RGFW (Windows)
+#define SUPPORT_CLIPBOARD_IMAGE    1
+
+// NOTE: Clipboard image loading requires support for some image file formats
+// TODO: Those defines should probably be removed from here, I prefer to let the user manage them
+#if defined(SUPPORT_CLIPBOARD_IMAGE)
+    #ifndef SUPPORT_MODULE_RTEXTURES
+        #define SUPPORT_MODULE_RTEXTURES 1
+    #endif
+    #ifndef STBI_REQUIRED
+        #define STBI_REQUIRED
+    #endif
+    #ifndef SUPPORT_FILEFORMAT_BMP // For clipboard image on Windows
+        #define SUPPORT_FILEFORMAT_BMP 1
+    #endif
+    #ifndef SUPPORT_FILEFORMAT_PNG // Wayland uses png for prints, at least it was on 22 LTS ubuntu
+        #define SUPPORT_FILEFORMAT_PNG 1
+    #endif
+    #ifndef SUPPORT_FILEFORMAT_JPG
+        #define SUPPORT_FILEFORMAT_JPG 1
+    #endif
+#endif
+
+
 // rcore: Configuration values
 //------------------------------------------------------------------------------------
 #define MAX_FILEPATH_CAPACITY        8192       // Maximum file paths capacity
@@ -79,7 +104,7 @@
 #define MAX_KEYBOARD_KEYS             512       // Maximum number of keyboard keys supported
 #define MAX_MOUSE_BUTTONS               8       // Maximum number of mouse buttons supported
 #define MAX_GAMEPADS                    4       // Maximum number of gamepads supported
-#define MAX_GAMEPAD_AXIS                8       // Maximum number of axis supported (per gamepad)
+#define MAX_GAMEPAD_AXES                8       // Maximum number of axes supported (per gamepad)
 #define MAX_GAMEPAD_BUTTONS            32       // Maximum number of buttons supported (per gamepad)
 #define MAX_GAMEPAD_VIBRATION_TIME      2.0f    // Maximum vibration time in seconds
 #define MAX_TOUCH_POINTS                8       // Maximum number of touch points supported
@@ -100,6 +125,8 @@
 // Show OpenGL extensions and capabilities detailed logs on init
 //#define RLGL_SHOW_GL_DETAILS_INFO              1
 
+#define RL_SUPPORT_MESH_GPU_SKINNING           1      // GPU skinning, comment if your GPU does not support more than 8 VBOs
+
 //#define RL_DEFAULT_BATCH_BUFFER_ELEMENTS    4096    // Default internal render batch elements limits
 #define RL_DEFAULT_BATCH_BUFFERS               1      // Default number of batch buffers (multi-buffering)
 #define RL_DEFAULT_BATCH_DRAWCALLS           256      // Default number of batch draw calls (by state changes: mode, texture)
@@ -109,8 +136,8 @@
 
 #define RL_MAX_SHADER_LOCATIONS               32      // Maximum number of shader locations supported
 
-#define RL_CULL_DISTANCE_NEAR               0.01      // Default projection matrix near cull distance
-#define RL_CULL_DISTANCE_FAR              1000.0      // Default projection matrix far cull distance
+#define RL_CULL_DISTANCE_NEAR              0.001      // Default projection matrix near cull distance
+#define RL_CULL_DISTANCE_FAR             10000.0      // Default projection matrix far cull distance
 
 // Default shader vertex attribute locations
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION    0
@@ -120,14 +147,11 @@
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT     4
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2   5
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES     6
-
-
-#define RL_SUPPORT_MESH_GPU_SKINNING                   // Remove this if your GPU does not support more than 8 VBOs
-
-#ifdef RL_SUPPORT_MESH_GPU_SKINNING
-#define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS     7
-#define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS 8
+#if defined(RL_SUPPORT_MESH_GPU_SKINNING)
+    #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS     7
+    #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS 8
 #endif
+#define RL_DEFAULT_SHADER_ATTRIB_LOCATION_INSTANCE_TX 9
 
 
 // Default shader vertex attribute names to set location points
@@ -165,14 +189,14 @@
 //------------------------------------------------------------------------------------
 // Module: rtextures - Configuration Flags
 //------------------------------------------------------------------------------------
-// Selecte desired fileformats to be supported for image data loading
+// Selected desired fileformats to be supported for image data loading
 #define SUPPORT_FILEFORMAT_PNG      1
 #define SUPPORT_FILEFORMAT_BMP      1
-//#define SUPPORT_FILEFORMAT_TGA      1
+#define SUPPORT_FILEFORMAT_TGA      1
 #define SUPPORT_FILEFORMAT_JPG      1
 #define SUPPORT_FILEFORMAT_GIF      1
 #define SUPPORT_FILEFORMAT_QOI      1
-//#define SUPPORT_FILEFORMAT_PSD      1
+#define SUPPORT_FILEFORMAT_PSD      1
 #define SUPPORT_FILEFORMAT_DDS      1
 //#define SUPPORT_FILEFORMAT_HDR      1
 //#define SUPPORT_FILEFORMAT_PIC          1
