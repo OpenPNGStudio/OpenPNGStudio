@@ -11,7 +11,7 @@ String cwd;
 String build_dir;
 
 /* programs */
-Program cmake, ninja, git, cp;
+Program cmake, ninja, git, cp, make, curl, tar;
 
 extern fn int symlink(char *target, char *path);
 
@@ -52,6 +52,7 @@ fn int main(String[] args)
             {"-DWOLFSSL_DEBUG=ON", "-DWOLFSSL_ED25519=ON",
             "-DWOLFSSL_CURVE25519=ON", "-DWOLFSSL_EXAMPLES=OFF",
             "-DBUILD_SHARED_LIBS=OFF"}),
+        lua_init(),
     };
 
     /* libarchive depends on zstd */
@@ -137,6 +138,9 @@ fn void init()
     ninja = find_program("ninja")!!;
     git = find_program("git")!!;
     cp = find_program("cp")!!;
+    make = find_program("make")!!;
+    curl = find_program("curl")!!;
+    tar = find_program("tar")!!;
 
     /* prepare miniroot */
     @pool() {
@@ -173,169 +177,8 @@ interface Target {
     fn bool? install(Path target);
 
     fn String get_name();
-    fn bool is_built();
     fn void add_dependency(Target dep);
     fn Target? get_dependency();
-}
-
-struct CMakeTarget (Target) {
-    DepList deps;
-    String repo;
-    StrList flags;
-    Path project_root;
-    bool configured;
-    bool compiled;
-    bool built;
-    char to_build;
-}
-
-fn CMakeTarget *cmake_dep_init(String repo, String[] flags)
-{
-    CMakeTarget *dep = mem::new(CMakeTarget);
-    dep.deps.init(mem);
-    dep.built = false;
-    dep.configured = false;
-    dep.compiled = false;
-    dep.to_build = 0;
-    dep.repo = repo;
-    dep.flags.init_with_array(mem, flags);
-    @pool() {
-        Path b = build_dir.to_tpath()!!;
-        b = b.tappend("deps")!!;
-        dep.project_root = b.append(mem, dep.get_name())!!;
-    };
-
-    return dep;
-}
-
-fn bool CMakeTarget.is_built(&self) @dynamic => self.to_build == 
-    self.deps.len() && self.built;
-
-fn void CMakeTarget.add_dependency(&self, Target dep) @dynamic =>
-    self.deps.push(dep);
-
-fn Target? CMakeTarget.get_dependency(&self) @dynamic
-{
-    if (self.to_build < self.deps.len()) {
-        defer self.to_build++;
-        return self.deps.get(self.to_build);
-    }
-
-    return NO_DEPS?;
-}
-
-fn String CMakeTarget.get_name(&self) @dynamic
-{
-    usz start = self.repo.rindex_of_char('/')!!;
-    usz end = self.repo.rindex_of_char('.')!!;
-    return self.repo[start + 1..end - 1];
-}
-
-fn bool? CMakeTarget.fetch(&self, Path cwd) @dynamic
-{
-    Path local = cwd.tappend(self.get_name())!!;
-    if (path::exists(local)) return true;
-
-    return git.exec("clone", "--depth=1", self.repo, output: true)! == 0;
-}
-
-fn bool? CMakeTarget.configure(&self, Path miniroot) @dynamic
-{
-    String repo_name = self.get_name();
-    if (self.configured) {
-        log_info("Already configured %s", repo_name)!;
-        return true;
-    }
-
-    while (try Target dep = self.get_dependency()) {
-        @pool() {
-            if (!dep.configure(miniroot)!!) {
-                log_err("Unable to configure a dependency!")!!;
-                return false;
-            }
-
-            if (!dep.build()!!) {
-                log_err("Unable to build a dependency!")!!;
-                return false;
-            }
-
-            if (!dep.install(miniroot)!!) {
-                log_err("Unable to install a dependency!")!!;
-                return false;
-            }
-        };
-    }
-    path::chdir(self.project_root)!;
-
-    @pool() {
-        StrList args;
-        args.tinit_with_array({"-B", "_build", "-G", "Ninja",
-            "-DCMAKE_INSTALL_PREFIX=/", "-DCMAKE_INSTALL_LIBDIR=lib"});
-
-        if (repo_name == "zstd") {
-            foreach (String arg : {"-S", "build/cmake"}) {
-                args.push(arg);
-            }
-        }
-
-        foreach (flag : self.flags) {
-            args.push(flag);
-        }
-
-        if (repo_name == "libarchive") {
-            Path b_lib = miniroot.tappend("lib")!!;
-            Path b_inc = miniroot.tappend("include")!!;
-            Path lib = b_lib.tappend("libzstd.a")!!;
-            args.push(string::tformat("-DZSTD_INCLUDE_DIR=%s",
-                b_inc.as_zstr()));
-            args.push(string::tformat("-DZSTD_LIBRARY=%s",
-                lib.as_zstr()));
-        }
-
-        log_info("Configuring %s", repo_name)!;
-        self.configured = true;
-        return cmake.exec_array(args.to_tarray(), output: true)! == 0;
-    };
-}
-
-fn bool? CMakeTarget.build(&self) @dynamic
-{
-    String repo_name = self.get_name();
-    if (self.compiled) {
-        log_info("Already built %s", repo_name)!;
-        return true;
-    }
-    path::chdir(self.project_root)!;
-
-    Path build_root = self.project_root.tappend("_build")!;
-
-    path::chdir(build_root)!;
-    log_info("Building %s", repo_name)!;
-    self.compiled = true;
-    return ninja.exec(output: true)! == 0;
-}
-
-fn bool? CMakeTarget.install(&self, Path target) @dynamic
-{
-    String repo_name = self.get_name();
-    if (self.built) {
-        log_info("Already installed %s", repo_name)!;
-        return true;
-    }
-
-    path::chdir(self.project_root)!;
-    Path build_root = self.project_root.tappend("_build")!;
-
-    path::chdir(build_root)!;
-    log_info("Installing %s", repo_name)!;
-    self.built = true;
-    return ninja.exec("install", output: true)! == 0;
-}
-
-struct Compiler {
-    Program exe;
-    StrList cflags;
-    StrList ldflags;
 }
 
 macro src($arr) {
@@ -344,19 +187,6 @@ macro src($arr) {
     $endfor
 
     return $arr;
-}
-
-fn Compiler? make_compiler(String exe) {
-    Compiler cmp;
-    cmp.exe = find_program(env_fallback("CC", exe))!;
-    cmp.cflags.init(mem);
-    cmp.ldflags.init(mem);
-
-    return cmp;
-}
-
-fn String? Compiler.compile(&self, String file) {
-    return NOT_FOUND?;
 }
 
 fn Program? find_program(String name) {
