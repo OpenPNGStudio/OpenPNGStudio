@@ -9,6 +9,8 @@ import std::collections::list;
 String cwd;
 String build_dir;
 
+extern fn int symlink(char *target, char *path);
+
 fn void main(String[] args)
 {
     init();
@@ -34,7 +36,8 @@ fn void main(String[] args)
     };
 
     /* zstd */
-    @dep_init(cmake_deps[0], {"-DZSTD_BUILD_SHARED=OFF"});
+    @dep_init(cmake_deps[0], {"-DZSTD_BUILD_SHARED=OFF",
+        "-DZSTD_BUILD_PROGRAMS=OFF", "-DZSTD_ENABLE_CXX=OFF"});
 
     /* libarchive */
     @dep_init(cmake_deps[1], {"-DENABLE_OPENSSL=OFF", "-DENABLE_LIBB2=OFF",
@@ -43,7 +46,8 @@ fn void main(String[] args)
         "-DENABLE_WIN32_XMLLITE=OFF", "-DENABLE_PCREPOSIX=OFF",
         "-DENABLE_PCRE2POSIX=OFF", "-DENABLE_LIBGCC=OFF", "-DENABLE_CNG=OFF",
         "-DENABLE_CPIO=OFF", "-DENABLE_CAT=OFF",  "-DENABLE_UNZIP=OFF",
-        "-DENABLE_ICONV=OFF"});
+        "-DENABLE_ICONV=OFF", "-DENABLE_TEST=OFF", "-DPKG_CONFIG_EXECUTABLE=",
+        "-DBUILD_SHARED_LIBS=OFF"});
 
     /* libuv */
     @dep_init(cmake_deps[2], {"-DLIBUV_BUILD_SHARED=OFF"});
@@ -54,11 +58,11 @@ fn void main(String[] args)
     /* wolfssl */
     @dep_init(cmake_deps[4], {"-DWOLFSSL_DEBUG=ON", "-DWOLFSSL_ED25519=ON",
         "-DWOLFSSL_CURVE25519=ON", "-DWOLFSSL_EXAMPLES=OFF",
-        "-DBUILD_SHARED_LIBS=ON"});
+        "-DBUILD_SHARED_LIBS=OFF"});
 
     /* programs */
     CMake cmake = find_program("cmake")!!;
-    find_program("ninja")!!; /* while unused, required for cmake deps */
+    Program ninja = find_program("ninja")!!;
     Program git = find_program("git")!!;
     Program cp = find_program("cp")!!;
 
@@ -85,6 +89,30 @@ fn void main(String[] args)
         }
         @pool() {
             cmake.configure(dep);
+            cmake.build(ninja, dep);
+        };
+    }
+
+    /* install deps, do libarchive in single go */
+    foreach(dep : cmake_deps) {
+        @pool() {
+            if (dep.repo.contains("libarchive.git")) {
+                Path b = build_dir.to_tpath()!!;
+                b = b.tappend("miniroot")!!;
+                Path b_lib = b.tappend("lib")!!;
+                Path b_inc = b.tappend("include")!!;
+                Path lib = b_lib.tappend("libzstd.a")!!;
+
+                dep.flags.push(string::tformat("-DZSTD_INCLUDE_DIR=%s",
+                    b_inc.as_zstr()));
+                dep.flags.push(string::tformat("-DZSTD_LIBRARY=%s",
+                    lib.as_zstr()));
+
+                cmake.configure(dep);
+                cmake.build(ninja, dep);
+            }
+
+            cmake.install(ninja, dep);
         };
     }
 }
@@ -103,9 +131,20 @@ fn void init()
         Path b = build_dir.to_tpath()!!;
         path::mkdir(b.tappend("deps")!!, recursive: true)!!;
         b = b.tappend("miniroot")!!;
-        
-        path::mkdir(b.tappend("lib")!!, recursive: true)!!;
-        path::mkdir(b.tappend("include")!!, recursive: true)!!;
+
+        Path b_lib = b.tappend("lib")!!;
+        Path b_inc = b.tappend("include")!!;
+
+        Path usr = b.tappend("usr")!!;
+        Path usr_lib = usr.tappend("lib")!!;
+        Path usr_inc = usr.tappend("include")!!;
+        path::mkdir(usr_lib, recursive: true)!!;
+        path::mkdir(usr_inc, recursive: true)!!;
+
+        libc::setenv("DESTDIR", b.as_zstr(), 1);
+
+        if (!path::exists(b_lib)) symlink(usr_lib.as_zstr(), b_lib.as_zstr());
+        if (!path::exists(b_inc)) symlink(usr_inc.as_zstr(), b_inc.as_zstr());
     };
 }
 
@@ -145,23 +184,54 @@ fn void CMake.configure(&self, CMakeDependency dep)
     path::chdir(b)!!;
     @pool() {
         StrList args;
-        args.tinit();
+        args.tinit_with_array({"-B", "_build", "-G", "Ninja",
+            "-DCMAKE_INSTALL_PREFIX=/", "-DCMAKE_INSTALL_LIBDIR=lib"});
         if (repo_name == "zstd") {
-            foreach (String arg : {"-B", "build", "-S", "build/cmake", "-G",
-                "Ninja"}) {
-                args.push(arg);
-            }
-        } else {
-            foreach (String arg : {"-B", "build", "-G", "Ninja"}) {
+            foreach (String arg : {"-S", "build/cmake"}) {
                 args.push(arg);
             }
         }
+
         foreach (flag : dep.flags) {
             args.push(flag);
         }
         log_info("Configuring %s", repo_name)!!;
         self.exec_array(args.to_tarray(), output: true)!!;
     };
+    path::chdir(cwd.to_tpath()!!)!!;
+}
+
+fn void CMake.build(&self, Program ninja, CMakeDependency dep)
+{
+    Path b = build_dir.to_tpath()!!;
+    b = b.tappend("deps")!!;
+
+    usz start = dep.repo.rindex_of_char('/')!!;
+    usz end = dep.repo.rindex_of_char('.')!!;
+    String repo_name = dep.repo[start + 1..end - 1];
+    b = b.tappend(repo_name)!!;
+    b = b.tappend("_build")!!;
+
+    path::chdir(b)!!;
+    log_info("Building %s", repo_name)!!;
+    ninja.exec(output: true)!!;
+    path::chdir(cwd.to_tpath()!!)!!;
+}
+
+fn void CMake.install(&self, Program ninja, CMakeDependency dep)
+{
+    Path b = build_dir.to_tpath()!!;
+    b = b.tappend("deps")!!;
+
+    usz start = dep.repo.rindex_of_char('/')!!;
+    usz end = dep.repo.rindex_of_char('.')!!;
+    String repo_name = dep.repo[start + 1..end - 1];
+    b = b.tappend(repo_name)!!;
+    b = b.tappend("_build")!!;
+
+    path::chdir(b)!!;
+    log_info("Installing %s", repo_name)!!;
+    ninja.exec("install", output: true)!!;
     path::chdir(cwd.to_tpath()!!)!!;
 }
 
