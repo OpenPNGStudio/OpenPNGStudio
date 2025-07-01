@@ -11,7 +11,7 @@ String cwd;
 String build_dir;
 
 /* programs */
-Program cmake, ninja, git, cp, make, curl, tar;
+Program cmake, ninja, git, cp, make, curl, tar, sh;
 
 extern fn int symlink(char *target, char *path);
 
@@ -53,10 +53,13 @@ fn int main(String[] args)
             "-DWOLFSSL_CURVE25519=ON", "-DWOLFSSL_EXAMPLES=OFF",
             "-DBUILD_SHARED_LIBS=OFF"}),
         lua_init(),
+        unuv_init(),
     };
 
     /* libarchive depends on zstd */
     deps[1].add_dependency(deps[0]);
+    /* libunuv depends on libuv */
+    deps[6].add_dependency(deps[2]);
 
     foreach (dep : deps) {
         @pool() {
@@ -141,6 +144,7 @@ fn void init()
     make = find_program("make")!!;
     curl = find_program("curl")!!;
     tar = find_program("tar")!!;
+    sh = find_program("sh")!!;
 
     /* prepare miniroot */
     @pool() {
@@ -158,6 +162,7 @@ fn void init()
         path::mkdir(usr_inc, recursive: true)!!;
 
         libc::setenv("DESTDIR", b.as_zstr(), 1);
+        libc::setenv("LIBUV_INCLUDE", b_inc.as_zstr(), 1);
 
         if (!path::exists(b_lib)) symlink(usr_lib.as_zstr(), b_lib.as_zstr());
         if (!path::exists(b_inc)) symlink(usr_inc.as_zstr(), b_inc.as_zstr());
