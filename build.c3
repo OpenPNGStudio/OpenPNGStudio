@@ -23,7 +23,7 @@ fn int main(String[] args)
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
         "console.c", "layermgr.c", "editor.c", "line_edit.c", "context.c",
         "gif_config.c", "icon_db.c", "lua_ctx.c", "raygui.c",
-        "ui/messagebox.c", "ui/window.c", "core/mask.c",
+        "ui/messagebox.c", "ui/window.c",
         "lua/logger.c",
         "work/work.c", "work/queue.c", "work/scheduler.c",
         "model/model.c", "model/write.c", "model/load.c",
@@ -169,7 +169,10 @@ fn int main(String[] args)
     defer objs.free();
 
     objs.push("rcs");
-    objs.push(string::format(mem, "%s/miniroot/lib/libOpenPNGStudio.a", build_dir));
+    String lib = string::format(mem, "%s/miniroot/lib/libOpenPNGStudio.a",
+        build_dir);
+    file::delete(lib)!!;
+    objs.push(lib);
 
     foreach (source : sources) {
         @pool() {
@@ -193,6 +196,15 @@ fn int main(String[] args)
     };
 
     c3c.exec("build", output: true)!!;
+
+    @pool() {
+        File clangd = file::open(".clangd", "w")!!;
+        log_info("Generating .clangd")!!;
+        clangd.write(string::tformat(`CompileFlags:
+  Add: [-xc, -I%s/include, -I%s/include/vendor, -I%s/build/miniroot/include]
+  RemapCxx: [.cpp, .cc, .cxx]
+  RemapC: [.c]`, cwd, cwd, cwd))!!;
+    };
 
     return 0;
 }

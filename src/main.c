@@ -295,9 +295,9 @@ static enum un_action draw(un_idle *task)
 
 static enum un_action update(un_idle *task)
 {
+
     mask_t mask = get_current_mask();
     handle_key_mask(&mask);
-
     bool ui_focused = false;
     struct nk_context *nk_ctx = ctx.ctx;
 
