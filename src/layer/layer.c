@@ -24,34 +24,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-static void layer_defaults(struct layer *layer);
 static enum un_action update_animation(un_timer *timer);
 static enum un_action after_timeout(un_timer *timer);
 static enum un_action after_toggle(un_timer *timer);
-
-struct layer *layer_new(Image image)
-{
-    struct layer *l = calloc(sizeof(*l), 1);
-    l->properties.image = image;
-    layer_defaults(l);
-
-    return l;
-}
-
-struct layer *layer_new_animated(Image image, uint64_t number_of_frames,
-    uint8_t *buffer, uint64_t size)
-{
-    struct animated_layer *a = calloc(sizeof(*a), 1);
-    a->layer.properties.image = image;
-    layer_defaults(&a->layer);
-    a->layer.properties.is_animated = true;
-
-    a->properties.number_of_frames = number_of_frames;
-    a->properties.gif_file_content = buffer;
-    a->properties.gif_file_size = size;
-
-    return &a->layer;
-}
 
 void layer_override_name(struct layer *layer, char *name)
 {
@@ -91,61 +66,8 @@ void layer_toggle(struct layer *layer, un_loop *loop)
     un_timer_start(timer, 250, 0, after_toggle);
 }
 
-/* C3 types */
-struct c3_layer {
-    double x, y, rotation;
-    mask_t mask;
-    int time_to_live;
-    bool has_toggle;
-};
-
-struct c3_anim_layer {
-    struct c3_layer layer;
-    uint64_t number_of_frames;
-    uint32_t *frame_delays;
-};
-
-extern char *layer_stringify_static(struct c3_layer layer);
-extern char *layer_stringify_anim(struct c3_anim_layer layer);
-
-char *layer_stringify(struct layer *layer)
-{
-    if (layer->properties.is_animated) {
-        struct animated_layer *al = layer_get_animated(layer);
-
-        return layer_stringify_anim((struct c3_anim_layer) {
-                .layer = (struct c3_layer) { .x = layer->properties.offset.x,
-                    .y = layer->properties.offset.y,
-                    .rotation = layer->properties.rotation,
-                    .mask = layer->state.mask,
-                    .time_to_live = layer->state.time_to_live,
-                    .has_toggle = layer->properties.has_toggle
-                }, .number_of_frames = al->properties.number_of_frames,
-                .frame_delays = al->properties.frame_delays
-            });
-    }
-
-    return layer_stringify_static((struct c3_layer) { .x = layer->properties.offset.x,
-        .y = layer->properties.offset.y, .rotation = layer->properties.rotation,
-        .mask = layer->state.mask, .time_to_live = layer->state.time_to_live,
-        .has_toggle = layer->properties.has_toggle
-    });
-}
-
 void layer_cleanup(struct layer *layer)
 {
-    assert(0 && "Not implemented yet!");
-}
-
-static void layer_defaults(struct layer *layer)
-{
-    layer->properties.texture = LoadTextureFromImage(layer->properties.image);
-    SetTextureFilter(layer->properties.texture, TEXTURE_FILTER_BILINEAR);
-    GenTextureMipmaps(&layer->properties.texture);
-    SetTextureWrap(layer->properties.texture, TEXTURE_WRAP_CLAMP);
-
-    layer->state.mask = DEFAULT_MASK;
-    layer->properties.rotation = 180.0f;
 }
 
 static enum un_action update_animation(un_timer *timer)

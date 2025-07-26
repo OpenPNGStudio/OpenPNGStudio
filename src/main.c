@@ -293,6 +293,8 @@ static enum un_action draw(un_idle *task)
     return REARM;
 }
 
+void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
+
 static enum un_action update(un_idle *task)
 {
 
@@ -328,6 +330,9 @@ static enum un_action update(un_idle *task)
             editor_draw(&ctx.editor, nk_ctx, &ui_focused);
         else
             editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+
+        if (ctx.editor.layer_manager.selected_layer != -1)
+            draw_props(&ctx.editor.layer_manager, nk_ctx);
     }
 
     editor_apply_mask(&ctx.editor);
@@ -528,10 +533,8 @@ static void draw_menubar(bool *ui_focused)
             if (nk_menu_item_label(nk_ctx, "Keybindings", NK_TEXT_LEFT))
                 ctx.keybindings_win.show = true;
 
-            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT)) {
+            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT))
                 ctx.about_win.show = true;
-                *(int*) 0 = 4;
-            }
 
             nk_menu_end(nk_ctx);
         }

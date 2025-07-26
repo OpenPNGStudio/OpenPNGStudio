@@ -39,6 +39,8 @@ struct layer *layer_new(Image image);
 struct layer *layer_new_animated(Image image, uint64_t number_of_frames,
     uint8_t *buffer, uint64_t size);
 
+struct layer_properties layer_updated_properties(struct layer *layer);
+
 void layer_start_timeout(struct layer *layer, un_loop *loop);
 void layer_toggle(struct layer *layer, un_loop *loop);
 

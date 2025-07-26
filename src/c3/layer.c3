@@ -19,68 +19,77 @@ module openpngstudio::layer;
 
 import std::core::string;
 import std::core::mem;
+import raylib5::rl;
+import openpngstudio::animation;
+import openpngstudio::core::mask;
+import openpngstudio::ui::line_edit;
 
-struct Layer {
-    double x, y, rotation;
-    ulong mask;
-    int time_to_live;
+interface Layer {
+    fn void draw(rl::Vector2 anchor);
+    /* TODO: fn void configure(); */
+    fn String stringify();
+    fn Properties animate();
+    /* TODO: fn void free(); */
+}
+
+struct Properties {
+    rl::Image image;
+    rl::Texture2D texture;
+
+    rl::Vector2 offset;
+    float rotation;
+    rl::Color tint;
+
+    LineEdit name;
+
     bool has_toggle;
+    bool is_animated;
 }
 
-struct AnimatedLayer {
-    Layer layer;
-    ulong number_of_frames;
-    uint *frame_delays;
+struct State {
+    Animation animation;
+    Mask mask;
+
+    int time_to_live;
+    bool active;
+    bool is_toggled;
+    bool prepare_for_deletion;
+    bool is_toggle_timer_ticking;
 }
 
-fn String stringify_base(Layer layer)
-{
-    return string::tformat(`[layer]
-offset.x = %f
-offset.y = %f
-rotation = %f
-mask = %d
-ttl = %d
-has_toggle = %s
-`, layer.x, layer.y, layer.rotation, layer.mask, layer.time_to_live, layer.has_toggle ? "true" : "false");
-}
-
-fn char *stringify(Layer layer) @export("layer_stringify_static")
+fn char *stringify(StaticLayer *layer) @export("layer_stringify")
 {
     char *res;
     @pool() {
-        String str = stringify_base(layer);
-        usz len = str.len;
-        res = malloc(len + 1);
-        mem::copy(res, str.ptr, len);
-        res[len] = 0;
-    };
-    return res;
-}
-
-fn char *stringify_anim(AnimatedLayer layer) @export("layer_stringify_anim")
-{
-    char *res;
-    uint[] delays = layer.frame_delays[:layer.number_of_frames];
-
-    @pool() {
-        String str = stringify_base(layer.layer);
-        str = str.tconcat(string::tformat(`[animation]
-frame_count = %d
-delays = [ `, layer.number_of_frames));
-
-        uint[] without_last = delays[:delays.len - 1];
-
-        foreach (uint delay : without_last) {
-            str = str.tconcat(string::tformat("%d, ", delay));
+        Layer l;
+        if (layer.props.is_animated) {
+            l = (AnimatedLayer*) layer;
+        } else {
+            l = layer;
         }
 
-        str = str.tconcat(string::tformat("%d ]\n", delays[delays.len - 1]));
+        String str = l.stringify();
         usz len = str.len;
         res = malloc(len + 1);
         mem::copy(res, str.ptr, len);
         res[len] = 0;
     };
-
     return res;
+}
+
+fn void reset_anim(StaticLayer *layer) @export("reset_anim")
+{
+    if (layer.state.animation) layer.state.animation.set_done();
+}
+
+fn Properties updated_properties(StaticLayer *layer) @export("layer_updated_properties")
+{
+    Layer l;
+    if (layer.props.is_animated) {
+        l = (AnimatedLayer*) layer;
+    } else {
+        l = layer;
+    }
+
+    return l.animate();
 }

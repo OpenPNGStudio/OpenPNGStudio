@@ -15,22 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
+module openpngstudio::animation;
 
-#include <animations.h>
-#include <layer/layer.h>
-#include <ui/window.h>
+import openpngstudio::layer;
+import std::time;
 
-struct layer_manager {
-    struct animation_manager *anims;
-    struct layer **layers;
-    struct window cfg_win;
-    uint64_t layer_count;
-    uint64_t selected_layer;
-};
-
-void layer_manager_cleanup(struct layer_manager *mgr);
-void layer_manager_add_layer(struct layer_manager *mgr, struct layer *layer);
-
-void layer_manager_ui(struct layer_manager *mgr, struct nk_context *ctx);
-void layer_manager_render(struct layer_manager *mgr);
+interface Animation {
+    fn void tick(Time delta);
+    fn bool is_done();
+    fn void set_done();
+    fn void reset(Time now);
+    fn Properties animate(StaticLayer *layer);
+}

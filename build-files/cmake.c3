@@ -91,7 +91,8 @@ fn bool? CMakeTarget.configure(&self, Path miniroot) @dynamic
     @pool() {
         StrList args;
         args.tinit_with_array({"-B", "_build", "-G", "Ninja",
-            "-DCMAKE_INSTALL_PREFIX=/", "-DCMAKE_INSTALL_LIBDIR=lib"});
+            "-DCMAKE_INSTALL_PREFIX=/", "-DCMAKE_INSTALL_LIBDIR=lib",
+            "CMAKE_BUILD_TYPE=Debug"});
 
         if (repo_name == "zstd") {
             foreach (String arg : {"-S", "build/cmake"}) {

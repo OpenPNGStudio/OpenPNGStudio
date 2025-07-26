@@ -19,15 +19,16 @@
 
 #include <stdbool.h>
 #include <core/mask.h>
+#include <c3.h>
 
 struct layer_state {
-    bool prepare_for_deletion;
+    c3any_t anim;
     mask_t mask;
 
     int time_to_live;
     bool active;
     bool is_toggled;
-
+    bool prepare_for_deletion;
     bool is_toggle_timer_ticking;
 };
 

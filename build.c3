@@ -171,7 +171,7 @@ fn int main(String[] args)
     objs.push("rcs");
     String lib = string::format(mem, "%s/miniroot/lib/libOpenPNGStudio.a",
         build_dir);
-    file::delete(lib)!!;
+    if (try file::delete(lib));
     objs.push(lib);
 
     foreach (source : sources) {
@@ -185,9 +185,17 @@ fn int main(String[] args)
             Path out_path = out.to_tpath()!!;
             path::mkdir(out_path.dirname().to_tpath(), recursive: true)!!;
 
-            cc.exec("-Wall", "-Wextra", "-Iinclude", "-Iinclude/vendor",
-                "-Ibuild/miniroot/include", "-c", full, "-o", out,
+            int res = cc.exec("-Wall", "-g", "-finstrument-functions",
+                "-Wextra", "-Iinclude", "-Iinclude/vendor",
+                "-Ibuild/miniroot/include", "-c", full, "-o", out, 
                 output: true)!!;
+
+            if (res != 0) {
+                log_err("Failed to build! Command:")!!;
+                log_err("%s -Wall -g -finstrument-functions -Wextra -Iinclude -Iinclude/vendor -Ibuild/miniroot/include -c %s -o %s",
+                    cc, full, out)!!;
+                return 1;
+            }
         };
     }
 

@@ -145,7 +145,8 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
 
     layer_manager_add_layer(&ctx->editor.layer_manager, layer);
 
-    if ((anim_layer = layer_get_animated(layer)) != NULL) {
+    if (layer->properties.is_animated) {
+        struct animated_layer *anim_layer = layer_get_animated(layer);
         ctx->configuring_gif = true;
 
         gif_configurator_prepare(&ctx->gif_cfg, anim_layer);

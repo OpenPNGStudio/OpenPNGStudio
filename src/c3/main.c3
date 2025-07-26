@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-module openpngstudio::layer;
+module openpngstudio;
 import std::io;
 
 import novacrash;
@@ -35,9 +35,8 @@ fn int main() {
     };
 
     options::cfg.theme = {
-        .background = { 0x28, 0x28, 0x28, 0xff },
-        .foreground = { 0xaf, 0xaf, 0xaf, 0xff },
-        .ambient = { 0x15, 0x5d, 0xfc, 0xff },
+        .background = { 0x16, 0x16, 0x16, 0xff },
+        .foreground = { 0xbe, 0xbe, 0xbe, 0xff },
         .font = $embed("../../assets/fonts/Ubuntu-R.ttf"),
         .font_size = 22,
     };
@@ -46,7 +45,7 @@ fn int main() {
 
     options::cfg.header = {
         .catch_phrases = phrases,
-        /* .crash_icon = $embed(...), */
+        .crash_icon = $embed("../../assets/images/crash.png"),
         .title_size = 32,
     };
 

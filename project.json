@@ -8,7 +8,7 @@
   "sources": [ "src/c3/**" ],
   "linker-search-paths": [ "build/miniroot/lib" ],
   "linked-libraries": [ "OpenPNGStudio", "archive", "lua", "raylib", "unuv", "uv", "wolfssl",
-        "zstd" ],
+        "zstd", "m"],
   "test-sources": [ "test/**" ],
   "output": "build",
   "targets": {
@@ -16,7 +16,6 @@
       "type": "executable"
     }
   },
-  "debug-info": "full",
   "cpu": "generic",
   "opt": "O0"
 }

@@ -62,10 +62,12 @@ fn void nova_panic(String msg, String file, String fun, uint line) @if(!env::NAT
 
 fn void nova_sig_segmentation_fault(CInt i) => nova_panic("Out of bounds memory access.", "???", "???", 0);
 fn void nova_sig_bus_error(CInt i) => nova_panic("Illegal memory access.", "???", "???", 0);
+fn void nova_sig_abort_error(CInt i) => nova_panic("Abort", "???", "???", 0);
 
 fn void setup() @init {
     builtin::panic = &nova_panic;
     
 	libc::signal(libc::SIGBUS, &nova_sig_bus_error);
 	libc::signal(libc::SIGSEGV, &nova_sig_segmentation_fault);
+	libc::signal(libc::SIGABRT, &nova_sig_abort_error);
 }

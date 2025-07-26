@@ -70,7 +70,9 @@ fn void? Ui.init(&self, String msg, String file, String fun, uint line, StackTra
     self.o = &options::cfg;
 
 $if env::OS_TYPE != WIN32 && !env::os_is_darwin():
-    ZString session_type = libc::getenv("XDG_SESSION_TYPE") ?: "tty";
+    ZString session_type = "tty";
+    if (ZString x11 = libc::getenv("DISPLAY")) { session_type = x11; }
+    else if (ZString wayland = libc::getenv("WAYLAND")) { session_type = wayland; }
     if (session_type == "tty") return RAYLIB_DIDNT_INIT?;
 $endif
 
@@ -245,7 +247,7 @@ fn void? draw(Ui *self)
         float content_width = 0;
 
         foreach (i, &tr : self.trace.backtrace) {
-            if (i < 6) continue;
+            if (i < 4) continue;
             if (tr.function == "???") continue;
             @pool() {
                 Path file;
