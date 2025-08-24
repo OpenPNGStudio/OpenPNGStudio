@@ -30,5 +30,7 @@ struct layer_state {
     bool is_toggled;
     bool prepare_for_deletion;
     bool is_toggle_timer_ticking;
+
+    int selected_animation;
 };
 

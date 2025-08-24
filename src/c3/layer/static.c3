@@ -50,6 +50,7 @@ fn void static_layer_defaults(StaticLayer *layer)
     layer.props.rotation = 180.0f;
     layer.props.tint = rl::WHITE;
     layer.state.animation = null;
+    layer.state.selected_animation = 0;
 }
 
 fn void StaticLayer.draw(&self, rl::Vector2 anchor) @dynamic

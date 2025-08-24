@@ -1,0 +1,24 @@
+{
+  "provides": "nk",
+  "targets" : {
+    "macos-x64" : {
+    },
+    "macos-aarch64" : {
+    },
+    "linux-aarch64" : {
+    },
+    "linux-riscv32" : {
+    },
+    "linux-riscv64" : {
+    },
+    "linux-x86" : {
+    },
+    "linux-x64" : {
+    },
+    "freebsd-x64" : {
+    },
+    "windows-x64" : {
+    }
+  }
+}
+

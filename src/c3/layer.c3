@@ -55,6 +55,8 @@ struct State {
     bool is_toggled;
     bool prepare_for_deletion;
     bool is_toggle_timer_ticking;
+
+    int selected_animation;
 }
 
 fn char *stringify(StaticLayer *layer) @export("layer_stringify")
@@ -79,16 +81,16 @@ fn char *stringify(StaticLayer *layer) @export("layer_stringify")
 
 fn void start_animation(StaticLayer *layer) @export("start_animation")
 {
-    if (layer.state.animation) layer.state.animation.can_play(TRUE);
+    if (layer.state.animation) layer.state.animation.can_play(SET_TRUE);
 }
 
 fn void stop_animation(StaticLayer *layer) @export("stop_animation")
 {
     if (layer.state.animation) {
-        if (layer.state.animation.can_play(GET)) {
-            layer.state.animation.is_done(TRUE);
+        if (layer.state.animation.can_play()) {
+            layer.state.animation.is_done(SET_TRUE);
         }
-        layer.state.animation.can_play(FALSE);
+        layer.state.animation.can_play(SET_FALSE);
     }
 }
 

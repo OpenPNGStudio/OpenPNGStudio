@@ -293,7 +293,7 @@ static enum un_action draw(un_idle *task)
     return REARM;
 }
 
-void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
+void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused);
 
 static enum un_action update(un_idle *task)
 {
@@ -332,7 +332,7 @@ static enum un_action update(un_idle *task)
             editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
 
         if (ctx.editor.layer_manager.selected_layer != -1)
-            draw_props(&ctx.editor.layer_manager, nk_ctx);
+            draw_props(&ctx.editor.layer_manager, nk_ctx, &ui_focused);
     }
 
     editor_apply_mask(&ctx.editor);
@@ -399,6 +399,7 @@ static enum un_action update(un_idle *task)
         }
 
         float wheel = GetMouseWheelMove();
+        static float target_zoom = 1.0;
         if (wheel != 0) {
             Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), ctx.camera);
             ctx.camera.offset = GetMousePosition();
@@ -406,8 +407,10 @@ static enum un_action update(un_idle *task)
 
             float scaleFactor = 1.0f + (0.1f * fabsf(wheel));
             if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
-            ctx.camera.zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 64.0f);
+            target_zoom = Clamp(ctx.camera.zoom * scaleFactor, 0.125f, 4.0f);
         }
+
+        ctx.camera.zoom = Lerp(ctx.camera.zoom, target_zoom, 0.35f);
     }
 
     work_scheduler_run(&ctx.sched);

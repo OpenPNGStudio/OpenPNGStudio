@@ -37,7 +37,7 @@
 extern struct context ctx;
 
 static void reset_key_mask(uint64_t *mask);
-void draw_props(struct layer_manager *mgr, struct nk_context *ctx);
+void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused);
 static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
 
 void layer_manager_cleanup(struct layer_manager *mgr)
@@ -81,8 +81,12 @@ void layer_manager_ui(struct layer_manager *mgr, struct nk_context *ctx)
         nk_layout_row_template_push_static(ctx, 30);
         nk_layout_row_template_end(ctx);
 
-        if (nk_button_image(ctx, get_icon(SELECT_ICON)))
-            mgr->selected_layer = i;
+        if (nk_button_image(ctx, get_icon(SELECT_ICON))) {
+            if (mgr->selected_layer == -1)
+                mgr->selected_layer = i;
+            else 
+                mgr->selected_layer = -1;
+        }
 
         line_edit_draw(&layer->properties.name, ctx);
 
@@ -231,11 +235,14 @@ void layer_manager_render(struct layer_manager *mgr)
     animation_manager_tick(mgr->anims);
 }
 
-void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
+void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused)
 {
     if (window_begin(&mgr->cfg_win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE |
         NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE |
         NK_WINDOW_CLOSABLE)) {
+
+        if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
+            *ui_focused = true;
         struct layer *layer = mgr->layers[mgr->selected_layer];
         bool holding_shift = nk_input_is_key_down(&ctx->input, NK_KEY_SHIFT);
 
@@ -322,11 +329,7 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx)
         } else
             reset_key_mask(&layer->state.mask);
 
-        nk_layout_row_dynamic(ctx, 30, 1);
-        if (nk_button_label(ctx, "Give animation")) {
-            spinner anim = spinner_new(360, 2500);
-            animation_manager_add(mgr->anims, layer, anim);
-        }
+        animation_manager_selector(mgr->anims, layer, ctx);
     } else
         mgr->selected_layer = -1;
 

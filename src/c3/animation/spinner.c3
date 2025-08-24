@@ -1,31 +1,17 @@
-/*
- * This file is part of OpenPNGStudio. 
- * Copyright (C) 2024-2025 LowByteFox
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+/* spdx-license-identifier: gpl-3.0-or-later */
 module openpngstudio::animation::spinner;
 
 import std::time;
 import std::core::mem;
-import std::math::easing;
 import openpngstudio::layer;
+import openpngstudio::animation::easings;
 import std::io;
+import nk;
 
 struct Spinner (Animation) {
     float rotation, end_rotation;
-    ulong delay;
+    ulong id;
+    int delay, easing_id;
     Time start;
     bool done, play;
 }
@@ -33,11 +19,15 @@ struct Spinner (Animation) {
 fn Animation new(float rotation, ulong delay) @export("spinner_new")
 {
     Spinner *s = malloc(Spinner.sizeof);
+    s.id = animation::new_id();
     s.end_rotation = rotation;
-    s.delay = (ulong) time::ms(delay);
+    s.delay = (int) time::ms(delay);
     s.done = true;
+    s.easing_id = 0;
     return s;
 }
+
+fn ulong Spinner.get_id(&self) @dynamic => self.id;
 
 fn void Spinner.tick(&self, Time delta) @dynamic
 {
@@ -47,7 +37,7 @@ fn void Spinner.tick(&self, Time delta) @dynamic
         self.done = true;
     }
 
-    self.rotation = easing::expo_inout(percentage, 0, self.end_rotation, 1.0);
+    self.rotation = easings::ease(self.easing_id, percentage, 0, self.end_rotation, 1.0);
 }
 
 fn bool Spinner.is_done(&self, StateBool toggle) @dynamic
@@ -77,4 +67,43 @@ fn Properties Spinner.animate(&self, StaticLayer *layer) @dynamic
     Properties copy = layer.props;
     copy.rotation += self.rotation;
     return copy;
+}
+
+fn void Spinner.config(&self, nk::Context *ctx) @dynamic
+{
+    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
+    nk::layout_row_push(ctx, 0.75f);
+    nk::label(ctx, "Rotation:", nk::TEXT_LEFT);
+    nk::layout_row_push(ctx, 0.24f);
+
+    float old_rotation = self.end_rotation;
+    nk::property_float(ctx, "Rotation: ", 0, &self.end_rotation, 360f, 0.1f, 0.2f);
+
+    if (old_rotation != self.end_rotation) {
+        self.is_done(SET_TRUE);
+    }
+
+    nk::layout_row_end(ctx);
+
+    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
+    nk::layout_row_push(ctx, 0.75f);
+    nk::label(ctx, "Length:", nk::TEXT_LEFT);
+    nk::layout_row_push(ctx, 0.24f);
+
+    int delay = self.delay / 1000;
+    nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
+
+    if ((delay * 1000) != self.delay) {
+        self.is_done(SET_TRUE);
+        self.delay = delay * 1000;
+    }
+
+    nk::layout_row_end(ctx);
+}
+
+fn int Spinner.easing(&self, bool set, int easing_id) @dynamic
+{
+    if (set) self.easing_id = easing_id;
+
+    return self.easing_id;
 }

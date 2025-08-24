@@ -12,7 +12,7 @@ String cwd;
 String build_dir;
 
 /* programs */
-Program cmake, ninja, git, cp, make, curl, tar, sh, cc, ar, c3c;
+Program cmake, ninja, git, cp, make, curl, tar, sh, cc, ar, c3c, sed;
 
 extern fn int symlink(char *target, char *path);
 
@@ -144,6 +144,10 @@ fn int main(String[] args)
                     log_err("Unable to fetch header!")!!;
                     return 1;
                 }
+
+                if (maybe.basename() == "raylib-nuklear.h") {
+                    sed.exec("-i", "s/NK_INCLUDE_FIXED_TYPES/NK_INCLUDE_SOFTWARE_FONT/", maybe.str_view())!!;
+                }
             }
         };
     }
@@ -176,10 +180,12 @@ fn int main(String[] args)
             String out = build_dir.tconcat("/").tconcat(source).tconcat(".o");
             objs.push(out.copy(mem));
 
-            log_info("Compiling %s", source)!!;
-
             Path out_path = out.to_tpath()!!;
             path::mkdir(out_path.dirname().to_tpath(), recursive: true)!!;
+
+            if (path::exists(out_path) && out.contains("wrappers")) continue;
+
+            log_info("Compiling %s", source)!!;
 
             int res = cc.exec("-Wall", "-g", "-finstrument-functions",
                 "-Wextra", "-Iinclude", "-Iinclude/vendor",
@@ -234,6 +240,7 @@ fn void init()
     cc = find_program("cc")!!;
     ar = find_program("ar")!!;
     c3c = find_program("c3c")!!;
+    sed = find_program("sed")!!;
 
     /* prepare miniroot */
     @pool() {
