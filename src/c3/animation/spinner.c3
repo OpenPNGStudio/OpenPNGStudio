@@ -27,7 +27,7 @@ struct Spinner (Animation) {
     float rotation, end_rotation;
     ulong delay;
     Time start;
-    bool done;
+    bool done, play;
 }
 
 fn Animation new(float rotation, ulong delay) @export("spinner_new")
@@ -39,7 +39,7 @@ fn Animation new(float rotation, ulong delay) @export("spinner_new")
     return s;
 }
 
-fn void Spinner.tick(&self, Time delta) @export("_gdb") @dynamic
+fn void Spinner.tick(&self, Time delta) @dynamic
 {
     float percentage = ((float) (delta - self.start)) / (float) self.delay; 
     if (percentage > 1.0) {
@@ -50,8 +50,21 @@ fn void Spinner.tick(&self, Time delta) @export("_gdb") @dynamic
     self.rotation = easing::expo_inout(percentage, 0, self.end_rotation, 1.0);
 }
 
-fn bool Spinner.is_done(&self) @dynamic => self.done;
-fn void Spinner.set_done(&self) @dynamic => self.done = true;
+fn bool Spinner.is_done(&self, StateBool toggle) @dynamic
+{
+    if (toggle == GET) return self.done;
+
+    self.done = (bool) toggle;
+    return self.done;
+}
+
+fn bool Spinner.can_play(&self, StateBool toggle) @dynamic
+{
+    if (toggle == GET) return self.play;
+
+    self.play = (bool) toggle;
+    return self.play;
+}
 
 fn void Spinner.reset(&self, Time now) @dynamic
 {

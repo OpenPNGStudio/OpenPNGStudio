@@ -57,10 +57,6 @@ fn int main(String[] args)
             {"-DLIBUV_BUILD_SHARED=OFF"}),
         cmake_dep_init("https://github.com/raysan5/raylib.git",
             {"-DBUILD_EXAMPLES=OFF"}),
-        cmake_dep_init("https://github.com/wolfSSL/wolfssl.git",
-            {"-DWOLFSSL_DEBUG=ON", "-DWOLFSSL_ED25519=ON",
-            "-DWOLFSSL_CURVE25519=ON", "-DWOLFSSL_EXAMPLES=OFF",
-            "-DBUILD_SHARED_LIBS=OFF"}),
         lua_init(),
         unuv_init(),
     };
@@ -78,7 +74,7 @@ fn int main(String[] args)
         /* libarchive depends on zstd */
         deps[1].add_dependency(deps[0]);
         /* libunuv depends on libuv */
-        deps[6].add_dependency(deps[2]);
+        deps[5].add_dependency(deps[2]);
 
         foreach (dep : deps) {
             @pool() {
@@ -227,7 +223,7 @@ fn void init()
     };
 
     /* programs */
-    cmake = find_program("cmake")!!;
+    cmake = "/usr/bin/cmake";
     ninja = find_program("ninja")!!;
     git = find_program("git")!!;
     cp = find_program("cp")!!;

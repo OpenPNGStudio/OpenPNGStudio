@@ -15,9 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-module openpngstudio::layer;
+module openpngstudio::layer::static_layer;
 
 import std::core::mem;
+import openpngstudio::layer;
 import openpngstudio::core::mask;
 import raylib5::rl;
 
@@ -72,6 +73,7 @@ has_toggle = %s
 fn Properties StaticLayer.animate(&self) @dynamic
 {
     if (self.state.animation) {
+        if (self.state.animation.is_done(GET)) return self.props;
         return self.state.animation.animate(self);
     }
 

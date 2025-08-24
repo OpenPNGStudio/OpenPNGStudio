@@ -52,7 +52,8 @@ void layer_manager_add_layer(struct layer_manager *mgr,
     mgr->layers[mgr->layer_count - 1] = layer;
 }
 
-void reset_anim(struct layer *);
+void start_animation(struct layer *);
+void stop_animation(struct layer *);
 
 void layer_manager_ui(struct layer_manager *mgr, struct nk_context *ctx)
 {
@@ -212,17 +213,18 @@ void layer_manager_render(struct layer_manager *mgr)
                 .x = texture.width / 2.0f,
                 .y = texture.height / 2.0f,
             }, props.rotation - 180, props.tint);
+            start_animation(layer);
 
             if (!layer->properties.has_toggle) {
-                if (!layer->state.active && layer->state.time_to_live > 0) {
-                    /* spawn live timeout */
+                /* spawn live timeout */
+                if (!layer->state.active && layer->state.time_to_live > 0)
                     layer_start_timeout(layer, ctx.loop);
-                    reset_anim(layer);
-                }
             } else {
                 if (!layer->state.is_toggle_timer_ticking && mask_test)
                     layer_toggle(layer, ctx.loop);
             }
+        } else {
+            stop_animation(layer);
         }
     }
 

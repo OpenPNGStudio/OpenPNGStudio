@@ -77,9 +77,19 @@ fn char *stringify(StaticLayer *layer) @export("layer_stringify")
     return res;
 }
 
-fn void reset_anim(StaticLayer *layer) @export("reset_anim")
+fn void start_animation(StaticLayer *layer) @export("start_animation")
 {
-    if (layer.state.animation) layer.state.animation.set_done();
+    if (layer.state.animation) layer.state.animation.can_play(TRUE);
+}
+
+fn void stop_animation(StaticLayer *layer) @export("stop_animation")
+{
+    if (layer.state.animation) {
+        if (layer.state.animation.can_play(GET)) {
+            layer.state.animation.is_done(TRUE);
+        }
+        layer.state.animation.can_play(FALSE);
+    }
 }
 
 fn Properties updated_properties(StaticLayer *layer) @export("layer_updated_properties")

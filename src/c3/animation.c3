@@ -20,10 +20,16 @@ module openpngstudio::animation;
 import openpngstudio::layer;
 import std::time;
 
+enum StateBool : const char {
+    FALSE = (StateBool) false,
+    TRUE = (StateBool) true,
+    GET,
+}
+
 interface Animation {
     fn void tick(Time delta);
-    fn bool is_done();
-    fn void set_done();
+    fn bool is_done(StateBool toggle);
+    fn bool can_play(StateBool toggle);
     fn void reset(Time now);
     fn Properties animate(StaticLayer *layer);
 }

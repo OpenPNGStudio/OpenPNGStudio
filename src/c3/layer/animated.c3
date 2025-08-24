@@ -15,12 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-module openpngstudio::layer;
+module openpngstudio::layer::animated;
 
 import std::core::string;
 import std::core::mem;
 import raylib5::rl;
 import openpngstudio::animation;
+import openpngstudio::layer::static_layer;
 
 struct AnimatedLayerProperties {
     char *gif_file_content;
@@ -42,7 +43,7 @@ fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
 {
     AnimatedLayer *l = mem::new(AnimatedLayer);
     l.layer.props.image = image;
-    static_layer_defaults(&l.layer);
+    static_layer::static_layer_defaults(&l.layer);
     l.layer.props.is_animated = true;
 
     l.props.number_of_frames = number_of_frames;
@@ -81,6 +82,7 @@ delays = [ `, self.props.number_of_frames));
 fn Properties AnimatedLayer.animate(&self) @dynamic
 {
     if (self.anim) {
+        if (self.anim.is_done(GET)) return self.layer.props;
         return self.anim.animate(&self.layer);
     }
 

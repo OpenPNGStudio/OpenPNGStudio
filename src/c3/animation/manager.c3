@@ -20,7 +20,7 @@ module openpngstudio::animation::manager;
 import openpngstudio::animation;
 import openpngstudio::layer;
 import std::collections::list;
-import std::time;
+import std::time, std::io;
 import std::core::mem;
 
 struct Manager {
@@ -39,7 +39,8 @@ fn void Manager.tick(&self) @export("animation_manager_tick")
     Time now = time::now();
 
     foreach (anim : self.animations) {
-        if (anim.is_done()) anim.reset(now);
+        if (!anim.can_play(GET)) continue;
+        if (anim.is_done(GET)) anim.reset(now);
 
         anim.tick(now);
     }
