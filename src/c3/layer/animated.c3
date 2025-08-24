@@ -82,7 +82,7 @@ delays = [ `, self.props.number_of_frames));
 fn Properties AnimatedLayer.animate(&self) @dynamic
 {
     if (self.anim) {
-        if (self.anim.is_done()) return self.layer.props;
+        if (self.anim.is_done() && !self.anim.can_play()) return self.layer.props;
         return self.anim.animate(&self.layer);
     }
 

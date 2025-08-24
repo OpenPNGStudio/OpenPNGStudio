@@ -23,6 +23,7 @@ import std::collections::list;
 import std::time, std::io;
 import std::core::mem;
 import openpngstudio::animation::spinner;
+import openpngstudio::animation::shake;
 import openpngstudio::animation::easings;
 import nk;
 
@@ -30,7 +31,7 @@ struct Manager {
     List{Animation} animations;
 }
 
-const CChar*[] ANIMATIONS = {"None", "Spinner"};
+const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake"};
 
 fn Manager *new_manager() @export("animation_manager_new")
 {
@@ -61,12 +62,14 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
     nk::layout_row_push(ctx, 0.24f);
 
     int old = layer.state.selected_animation;
-    int current = nk::combo(ctx, ANIMATIONS.ptr, 2, old, 30, nk::vec2(200, 200)
+    int current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30, nk::vec2(200, 200)
         );
     layer.state.selected_animation = current;
 
     if (old != current) {
-        if (current == 1) {
+        if (current == 2) {
+            self.add_animation(layer, shake::new());
+        } else if (current == 1) {
             self.add_animation(layer, spinner::new(360, 2500));
         } else if (current == 0) {
             if (layer.state.animation) {

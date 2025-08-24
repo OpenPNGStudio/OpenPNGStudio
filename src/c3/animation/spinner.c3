@@ -9,14 +9,14 @@ import std::io;
 import nk;
 
 struct Spinner (Animation) {
+    Time start;
     float rotation, end_rotation;
     ulong id;
     int delay, easing_id;
-    Time start;
     bool done, play;
 }
 
-fn Animation new(float rotation, ulong delay) @export("spinner_new")
+fn Animation new(float rotation, ulong delay)
 {
     Spinner *s = malloc(Spinner.sizeof);
     s.id = animation::new_id();

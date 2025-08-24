@@ -74,7 +74,8 @@ has_toggle = %s
 fn Properties StaticLayer.animate(&self) @dynamic
 {
     if (self.state.animation) {
-        if (self.state.animation.is_done(GET)) return self.props;
+        if (self.state.animation.is_done() &&
+            !self.state.animation.can_play()) return self.props;
         return self.state.animation.animate(self);
     }
 
