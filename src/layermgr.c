@@ -289,7 +289,8 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         nk_layout_row_dynamic(ctx, 2, 1);
         nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
 
-        configure_mask(&layer->state.mask, layer->input_key_buffer, &layer->input_key_length, ctx);
+        configure_mask(&layer->state.mask, layer->input_key_buffer,
+            &layer->input_key_length, ctx, "Mask:");
 
         animation_manager_selector(mgr->anims, layer, ctx);
     } else

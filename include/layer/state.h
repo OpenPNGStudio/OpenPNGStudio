@@ -24,6 +24,7 @@
 struct layer_state {
     c3any_t anim;
     mask_t mask;
+    mask_t anim_mask;
 
     int time_to_live;
     bool active;

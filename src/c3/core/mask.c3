@@ -174,10 +174,10 @@ extern fn void reset_key_mask(Mask *mask);
 extern fn nk::Bool nk_filter_key(nk::TextEdit *box, nk::Rune unicode);
 
 fn void configure(Mask *mask, char *input_buffer, int *input_size,
-    nk::Context *ctx) @export("configure_mask")
+    nk::Context *ctx, char *label) @export("configure_mask")
 {
     nk::layout_row_dynamic(ctx, 30, 1);
-    nk::label(ctx, "Mask:", nk::TEXT_LEFT);
+    nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);
     nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 3);
 
     nk::layout_row_push(ctx, 0.33f);

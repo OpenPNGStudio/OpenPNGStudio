@@ -22,6 +22,7 @@ import openpngstudio::layer;
 import std::collections::list;
 import std::time, std::io;
 import std::core::mem;
+import openpngstudio::core::mask;
 import openpngstudio::animation::spinner;
 import openpngstudio::animation::shake;
 import openpngstudio::animation::easings;
@@ -109,8 +110,17 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
     } else {
         nk::widget_disable_end(ctx);
     }
-
     nk::layout_row_end(ctx);
+
+    nk::layout_row_dynamic(ctx, 2, 1);
+    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+
+    mask::configure(&layer.state.anim_mask, &layer.anim_input_key_buffer,
+        &layer.anim_input_key_len, ctx, "Animation Mask:");
+
+    nk::layout_row_dynamic(ctx, 2, 1);
+    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+
     if (layer.state.animation) {
         nk::layout_row_dynamic(ctx, 30, 2);
         nk::label(ctx, "Animation Config: ", nk::TEXT_LEFT);

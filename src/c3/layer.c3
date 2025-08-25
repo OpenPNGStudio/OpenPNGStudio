@@ -49,6 +49,7 @@ struct Properties {
 struct State {
     Animation animation;
     Mask mask;
+    Mask anim_mask;
 
     int time_to_live;
     bool active;
@@ -81,7 +82,13 @@ fn char *stringify(StaticLayer *layer) @export("layer_stringify")
 
 fn void start_animation(StaticLayer *layer) @export("start_animation")
 {
-    if (layer.state.animation) layer.state.animation.can_play(SET_TRUE);
+    if (layer.state.animation) {
+        if (mask::cmp(mask::get(), layer.state.anim_mask)) {
+            layer.state.animation.can_play(SET_TRUE);
+        } else {
+            if (layer.state.animation.is_done()) stop_animation(layer);
+        }
+    }
 }
 
 fn void stop_animation(StaticLayer *layer) @export("stop_animation")

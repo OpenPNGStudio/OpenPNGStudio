@@ -28,6 +28,9 @@ struct StaticLayer (Layer) {
 
     char[2] input_key_buffer;
     int input_key_len;
+
+    char[2] anim_input_key_buffer;
+    int anim_input_key_len;
 }
 
 fn StaticLayer *new_static(rl::Image image) @export("layer_new")
@@ -47,6 +50,7 @@ fn void static_layer_defaults(StaticLayer *layer)
     rl::setTextureWrap(layer.props.texture, TextureWrap.CLAMP.ordinal);
 
     layer.state.mask = mask::DEFAULT_LAYER_MASK;
+    layer.state.anim_mask = mask::DEFAULT_LAYER_MASK;
     layer.props.rotation = 180.0f;
     layer.props.tint = rl::WHITE;
     layer.state.animation = null;
