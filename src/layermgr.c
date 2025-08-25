@@ -25,7 +25,6 @@
 #include <raylib.h>
 #include <unuv.h>
 #include <limits.h>
-#include <ctype.h>
 #include <float.h>
 #include <math.h>
 #include <stdbool.h>
@@ -36,9 +35,9 @@
 
 extern struct context ctx;
 
-static void reset_key_mask(uint64_t *mask);
+void reset_key_mask(uint64_t *mask);
 void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused);
-static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
+nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode);
 
 void layer_manager_cleanup(struct layer_manager *mgr)
 {
@@ -290,44 +289,7 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         nk_layout_row_dynamic(ctx, 2, 1);
         nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
 
-        nk_layout_row_dynamic(ctx, 30, 1);
-        nk_label(ctx, "Mask:", NK_TEXT_LEFT);
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
-
-        nk_layout_row_push(ctx, 0.33f);
-        nk_checkbox_flags_label(ctx, "Normal", (unsigned int*) &layer->state.mask, QUIET);
-        nk_layout_row_push(ctx, 0.33f);
-        nk_checkbox_flags_label(ctx, "Talking", (unsigned int*) &layer->state.mask, TALK);
-        nk_layout_row_push(ctx, 0.329f);
-        nk_checkbox_flags_label(ctx, "Pause", (unsigned int*) &layer->state.mask, PAUSE);
-        nk_layout_row_end(ctx);
-
-        nk_layout_row_dynamic(ctx, 30, 1);
-        nk_label(ctx, "Modifier keys:", NK_TEXT_LEFT);
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-
-        nk_layout_row_push(ctx, 0.25f);
-        nk_checkbox_flags_label(ctx, "Shift", (unsigned int*) &layer->state.mask, SHIFT);
-        nk_layout_row_push(ctx, 0.25f);
-        nk_checkbox_flags_label(ctx, "Ctrl", (unsigned int*) &layer->state.mask, CTRL);
-        nk_layout_row_push(ctx, 0.25f);
-        nk_checkbox_flags_label(ctx, "Super", (unsigned int*) &layer->state.mask, SUPER);
-        nk_layout_row_push(ctx, 0.249f);
-        nk_checkbox_flags_label(ctx, "Alt", (unsigned int*) &layer->state.mask, META);
-        nk_layout_row_end(ctx);
-
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
-        nk_layout_row_push(ctx, 0.5f);
-        nk_label(ctx, "Key press:", NK_TEXT_LEFT);
-        nk_layout_row_push(ctx, 0.49f);
-        nk_edit_string(ctx, NK_EDIT_SIMPLE, layer->input_key_buffer, &layer->input_key_length, 2,
-                nk_filter_key);
-
-        if (layer->input_key_length > 0) {
-            layer->input_key_buffer[0] = toupper(layer->input_key_buffer[0]);
-            layer->state.mask |= 1ULL << (layer->input_key_buffer[0] - 'A' + KEY_START);
-        } else
-            reset_key_mask(&layer->state.mask);
+        configure_mask(&layer->state.mask, layer->input_key_buffer, &layer->input_key_length, ctx);
 
         animation_manager_selector(mgr->anims, layer, ctx);
     } else
@@ -337,7 +299,7 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         window_end(&mgr->cfg_win);
 }
 
-static void reset_key_mask(uint64_t *mask)
+void reset_key_mask(uint64_t *mask)
 {
     uint64_t new_mask = 0;
     for (int i = 0; i < 7; i++)
@@ -346,7 +308,7 @@ static void reset_key_mask(uint64_t *mask)
     *mask &= new_mask;
 }
 
-static nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode)
+nk_bool nk_filter_key(const struct nk_text_edit *box, nk_rune unicode)
 {
     if ((unicode >= 'a' && unicode <= 'z') || (unicode >= 'A' && unicode <= 'Z'))
         return nk_true;

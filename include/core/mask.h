@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <nuklear.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -60,3 +61,4 @@ mask_t get_current_mask();
 void set_key_mask(mask_t *mask);
 void handle_key_mask(mask_t *mask);
 bool test_masks(mask_t mask, mask_t target);
+void configure_mask(mask_t *mask, char *input, int *size, struct nk_context *ctx);

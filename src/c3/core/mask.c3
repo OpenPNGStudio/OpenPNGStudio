@@ -18,7 +18,8 @@
 module openpngstudio::core::mask;
 
 import raylib5::rl;
-import std::io;
+import std::io, std::ascii;
+import nk;
 
 alias Mask = ulong;
 
@@ -167,4 +168,50 @@ fn bool cmp(Mask mask, Mask target) @export("test_masks")
     }
 
     return res;
+}
+
+extern fn void reset_key_mask(Mask *mask);
+extern fn nk::Bool nk_filter_key(nk::TextEdit *box, nk::Rune unicode);
+
+fn void configure(Mask *mask, char *input_buffer, int *input_size,
+    nk::Context *ctx) @export("configure_mask")
+{
+    nk::layout_row_dynamic(ctx, 30, 1);
+    nk::label(ctx, "Mask:", nk::TEXT_LEFT);
+    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 3);
+
+    nk::layout_row_push(ctx, 0.33f);
+    nk::checkbox_flags_label(ctx, "Normal", (CUInt*) mask, QUIET);
+    nk::layout_row_push(ctx, 0.33f);
+    nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
+    nk::layout_row_push(ctx, 0.329f);
+    nk::checkbox_flags_label(ctx, "Pause", (CUInt*) mask, PAUSE);
+    nk::layout_row_end(ctx);
+
+    nk::layout_row_dynamic(ctx, 30, 1);
+    nk::label(ctx, "Modifier keys:", nk::TEXT_LEFT);
+    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
+
+    nk::layout_row_push(ctx, 0.25f);
+    nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
+    nk::layout_row_push(ctx, 0.25f);
+    nk::checkbox_flags_label(ctx, "Ctrl", (CUInt*) mask, CTRL);
+    nk::layout_row_push(ctx, 0.25f);
+    nk::checkbox_flags_label(ctx, "Super", (CUInt*) mask, SUPER);
+    nk::layout_row_push(ctx, 0.249f);
+    nk::checkbox_flags_label(ctx, "Alt", (CUInt*) mask, META);
+    nk::layout_row_end(ctx);
+
+    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
+    nk::layout_row_push(ctx, 0.5f);
+    nk::label(ctx, "Key press:", nk::TEXT_LEFT);
+    nk::layout_row_push(ctx, 0.49f);
+    nk::edit_string(ctx, nk::EDIT_SIMPLE, (CChar*) input_buffer, input_size, 2,
+        &nk_filter_key);
+    if (*input_size > 0) {
+        input_buffer[0] = ascii::to_upper(input_buffer[0]);
+        *mask |= 1ULL << ((Mask) input_buffer[0] - 'A' + KEY_START);
+    } else {
+        reset_key_mask(mask);
+    }
 }

@@ -15,7 +15,7 @@ struct Shake (Animation) {
     Vector2 current, offset;
     Time start;
     ulong id;
-    int start_range, end_range, delay, easing_id;
+    int start_range, end_range, delay;
     bool done, play;
 }
 
@@ -31,7 +31,6 @@ fn Animation new(int start_range = -5, int end_range = 5, ulong delay = 100)
     s.id = animation::new_id();
     s.delay = (int) time::ms(delay);
     s.done = true;
-    s.easing_id = 0;
     return s;
 }
 
@@ -47,12 +46,12 @@ fn void Shake.tick(&self, Time delta) @dynamic
 
     if (percentage <= 0.5f) {
         float t = percentage / 0.5f;
-        float e = easings::ease(self.easing_id, t, 0.0f, 1.0f, 1.0f);
+        float e = easings::ease(0, t, 0.0f, 1.0f, 1.0f);
         self.current.x = self.offset.x * e;
         self.current.y = self.offset.y * e;
     } else {
         float t = (percentage - 0.5f) / 0.5f;
-        float e = easings::ease(self.easing_id, t, 0.0f, 1.0f, 1.0f);
+        float e = easings::ease(0, t, 0.0f, 1.0f, 1.0f);
         float returnFactor = 1.0f - e;
         self.current.x = self.offset.x * returnFactor;
         self.current.y = self.offset.y * returnFactor;
@@ -145,16 +144,4 @@ fn Vector2 Shake.gen_pos(&self) @local
     return { x, y };
 }
 
-// fn void Spinner.config(&self, nk::Context *ctx) @dynamic
-// {
-//
-//     nk::layout_row_end(ctx);
-//
-// }
-
-fn int Shake.easing(&self, bool set, int easing_id) @dynamic
-{
-    if (set) self.easing_id = easing_id;
-
-    return self.easing_id;
-}
+fn int Shake.easing(&self, bool set, int easing_id) @dynamic => 0;
