@@ -21,7 +21,6 @@
 #endif
 #include "console.h"
 #include "editor.h"
-#include "gif_config.h"
 #include <layer/manager.h>
 #include <fcntl.h>
 #include <ui/filedialog.h>
@@ -333,31 +332,13 @@ static enum un_action update(un_idle *task)
 
         if (ctx.editor.layer_manager.selected_layer != -1)
             draw_props(&ctx.editor.layer_manager, nk_ctx, &ui_focused);
+
+        if (ctx.editor.layer_manager.anims != NULL)
+            animation_manager_global_anim(ctx.editor.layer_manager.anims,
+                nk_ctx);
     }
 
     editor_apply_mask(&ctx.editor);
-
-    gif_configurator_draw(&ctx.gif_cfg, nk_ctx, &ui_focused);
-
-    if (ctx.configuring_gif && !ctx.gif_cfg.win.show) {
-        LOG_I("GIF Configured", NULL);
-        /* reset state */
-        ctx.configuring_gif = false;
-        ctx.gif_cfg.global_delay = false;
-        free(ctx.gif_cfg.lengths);
-        ctx.gif_cfg.lengths = NULL;
-
-        for (int i = 0; i < ctx.gif_cfg.layer->properties.number_of_frames; i++)
-            free(ctx.gif_cfg.inputs[i]);
-        free(ctx.gif_cfg.inputs);
-        ctx.gif_cfg.inputs = NULL;
-
-        int i = ctx.editor.layer_manager.layer_count - 1;
-
-        struct layer *l = ctx.editor.layer_manager.layers[i];
-        layer_animated_start(layer_get_animated(l), ctx.loop);
-        ctx.gif_cfg.layer = NULL;
-    }
 
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();
@@ -429,8 +410,7 @@ static enum un_action update(un_idle *task)
     }
 
     /* check for pending work */
-    if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready &&
-        !ctx.configuring_gif)
+    if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready)
         context_after_img_load(&ctx, ctx.image_work_queue);
 
     if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
@@ -632,7 +612,7 @@ static void load_layer_file(uv_work_t *req)
     struct image_load_req *work = req->data;
     if (strcmp(work->ext, ".gif") == 0) {
         work->img = LoadImageAnimFromMemory(work->ext, work->buffer,
-            work->size, &work->frames_count);
+            work->size, &work->frames_count, &work->delays);
         memcpy(work->gif_buffer, work->buffer, work->size);
     }
     else

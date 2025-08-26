@@ -228,6 +228,11 @@ void layer_manager_render(struct layer_manager *mgr)
             }
         } else {
             stop_animation(layer);
+            if (layer->properties.is_animated) {
+                struct animated_layer *alayer = layer_get_animated(layer);
+                alayer->properties.previous_frame_index = 0;
+                alayer->properties.current_frame_index = 0;
+            }
         }
     }
 

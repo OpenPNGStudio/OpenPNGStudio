@@ -39,7 +39,7 @@ struct AnimatedLayer (Layer) {
 }
 
 fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
-    char *buffer, usz size) @export("layer_new_animated")
+    char *buffer, usz size, int *delays) @export("layer_new_animated")
 {
     AnimatedLayer *l = mem::new(AnimatedLayer);
     l.layer.props.image = image;
@@ -49,10 +49,10 @@ fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
     l.props.number_of_frames = number_of_frames;
     l.props.gif_file_content = buffer;
     l.props.gif_file_size = size;
+    l.props.frame_delays = (uint*) delays;
 
     return l;
 }
-
 
 fn void AnimatedLayer.draw(&self, rl::Vector2 anchor) @dynamic
 {

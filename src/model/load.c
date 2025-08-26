@@ -26,6 +26,7 @@ struct layer_info {
     char *buffer;
     size_t index;
     bool is_animated;
+    int *delays;
 
     uint8_t *image_buffer;
     size_t image_size;
@@ -184,7 +185,7 @@ static void read_archive(struct work *work)
         assert(rd->current != NULL && "Was the model not prepared?");
         if (rd->current->is_animated) {
             rd->current->img = LoadImageAnimFromMemory(".gif", rd->current->image_buffer,
-                rd->current->image_size, &rd->current->frame_count);
+                rd->current->image_size, &rd->current->frame_count, &rd->current->delays);
         } else {
             rd->current->img = LoadImageFromMemory(".png", rd->current->image_buffer,
                 rd->current->image_size);
@@ -359,7 +360,7 @@ static int parse_layer_info(struct model_reader *rd)
 end:
     if (rd->current->is_animated) {
         rd->layers[rd->current_layer] = layer_new_animated(rd->current->img, rd->current->frame_count,
-            (uint8_t*) rd->current->buffer, rd->current->image_size);
+            (uint8_t*) rd->current->buffer, rd->current->image_size, (int*) delays);
     } else {
         rd->layers[rd->current_layer] = layer_new(rd->current->img);
     }
@@ -380,7 +381,6 @@ end:
     if (c->properties.is_animated) {
         struct animated_layer *ac = layer_get_animated(c);
         ac->properties.number_of_frames = n_frames;
-        ac->properties.frame_delays = delays;
         ac->properties.previous_frame_index = 0;
         ac->properties.current_frame_index = 0;
         ac->properties.gif_file_content = rd->current->image_buffer;

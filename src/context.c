@@ -67,6 +67,7 @@ void context_load_image(struct context *ctx, const char *name,
     req->name = strdup(name);
     req->ext = strrchr(req->name, '.');
     req->fd = fd;
+    req->delays = NULL;
 
     /* deploy */
     if (ctx->image_work_queue == NULL)
@@ -136,7 +137,7 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
 
     if (req->gif_buffer != NULL)
         layer = layer_new_animated(req->img, req->frames_count,
-            req->gif_buffer, req->size);
+            req->gif_buffer, req->size, req->delays);
     else
         layer = layer_new(req->img);
     
@@ -146,10 +147,8 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
     layer_manager_add_layer(&ctx->editor.layer_manager, layer);
 
     if (layer->properties.is_animated) {
-        struct animated_layer *anim_layer = layer_get_animated(layer);
-        ctx->configuring_gif = true;
-
-        gif_configurator_prepare(&ctx->gif_cfg, anim_layer);
+        anim_layer = layer_get_animated(layer);
+        layer_animated_start(anim_layer, ctx->loop);                
     }
 
     /* cleanup */

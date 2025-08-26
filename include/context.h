@@ -33,7 +33,6 @@
 #include <stdatomic.h>
 #include <raylib.h>
 #include <ui/filedialog.h>
-#include <gif_config.h>
 #include <core/microphone.h>
 #include <lua.h>
 #include <core/mask.h>
@@ -64,6 +63,7 @@ struct image_load_req {
     uv_work_t req;
     uint8_t *buffer;
     uint8_t *gif_buffer;
+    int *delays;
     size_t size;
     char *name;
     const char *ext;
@@ -88,7 +88,6 @@ struct context {
     /* STATE */
     enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
-    bool configuring_gif;
     lua_State *L;
     struct script_load_req *script_work_queue;
 
@@ -105,7 +104,6 @@ struct context {
     Camera2D camera;
 
     struct editor editor;
-    struct gif_configurator gif_cfg;
     struct microphone_data mic;
 
     /* separate components */

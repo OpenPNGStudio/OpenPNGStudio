@@ -14,5 +14,5 @@ void animation_manager_add(animation_manager *self, struct layer *layer,
     animation anim);
 void animation_manager_selector(animation_manager *self, struct layer *layer,
     struct nk_context *ctx);
-
-spinner spinner_new(float rotation, uint64_t delay);
+void animation_manager_show(animation_manager *self);
+void animation_manager_global_anim(animation_manager *self, struct nk_context *ctx);

@@ -26,18 +26,25 @@ import openpngstudio::core::mask;
 import openpngstudio::animation::spinner;
 import openpngstudio::animation::shake;
 import openpngstudio::animation::easings;
+import openpngstudio::ui::window;
 import nk;
 
 struct Manager {
     List{Animation} animations;
+    Animation global_animation;
+    int selected;
+    window::Window cfg_win;
 }
 
 const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake"};
 
 fn Manager *new_manager() @export("animation_manager_new")
 {
-    Manager *m = malloc(Manager.sizeof);
+    Manager *m = calloc(Manager.sizeof);
     m.animations.init(mem);
+    m.global_animation = null;
+    m.selected = 0;
+
     return m;
 }
 
@@ -51,6 +58,34 @@ fn void Manager.tick(&self) @export("animation_manager_tick")
 
         anim.tick(now);
     }
+}
+
+fn void Manager.show(&self) @export("animation_manager_show")
+{
+    self.cfg_win.show = true;
+}
+
+fn void Manager.global_anim(&self, nk::Context *ctx) @export("animation_manager_global_anim")
+{
+    if (self.cfg_win.ctx == null) {
+        window::window_init(&self.cfg_win, ctx, "Global Animation Config");
+    }
+
+    if (window::window_begin(&self.cfg_win, nk::WINDOW_TITLE | nk::WINDOW_MOVABLE |
+        nk::WINDOW_SCALABLE | nk::WINDOW_BORDER | nk::WINDOW_MINIMIZABLE | 
+        nk::WINDOW_CLOSABLE)) {
+        nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
+        nk::layout_row_push(ctx, 0.75f);
+        nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
+        nk::layout_row_push(ctx, 0.24f);
+
+        int old = self.selected;
+        int current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
+            nk::vec2(200, 200));
+        self.selected = current;
+    }
+
+    if (self.cfg_win.state != HIDE) window::window_end(&self.cfg_win);
 }
 
 fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) @export("animation_manager_selector")

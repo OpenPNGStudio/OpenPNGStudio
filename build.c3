@@ -22,7 +22,7 @@ fn int main(String[] args)
 
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
         "console.c", "layermgr.c", "editor.c", "line_edit.c", "context.c",
-        "gif_config.c", "icon_db.c", "lua_ctx.c", "raygui.c",
+        "icon_db.c", "lua_ctx.c", "raygui.c",
         "ui/messagebox.c", "ui/window.c",
         "lua/logger.c",
         "work/work.c", "work/queue.c", "work/scheduler.c",
@@ -86,6 +86,20 @@ fn int main(String[] args)
                     log_err("Unable to fetch a dependency!")!!;
                     return 1;
                 }
+
+                if (dep.get_name() == "raylib") {
+                    Path c = cwd.to_tpath()!!;
+                    Path patch = c.tappend("patch")!!;
+                    patch = patch.tappend("src_raylib_gif_add_delays.diff")!!;
+                    String file = patch.str_view();
+
+                    b = b.tappend("raylib")!!;
+                    path::chdir(b)!!;
+
+                    git.exec("apply", file)!!;
+                    io::printn(file);
+                }
+
                 path::chdir(cwd.to_tpath()!!)!!;
             };
         }
@@ -188,7 +202,7 @@ fn int main(String[] args)
             log_info("Compiling %s", source)!!;
 
             int res = cc.exec("-Wall", "-g", "-finstrument-functions",
-                "-Wextra", "-Iinclude", "-Iinclude/vendor",
+                "-Wextra", "-Iinclude", "-Iinclude/vendor", "-fsanitize=address",
                 "-Ibuild/miniroot/include", "-c", full, "-o", out, 
                 output: true)!!;
 
@@ -205,7 +219,7 @@ fn int main(String[] args)
         ar.exec_array(objs.to_tarray(), output: true)!!;
     };
 
-    c3c.exec("build", output: true)!!;
+    c3c.exec("--sanitize=address", "build", output: true)!!;
 
     @pool() {
         File clangd = file::open(".clangd", "w")!!;
