@@ -172,12 +172,10 @@ fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev)
             layer.props = old;
             return new;
         } else {
-            if (self.global_animation.is_done()) {
-                if (self.global_animation.can_play()) {
-                    self.global_animation.is_done(SET_TRUE);
-                }
-                self.global_animation.can_play(SET_FALSE);
+            if (self.global_animation.can_play()) {
+                self.global_animation.is_done(SET_TRUE);
             }
+            self.global_animation.can_play(SET_FALSE);
         }
     }
 
