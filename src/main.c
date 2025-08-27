@@ -506,6 +506,10 @@ static void draw_menubar(bool *ui_focused)
                         LOG_W("Script is being loaded!", 0);
                     }
                 }
+
+                if (nk_menu_item_label(nk_ctx, "Quit", NK_TEXT_LEFT)) {
+                    uv_stop((void*) ctx.loop);
+                }
             }
 
             nk_menu_end(nk_ctx);

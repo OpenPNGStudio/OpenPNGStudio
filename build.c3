@@ -202,7 +202,7 @@ fn int main(String[] args)
             log_info("Compiling %s", source)!!;
 
             int res = cc.exec("-Wall", "-g", "-finstrument-functions",
-                "-Wextra", "-Iinclude", "-Iinclude/vendor", "-fsanitize=address",
+                "-Wextra", "-Iinclude", "-Iinclude/vendor",
                 "-Ibuild/miniroot/include", "-c", full, "-o", out, 
                 output: true)!!;
 
@@ -219,7 +219,7 @@ fn int main(String[] args)
         ar.exec_array(objs.to_tarray(), output: true)!!;
     };
 
-    c3c.exec("--sanitize=address", "build", output: true)!!;
+    c3c.exec("build", output: true)!!;
 
     @pool() {
         File clangd = file::open(".clangd", "w")!!;

@@ -83,8 +83,7 @@ fn void Fade.reset(&self, Time now) @dynamic
 fn Properties Fade.animate(&self, StaticLayer *layer) @dynamic
 {
     Properties copy = layer.props;
-    copy.tint.a = (char) (self.opacity * 255);
-    io::printn(copy.tint.a);
+    copy.tint.a = (char) $$round(self.opacity * 255);
     return copy;
 }
 

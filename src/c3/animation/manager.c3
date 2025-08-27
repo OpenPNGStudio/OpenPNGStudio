@@ -163,7 +163,7 @@ fn void Manager.global_anim(&self, nk::Context *ctx) @export("animation_manager_
 fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev) @export("animation_manager_animate_global")
 {
     if (self.global_animation) {
-        if (mask::cmp(mask::get(), self.global_anim_mask)) {
+        if (mask::cmp(mask::get(), self.global_anim_mask) || !self.global_animation.is_done()) {
             self.global_animation.can_play(SET_TRUE);
 
             Properties old = layer.props;

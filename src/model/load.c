@@ -176,7 +176,10 @@ static void read_archive(struct work *work)
     case READER_READ_LAYER_INFO:
         if (parse_layer_info(rd))
             rd->state = READER_READ_FAIL;
+        struct layer_info *prev = rd->current;
         rd->current = rd->current->next;
+        if (prev != NULL)
+            free(prev);
         rd->current_layer++;
         if (rd->current == NULL)
             rd->state = READER_SETUP_TIMERS;
@@ -215,6 +218,7 @@ static void after_read(struct work *work)
         if (rd->current == NULL && rd->state == READER_LAYER_PREPARE)
             break;
         rd->state = READER_READ_LAYER_IMG;
+        free(work);
         struct work *wrk = work_new(read_archive, after_read, true);
         work_set_context(wrk, rd);
 
@@ -223,6 +227,7 @@ static void after_read(struct work *work)
     }
     case READER_READ_LAYER_IMG: {
         rd->state = READER_READ_LAYER_INFO;
+        free(work);
         struct work *wrk = work_new(read_archive, after_read, false);
         work_set_context(wrk, rd);
 
@@ -235,6 +240,7 @@ static void after_read(struct work *work)
         LOG_I("Layers configured", 0);
         LOG_I("Model has been loaded!", 0);
         free(rd);
+        free(work);
         return;
     case READER_READ_MANIFEST:
     case READER_READ_FAIL:
