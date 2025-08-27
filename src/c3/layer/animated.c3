@@ -19,6 +19,7 @@ module openpngstudio::layer::animated;
 
 import std::core::string;
 import std::core::mem;
+import std::io;
 import raylib5::rl;
 import openpngstudio::animation;
 import openpngstudio::layer::static_layer;
@@ -35,7 +36,6 @@ struct AnimatedLayerProperties {
 struct AnimatedLayer (Layer) {
     StaticLayer layer;
     AnimatedLayerProperties props;
-    Animation anim;
 }
 
 fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
@@ -81,9 +81,10 @@ delays = [ `, self.props.number_of_frames));
 
 fn Properties AnimatedLayer.animate(&self) @dynamic
 {
-    if (self.anim) {
-        if (self.anim.is_done() && !self.anim.can_play()) return self.layer.props;
-        return self.anim.animate(&self.layer);
+    Animation anim = self.layer.state.animation;
+    if (anim) {
+        if (anim.is_done() && !anim.can_play()) return self.layer.props;
+        return anim.animate(&self.layer);
     }
 
     return self.layer.props;

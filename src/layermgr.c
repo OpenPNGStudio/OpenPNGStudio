@@ -202,6 +202,7 @@ void layer_manager_render(struct layer_manager *mgr)
 
         if ((layer->state.active || layer->state.is_toggled) || mask_test) {
             struct layer_properties props = layer_updated_properties(layer);
+            props = animation_manager_animate_global(mgr->anims, layer, props);
             DrawTexturePro(texture, (Rectangle) {
                 .x = 0,
                 .y = 0,

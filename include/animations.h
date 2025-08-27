@@ -16,3 +16,5 @@ void animation_manager_selector(animation_manager *self, struct layer *layer,
     struct nk_context *ctx);
 void animation_manager_show(animation_manager *self);
 void animation_manager_global_anim(animation_manager *self, struct nk_context *ctx);
+struct layer_properties animation_manager_animate_global(
+    animation_manager *self, struct layer *layer, struct layer_properties prev);
