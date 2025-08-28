@@ -22,9 +22,8 @@ fn int main(String[] args)
 
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
         "console.c", "layermgr.c", "editor.c", "line_edit.c", "context.c",
-        "icon_db.c", "lua_ctx.c", "raygui.c",
+        "icon_db.c", "raygui.c",
         "ui/messagebox.c", "ui/window.c",
-        "lua/logger.c",
         "work/work.c", "work/queue.c", "work/scheduler.c",
         "model/model.c", "model/write.c", "model/load.c",
         "layer/layer.c",
@@ -57,7 +56,6 @@ fn int main(String[] args)
             {"-DLIBUV_BUILD_SHARED=OFF"}),
         cmake_dep_init("https://github.com/raysan5/raylib.git",
             {"-DBUILD_EXAMPLES=OFF"}),
-        lua_init(),
         unuv_init(),
     };
 
@@ -74,7 +72,7 @@ fn int main(String[] args)
         /* libarchive depends on zstd */
         deps[1].add_dependency(deps[0]);
         /* libunuv depends on libuv */
-        deps[5].add_dependency(deps[2]);
+        deps[4].add_dependency(deps[2]);
 
         foreach (dep : deps) {
             @pool() {

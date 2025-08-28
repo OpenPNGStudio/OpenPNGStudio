@@ -53,10 +53,12 @@
 #include <unistd.h>
 #include <unuv.h>
 #include <uv.h>
+#if 0
 #include <lua_ctx.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#endif
 
 #ifndef NDEBUG
 #define PATH_START "../"
@@ -217,6 +219,7 @@ int c_main()
     }
 
     /* LUA */
+#if 0
     context_init_lua(&ctx);
 
     lua_getglobal(ctx.L, "package");
@@ -238,7 +241,7 @@ int c_main()
         lua_pop(ctx.L, 1);
     } else
         LOG_I("Lua runtime loaded successfuly!", 0);
-
+#endif
     ctx.editor.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
 
     SetTargetFPS(60);
@@ -397,6 +400,7 @@ static enum un_action update(un_idle *task)
     work_scheduler_run(&ctx.sched);
 
     /* execute lua once */
+#if 0
     lua_getglobal(ctx.L, LUA_PRIV_PREFIX "rt_spin_once");
 
     if (lua_isfunction(ctx.L, -1)) {
@@ -408,11 +412,12 @@ static enum un_action update(un_idle *task)
         LOG_E("Something happened with %s! Abort!", LUA_PRIV_PREFIX "rt_spin_once");
         abort();
     }
+#endif
 
     /* check for pending work */
     if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready)
         context_after_img_load(&ctx, ctx.image_work_queue);
-
+#if 0
     if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
         struct script_load_req *work = ctx.script_work_queue;
         struct lua_script script = {0};
@@ -432,6 +437,7 @@ static enum un_action update(un_idle *task)
         close(work->fd);
         free(work);
     }
+#endif
 
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
@@ -492,7 +498,7 @@ static void draw_menubar(bool *ui_focused)
                     
                     ctx.loading_state = SELECTING_IMAGE;
                 }
-
+#if 0
                 if (nk_menu_item_label(nk_ctx, "Load Script", NK_TEXT_LEFT)) {
                     if (ctx.editor.script_manager.to_import == NULL) {
                         ctx.dialog.open_for_write = false;
@@ -506,6 +512,7 @@ static void draw_menubar(bool *ui_focused)
                         LOG_W("Script is being loaded!", 0);
                     }
                 }
+#endif
 
                 if (nk_menu_item_label(nk_ctx, "Quit", NK_TEXT_LEFT)) {
                     uv_stop((void*) ctx.loop);

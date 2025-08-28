@@ -37,9 +37,11 @@
 
 #define PAGE_SIZE 4096 /* usual size */
 
+#if 0
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#endif
 
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after)
@@ -302,8 +304,10 @@ void context_keybindings(struct context *context, struct nk_context *ctx)
         window_end(&context->keybindings_win);
 }
 
+#if 0
 void context_init_lua(struct context *context)
 {
     context->L = luaL_newstate();
     luaL_openlibs(context->L);
 }
+#endif

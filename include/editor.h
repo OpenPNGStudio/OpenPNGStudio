@@ -23,7 +23,9 @@
 #include <core/microphone.h>
 #include "ui/window.h"
 #include <layer/manager.h>
+#if 0
 #include <lua_ctx.h>
+#endif
 #include <raylib-nuklear.h>
 #include <stdint.h>
 
@@ -38,7 +40,9 @@ enum editor_tab_id {
 struct editor {
     /* TABS */
     struct layer_manager layer_manager;
+#if 0
     struct script_mgr script_manager;
+#endif
 
     /* STATE */
     enum editor_tab_id current_tab;

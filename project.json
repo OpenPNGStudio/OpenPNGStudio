@@ -7,7 +7,7 @@
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
   "linker-search-paths": [ "build/miniroot/lib" ],
-  "linked-libraries": [ "OpenPNGStudio", "archive", "lua", "raylib", "unuv", "uv",
+  "linked-libraries": [ "OpenPNGStudio", "archive", "raylib", "unuv", "uv",
         "zstd", "m"],
   "test-sources": [ "test/**" ],
   "output": "build",

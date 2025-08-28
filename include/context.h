@@ -34,7 +34,9 @@
 #include <raylib.h>
 #include <ui/filedialog.h>
 #include <core/microphone.h>
+#if 0
 #include <lua.h>
+#endif
 #include <core/mask.h>
 #include <model/model.h>
 
@@ -88,7 +90,9 @@ struct context {
     /* STATE */
     enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
+#if 0
     lua_State *L;
+#endif
     struct script_load_req *script_work_queue;
 
     struct work_scheduler sched;
