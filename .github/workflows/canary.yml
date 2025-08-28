@@ -1,0 +1,70 @@
+name: Build And Publish Canary
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_enabled:
+        type: boolean
+        description: 'Build release binaries'
+        required: false
+        default: false
+  push:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    name: Linux build
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux Build
+        run: |
+          export DEBIAN_FRONTEND="noninteractive"
+          sudo apt update
+          sudo apt install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+          sudo apt install -y ninja-build cmake meson make gcc g++ wget curl git
+
+          wget https://github.com/c3lang/c3c/releases/latest/download/c3-linux.tar.gz
+          tar -xzf c3-linux.tar.gz
+          export PATH="$PATH:$(pwd)/c3/"
+
+          RELEASE_BUILD="${{ inputs.release_enabled }}" ./build.sh
+          cd build
+          ln ./OpenPNGStudio ../OpenPNGStudio
+          cd ..
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-linux-x86_64
+          path: |
+            assets/
+            licenses/
+            OpenPNGStudio
+            COPYING
+
+  release:
+    needs: [linux]
+    runs-on: ubuntu-24.04
+    name: Publish built binaries
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Merge
+        run: |
+          sudo apt install -y zip
+          for dir in OpenPNGStudio-*-x86_64; do
+            zip -r $dir.zip $dir
+          done
+          
+      - uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: canary
+          prerelease: true
+          files: |
+            OpenPNGStudio-*-x86_64.zip

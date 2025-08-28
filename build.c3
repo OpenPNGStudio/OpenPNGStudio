@@ -11,13 +11,25 @@ import std::io::file;
 String cwd;
 String build_dir;
 
+bool debug;
+
 /* programs */
 Program cmake, ninja, git, cp, make, curl, tar, sh, cc, ar, c3c, sed;
 
 extern fn int symlink(char *target, char *path);
 
-fn int main(String[] args)
+fn int main(String[] cli_args)
 {
+    if (cli_args.len >= 2) {
+        if (cli_args[1] == "false") {
+            debug = true;
+        } else if (cli_args[1] == "true") {
+            debug = false;
+        }
+    }
+
+    io::print("Debug: ");
+    io::printn(debug);
     init();
 
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
@@ -199,9 +211,17 @@ fn int main(String[] args)
 
             log_info("Compiling %s", source)!!;
 
-            int res = cc.exec("-Wall", "-g", "-finstrument-functions",
+            StrList args;
+            args.tinit_with_array({"-Wall", "-g", "-finstrument-functions",
                 "-Wextra", "-Iinclude", "-Iinclude/vendor",
-                "-Ibuild/miniroot/include", "-c", full, "-o", out, 
+                "-Ibuild/miniroot/include", "-c", full, "-o", out});
+
+            if (!build::debug) {
+                args.push("-O3");
+                args.push("-DNDEBUG");
+            }
+
+            int res = cc.exec_array(args.to_tarray(), 
                 output: true)!!;
 
             if (res != 0) {
@@ -217,7 +237,11 @@ fn int main(String[] args)
         ar.exec_array(objs.to_tarray(), output: true)!!;
     };
 
-    c3c.exec("build", output: true)!!;
+    if (build::debug) {
+        c3c.exec("build", output: true)!!;
+    } else {
+        c3c.exec("build", "-O5", output: true)!!;
+    }
 
     @pool() {
         File clangd = file::open(".clangd", "w")!!;

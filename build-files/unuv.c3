@@ -86,6 +86,8 @@ fn bool? UnuvTarget.configure(&self, Path miniroot) @dynamic
     log_info("Configuring %s", repo_name)!;
     self.configured = true;
 
+    if (!build::debug) libc::setenv("CFLAGS", "-O3", 1);
+    defer libc::setenv("CLFAGS", "", 1);
     return sh.exec("-c", "\"./configure\"")! == 0;
 }
 
