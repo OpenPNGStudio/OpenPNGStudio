@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include <lua_ctx.h>
 #include <lua.h>
 #include <lualib.h>

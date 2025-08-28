@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include <work/scheduler.h>
 #include <work/queue.h>
 #include <work/work.h>
