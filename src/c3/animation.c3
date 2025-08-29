@@ -19,7 +19,7 @@ interface Animation {
     fn bool is_done(StateBool toggle = GET);
     fn bool can_play(StateBool toggle = GET);
     fn void reset(Time now);
-    fn Properties animate(StaticLayer *layer);
+    fn Properties animate(Properties *props);
     fn void config(nk::Context *ctx);
     fn int easing(bool set = false, int easing_id = 0);
 }

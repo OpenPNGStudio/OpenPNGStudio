@@ -22,7 +22,7 @@ enum editor_tab_id {
 
 struct editor {
     /* TABS */
-    struct layer_manager layer_manager;
+    struct layer_manager *layer_manager;
 #if 0
     struct script_mgr script_manager;
 #endif

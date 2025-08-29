@@ -89,9 +89,9 @@ fn void Fade.reset(&self, Time now) @dynamic
     self.done = false;
 }
 
-fn Properties Fade.animate(&self, StaticLayer *layer) @dynamic
+fn Properties Fade.animate(&self, Properties *props) @dynamic
 {
-    Properties copy = layer.props;
+    Properties copy = *props;
     copy.tint.a = self.opacity;
     return copy;
 }

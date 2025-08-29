@@ -33,7 +33,7 @@ fn int main(String[] cli_args)
     init();
 
     String[] sources = src({"main.c", "pathbuf.c", "str.c", "filedialog.c",
-        "console.c", "layermgr.c", "editor.c", "line_edit.c", "context.c",
+        "console.c", "editor.c", "line_edit.c", "context.c",
         "icon_db.c", "raygui.c",
         "ui/messagebox.c", "ui/window.c",
         "work/work.c", "work/queue.c", "work/scheduler.c",
@@ -67,7 +67,16 @@ fn int main(String[] cli_args)
         cmake_dep_init("https://github.com/libuv/libuv.git",
             {"-DLIBUV_BUILD_SHARED=OFF"}),
         cmake_dep_init("https://github.com/raysan5/raylib.git",
-            {"-DBUILD_EXAMPLES=OFF"}),
+            {"-DBUILD_EXAMPLES=OFF", "-DCUSTOMIZE_BUILD=ON",
+            "-DSUPPORT_MODULE_RMODELS=OFF", "-DSUPPORT_MODULE_RAUDIO=OFF",
+            "-DSUPPORT_GESTURE_SYSTEM=OFF", "-DSUPPORT_RPRAND_GENERATOR=OFF",
+            "-DSUPPORT_MOUSE_GESTURES=OFF", "-DSUPPORT_SSH_KEYBOARD_RPI=OFF",
+            "-DSUPPORT_GIF_RECORDING=OFF", "-DSUPPORT_FILEFORMAT_BMP=ON",
+            "-DSUPPORT_FILEFORMAT_JPG=ON", "-DSUPPORT_FILEFORMAT_PNG=ON",
+            "-DSUPPORT_FILEFORMAT_BMP=ON", "-DSUPPORT_FILEFORMAT_TGA=ON",
+            "-DSUPPORT_FILEFORMAT_GIF=ON", "-DSUPPORT_FILEFORMAT_QOI=ON",
+            "-DSUPPORT_FILEFORMAT_PSD=ON", "-DSUPPORT_FILEFORMAT_DDS=ON",
+            }),
         unuv_init(),
     };
 
@@ -113,19 +122,6 @@ fn int main(String[] cli_args)
                 path::chdir(cwd.to_tpath()!!)!!;
             };
         }
-
-        @pool() {
-            Path cfg = path::tcwd()!!;
-            cfg = cfg.tappend("raylib_config.h")!!;
-
-            Path b = build_dir.to_tpath()!!;
-            b = b.tappend("deps")!!;
-            b = b.tappend("raylib")!!;
-            b = b.tappend("src")!!;
-            b = b.tappend("config.h")!!;
-            cp.exec(cfg.str_view(), b.str_view())!!;
-            log_info("Copying over custom raylib config")!!;
-        };
 
         foreach (dep : deps) {
             @pool() {
@@ -217,7 +213,7 @@ fn int main(String[] cli_args)
                 "-Ibuild/miniroot/include", "-c", full, "-o", out});
 
             if (!build::debug) {
-                args.push("-O3");
+                args.push("-Oz");
                 args.push("-DNDEBUG");
             }
 
@@ -240,7 +236,7 @@ fn int main(String[] cli_args)
     if (build::debug) {
         c3c.exec("build", output: true)!!;
     } else {
-        c3c.exec("build", "-O5", output: true)!!;
+        c3c.exec("build", "-Oz", output: true)!!;
     }
 
     @pool() {

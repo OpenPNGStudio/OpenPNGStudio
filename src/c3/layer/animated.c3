@@ -27,7 +27,7 @@ fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
 {
     AnimatedLayer *l = mem::new(AnimatedLayer);
     l.layer.props.image = image;
-    static_layer::static_layer_defaults(&l.layer);
+    static_layer::defaults(&l.layer);
     l.layer.props.is_animated = true;
 
     l.props.number_of_frames = number_of_frames;
@@ -40,6 +40,19 @@ fn AnimatedLayer *animated_layer_new(rl::Image image, usz number_of_frames,
 
 fn void AnimatedLayer.draw(&self, rl::Vector2 anchor) @dynamic
 {
+    rl::Image *img = &self.layer.props.image;
+    if (self.props.previous_frame_index != self.props.current_frame_index) {
+        usz off = (usz) img.width * img.height * 4 *
+            self.props.current_frame_index;
+        
+        rl::updateTexture(self.layer.props.texture, img.data + off);
+        self.props.previous_frame_index = self.props.current_frame_index;
+    }
+
+    if (!static_layer::draw(&self.layer, anchor)) {
+        self.props.previous_frame_index = 0;
+        self.props.current_frame_index = 0;
+    }
 }
 
 fn String AnimatedLayer.stringify(&self) @dynamic
@@ -63,13 +76,18 @@ delays = [ `, self.props.number_of_frames));
     return str;
 }
 
+fn Properties *AnimatedLayer.get_properties(&self) @dynamic => &self.layer.props;
+fn State *AnimatedLayer.get_state(&self) @dynamic => &self.layer.state;
+
 fn Properties AnimatedLayer.animate(&self) @dynamic
 {
     Animation anim = self.layer.state.animation;
     if (anim) {
         if (anim.is_done() && !anim.can_play()) return self.layer.props;
-        return anim.animate(&self.layer);
+        return anim.animate(&self.layer.props);
     }
 
     return self.layer.props;
 }
+
+fn void AnimatedLayer.free(&self) @dynamic {}

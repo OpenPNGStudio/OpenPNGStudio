@@ -13,8 +13,10 @@ struct layer_manager {
     uint64_t selected_layer;
 };
 
+struct layer_manager *layer_manager_init();
+
 void layer_manager_cleanup(struct layer_manager *mgr);
 void layer_manager_add_layer(struct layer_manager *mgr, struct layer *layer);
 
 void layer_manager_ui(struct layer_manager *mgr, struct nk_context *ctx);
-void layer_manager_render(struct layer_manager *mgr);
+void layer_manager_render(struct layer_manager *mgr, un_loop *loop);

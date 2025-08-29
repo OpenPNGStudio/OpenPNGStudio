@@ -28,6 +28,11 @@ bool window_begin(struct window *win, nk_flags flags)
 
     if (win->show) {
         if (nk_begin(win->ctx, win->title, win->geometry, flags)) {
+            struct nk_vec2 pos = nk_window_get_position(win->ctx);
+            if (pos.x < 0) pos.x = 0;
+            if (pos.y < 0) pos.y = 0;
+            nk_window_set_position(win->ctx, win->title, pos);
+
             win->state = SHOW;
             if (nk_input_is_mouse_hovering_rect(&win->ctx->input,
                 nk_window_get_bounds(win->ctx))) {

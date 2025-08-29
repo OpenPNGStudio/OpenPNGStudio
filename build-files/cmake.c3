@@ -96,7 +96,7 @@ fn bool? CMakeTarget.configure(&self, Path miniroot) @dynamic
         if (build::debug) {
             args.push("-DCMAKE_BUILD_TYPE=Debug");
         } else {
-            args.push("-DCMAKE_BUILD_TYPE=Release");
+            args.push("-DCMAKE_BUILD_TYPE=MinSizeRel");
         }
 
         if (repo_name == "zstd") {

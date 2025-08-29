@@ -81,9 +81,9 @@ fn void Shake.reset(&self, Time now) @dynamic
     self.done = false;
 }
 
-fn Properties Shake.animate(&self, StaticLayer *layer) @dynamic
+fn Properties Shake.animate(&self, Properties *props) @dynamic
 {
-    Properties copy = layer.props;
+    Properties copy = *props;
     copy.offset.x += self.current.x;
     copy.offset.y += self.current.y;
     return copy;

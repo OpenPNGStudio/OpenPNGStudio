@@ -62,9 +62,9 @@ fn void Spinner.reset(&self, Time now) @dynamic
     self.done = false;
 }
 
-fn Properties Spinner.animate(&self, StaticLayer *layer) @dynamic
+fn Properties Spinner.animate(&self, Properties *props) @dynamic
 {
-    Properties copy = layer.props;
+    Properties copy = *props;
     copy.rotation += self.rotation;
     return copy;
 }

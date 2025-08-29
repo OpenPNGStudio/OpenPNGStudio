@@ -149,12 +149,7 @@ fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev)
     if (self.global_animation) {
         if (mask::cmp(mask::get(), self.global_anim_mask) || !self.global_animation.is_done()) {
             self.global_animation.can_play(SET_TRUE);
-
-            Properties old = layer.props;
-            layer.props = prev;
-            Properties new = self.global_animation.animate(layer);
-            layer.props = old;
-            return new;
+            return self.global_animation.animate(&prev);
         } else {
             if (self.global_animation.can_play()) {
                 self.global_animation.is_done(SET_TRUE);

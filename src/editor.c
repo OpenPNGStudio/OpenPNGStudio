@@ -82,10 +82,10 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
                 nk_layout_row_dynamic(ctx, 30, 1);
                 nk_label(ctx, "Model Information: ", NK_TEXT_LEFT);
                 if (nk_button_label(ctx, "Global Animation Settings"))
-                    animation_manager_show(editor->layer_manager.anims);
+                    animation_manager_show(editor->layer_manager->anims);
                 break;
             case LAYERS:
-                layer_manager_ui(&editor->layer_manager, ctx);
+                layer_manager_ui(editor->layer_manager, ctx);
                 break;
             case SCRIPTS:
                 nk_layout_row_dynamic(ctx, 30, 1);

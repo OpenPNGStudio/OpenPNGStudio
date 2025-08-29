@@ -60,14 +60,14 @@ static void write_archive(struct work *work)
         add_directory_to_archive(wr, "layers");
         break;
     case WRITER_WRITE_LAYER_INFO: {
-        if (wr->layer_index == wr->model->editor->layer_manager.layer_count) {
+        if (wr->layer_index == wr->model->editor->layer_manager->layer_count) {
             wr->state = WRITER_WRITE_DONE;
             break;
         }
         LOG_I("Writing layer %s",
-            wr->model->editor->layer_manager.layers[wr->layer_index]
+            wr->model->editor->layer_manager->layers[wr->layer_index]
             ->properties.name.buffer);
-        struct layer *layer = wr->model->editor->layer_manager.layers[wr->layer_index];
+        struct layer *layer = wr->model->editor->layer_manager->layers[wr->layer_index];
         int pathname_len = snprintf(NULL, 0, "layers/%s-%d.toml",
             layer->properties.name.buffer, wr->layer_index + 1);
 
@@ -81,7 +81,7 @@ static void write_archive(struct work *work)
     }
     case WRITER_WRITE_LAYER_IMG: {
         LOG_I("Wrinting Layer Image", 0);
-        struct layer *layer = wr->model->editor->layer_manager.layers[wr->layer_index];
+        struct layer *layer = wr->model->editor->layer_manager->layers[wr->layer_index];
         struct animated_layer *animated_layer = NULL;
 
         if (layer->properties.is_animated) {

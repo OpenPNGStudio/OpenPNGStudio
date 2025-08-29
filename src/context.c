@@ -130,7 +130,7 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
     LOG_I("Loaded layer \"%s\"", req->name);
     layer_override_name(layer, req->name);
 
-    layer_manager_add_layer(&ctx->editor.layer_manager, layer);
+    layer_manager_add_layer(ctx->editor.layer_manager, layer);
 
     if (layer->properties.is_animated) {
         anim_layer = layer_get_animated(layer);

@@ -136,7 +136,7 @@ int c_main()
     filedialog_refresh(&ctx.dialog);
 
     ctx.camera.zoom = 1.0f;
-    ctx.editor.layer_manager.selected_layer = -1;
+    ctx.editor.layer_manager = layer_manager_init();
     ctx.editor.mic = &ctx.mic;
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
@@ -266,7 +266,7 @@ static enum un_action draw(un_idle *task)
 
     BeginMode2D(ctx.camera);
 
-    layer_manager_render(&ctx.editor.layer_manager);
+    layer_manager_render(ctx.editor.layer_manager);
 
     EndMode2D();
 
@@ -283,7 +283,6 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
 
 static enum un_action update(un_idle *task)
 {
-
     mask_t mask = get_current_mask();
     handle_key_mask(&mask);
     bool ui_focused = false;
@@ -317,12 +316,12 @@ static enum un_action update(un_idle *task)
         else
             editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
 
-        if (ctx.editor.layer_manager.selected_layer != -1)
-            draw_props(&ctx.editor.layer_manager, nk_ctx, &ui_focused);
+        if (ctx.editor.layer_manager->selected_layer != -1)
+            draw_props(ctx.editor.layer_manager, nk_ctx, &ui_focused);
 
-        if (ctx.editor.layer_manager.anims != NULL)
-            animation_manager_global_anim(ctx.editor.layer_manager.anims,
-                nk_ctx);
+        // if (ctx.editor.layer_manager->anims != NULL)
+        //     animation_manager_global_anim(ctx.editor.layer_manager->anims,
+        //         nk_ctx);
     }
 
     editor_apply_mask(&ctx.editor);

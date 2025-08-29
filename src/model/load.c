@@ -236,8 +236,8 @@ static void after_read(struct work *work)
         return;
     }
     case READER_READ_DONE:
-        rd->model->editor->layer_manager.layers = rd->layers;
-        rd->model->editor->layer_manager.layer_count = rd->manifest.number_of_layers;
+        rd->model->editor->layer_manager->layers = rd->layers;
+        rd->model->editor->layer_manager->layer_count = rd->manifest.number_of_layers;
         LOG_I("Layers configured", 0);
         LOG_I("Model has been loaded!", 0);
         free(rd);

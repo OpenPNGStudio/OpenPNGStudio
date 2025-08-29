@@ -12,8 +12,11 @@ interface Layer {
     fn void draw(rl::Vector2 anchor);
     /* TODO: fn void configure(); */
     fn String stringify();
+    fn Properties *get_properties();
+    fn State *get_state();
+
     fn Properties animate();
-    /* TODO: fn void free(); */
+    fn void free();
 }
 
 struct Properties {
@@ -62,27 +65,6 @@ fn char *stringify(StaticLayer *layer) @export("layer_stringify")
         res[len] = 0;
     };
     return res;
-}
-
-fn void start_animation(StaticLayer *layer) @export("start_animation")
-{
-    if (layer.state.animation) {
-        if (mask::cmp(mask::get(), layer.state.anim_mask)) {
-            layer.state.animation.can_play(SET_TRUE);
-        } else {
-            if (layer.state.animation.is_done()) stop_animation(layer);
-        }
-    }
-}
-
-fn void stop_animation(StaticLayer *layer) @export("stop_animation")
-{
-    if (layer.state.animation) {
-        if (layer.state.animation.can_play()) {
-            layer.state.animation.is_done(SET_TRUE);
-        }
-        layer.state.animation.can_play(SET_FALSE);
-    }
 }
 
 fn Properties updated_properties(StaticLayer *layer) @export("layer_updated_properties")
