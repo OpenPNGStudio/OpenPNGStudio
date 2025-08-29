@@ -378,8 +378,8 @@ end:
     c->properties.rotation = rot;
     c->state.mask = msk;
     if (in > 0) {
-        c->input_key_buffer[0] = in;
-        c->input_key_length = 1;
+        c->state.input_key_buffer[0] = in;
+        c->state.input_key_len = 1;
     }
     c->state.time_to_live = to_live;
     c->properties.has_toggle = toggle;

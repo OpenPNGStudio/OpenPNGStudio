@@ -4,6 +4,7 @@ module openpngstudio::layer::animated;
 import std::core::string;
 import std::core::mem;
 import std::io;
+import nk;
 import raylib5::rl;
 import openpngstudio::animation;
 import openpngstudio::layer::static_layer;
@@ -91,3 +92,8 @@ fn Properties AnimatedLayer.animate(&self) @dynamic
 }
 
 fn void AnimatedLayer.free(&self) @dynamic {}
+
+fn void AnimatedLayer.configure(&self, nk::Context *ctx) @dynamic
+{
+    static_layer::configure(&self.layer, ctx);
+}

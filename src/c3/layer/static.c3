@@ -5,16 +5,11 @@ import std::core::mem;
 import openpngstudio::layer;
 import openpngstudio::core::mask;
 import raylib5::rl;
+import nk;
 
 struct StaticLayer (Layer) {
     Properties props;
     State state;
-
-    char[2] input_key_buffer;
-    int input_key_len;
-
-    char[2] anim_input_key_buffer;
-    int anim_input_key_len;
 }
 
 fn StaticLayer *new_static(rl::Image image) @export("layer_new")
@@ -63,3 +58,6 @@ fn void StaticLayer.free(&self) @dynamic
 
     mem::free(self);
 }
+
+fn void StaticLayer.configure(&self, nk::Context *ctx) @dynamic =>
+    configure(self, ctx);

@@ -2,6 +2,8 @@
 module openpngstudio::layer::static_layer;
 
 import raylib5::rl;
+import nk;
+import std::math;
 import openpngstudio::core::mask;
 
 fn void defaults(StaticLayer *layer)
@@ -13,7 +15,7 @@ fn void defaults(StaticLayer *layer)
 
     layer.state.mask = mask::DEFAULT_LAYER_MASK;
     layer.state.anim_mask = mask::DEFAULT_LAYER_MASK;
-    layer.props.rotation = 180.0f;
+    layer.props.rotation = 0f;
     layer.props.tint = rl::WHITE;
     layer.state.animation = null;
     layer.state.selected_animation = 0;
@@ -36,7 +38,7 @@ fn bool draw(StaticLayer *layer, rl::Vector2 anchor)
             .width = texture.width, .height = texture.height,
         }, {
             .x = texture.width / 2.0f, .y = texture.height / 2.0f,
-        }, props.rotation - 180.0f, props.tint);
+        }, props.rotation, props.tint);
         start_animation(layer);
 
         // if (!layer->properties.has_toggle) {
@@ -52,6 +54,79 @@ fn bool draw(StaticLayer *layer, rl::Vector2 anchor)
     stop_animation(layer);
 
     return false;
+}
+
+fn void configure(StaticLayer *layer, nk::Context *ctx)
+{
+    bool holding_shift = nk::input_is_key_down(&ctx.input, nk::KEY_SHIFT);
+    float win_width = nk::window_get_width(ctx);
+    float off = holding_shift ? 1.0f : 0.1f;
+    nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
+    defer nk::style_pop_vec2(ctx);
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    float min_width = math::max(win_width * 0.49f, 250.0f);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
+
+    nk::label(ctx, "Position: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Position Group", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 2);
+
+        if (holding_shift) {
+            layer.props.offset.x = math::round(layer.props.offset.x);
+            layer.props.offset.y = math::round(layer.props.offset.y);
+        }
+
+        nk::property_float(ctx, "X:", float.min, &layer.props.offset.x,
+            float.max, off, off);
+        nk::property_float(ctx, "Y:", float.min, &layer.props.offset.y,
+            float.max, off, off);
+
+        nk::group_end(ctx);
+    }
+
+    nk::label(ctx, "Rotation:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Rotation Group", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+
+        if (holding_shift) {
+            layer.props.rotation = math::round(layer.props.rotation);
+        }
+
+        nk::property_float(ctx, "##Rotation Angle", float.min,
+            &layer.props.rotation, float.max, off, off);
+
+        nk::group_end(ctx);
+    }
+
+    nk::label(ctx, "Toggle mode:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Toggle Mode Goup", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_template_begin(ctx, 30);
+        nk::layout_row_template_push_dynamic(ctx);
+        nk::layout_row_template_push_static(ctx, 65);
+        nk::layout_row_template_end(ctx);
+
+        nk::spacing(ctx, 1);
+        nk::checkbox_label(ctx, "Enable", &layer.props.has_toggle);
+
+        nk::group_end(ctx);
+    }
+
+    nk::label(ctx, "Timeout (ms):", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Timeout Group", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+
+        if (layer.props.has_toggle) nk::widget_disable_begin(ctx);
+
+        nk::property_int(ctx, "##Timeout", 0, &layer.state.time_to_live,
+            int.max, 1, 1);
+
+        if (layer.props.has_toggle) nk::widget_disable_end(ctx);
+
+        nk::group_end(ctx);
+    }
 }
 
 fn void start_animation(StaticLayer *layer) @local

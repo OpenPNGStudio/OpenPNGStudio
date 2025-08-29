@@ -7,10 +7,11 @@ import raylib5::rl;
 import openpngstudio::animation;
 import openpngstudio::core::mask;
 import openpngstudio::ui::line_edit;
+import nk;
 
 interface Layer {
     fn void draw(rl::Vector2 anchor);
-    /* TODO: fn void configure(); */
+    fn void configure(nk::Context *ctx);
     fn String stringify();
     fn Properties *get_properties();
     fn State *get_state();
@@ -45,6 +46,11 @@ struct State {
     bool is_toggle_timer_ticking;
 
     int selected_animation;
+    char[2] input_key_buffer;
+    int input_key_length;
+
+    char[2] anim_input_key_buffer;
+    int anim_input_key_length;
 }
 
 fn char *stringify(StaticLayer *layer) @export("layer_stringify")
@@ -65,16 +71,4 @@ fn char *stringify(StaticLayer *layer) @export("layer_stringify")
         res[len] = 0;
     };
     return res;
-}
-
-fn Properties updated_properties(StaticLayer *layer) @export("layer_updated_properties")
-{
-    Layer l;
-    if (layer.props.is_animated) {
-        l = (AnimatedLayer*) layer;
-    } else {
-        l = layer;
-    }
-
-    return l.animate();
 }

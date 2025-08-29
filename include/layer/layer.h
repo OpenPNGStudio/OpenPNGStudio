@@ -9,12 +9,6 @@
 struct layer {
     struct layer_properties properties;
     struct layer_state state;
-
-    char input_key_buffer[2];
-    int input_key_length;
-
-    char anim_input_key_buffer[2];
-    int anim_input_key_length;
 };
 
 struct animated_layer {

@@ -161,7 +161,7 @@ fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev)
     return prev;
 }
 
-fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) @export("animation_manager_selector")
+fn void Manager.animation_selector(&self, Layer layer, nk::Context *ctx) @export("animation_manager_selector")
 {
     nk::layout_row_dynamic(ctx, 2, 1);
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
@@ -170,16 +170,18 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
     nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
     nk::layout_row_push(ctx, 0.24f);
 
-    int old = layer.state.selected_animation;
+    State *layer_state = layer.get_state();
+
+    int old = layer_state.selected_animation;
     int current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30, nk::vec2(200, 200)
         );
-    layer.state.selected_animation = current;
+    layer_state.selected_animation = current;
 
     if (old != current) {
-        if (layer.state.animation) {
-            ulong id = layer.state.animation.get_id();
-            Animation prev = layer.state.animation;
-            layer.state.animation = null;
+        if (layer_state.animation) {
+            ulong id = layer_state.animation.get_id();
+            Animation prev = layer_state.animation;
+            layer_state.animation = null;
             self.del_animation(id);
             free(prev);
         }
@@ -200,14 +202,14 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
 
     old = 0;
 
-    if (layer.state.animation) {
-        old = layer.state.animation.easing();
+    if (layer_state.animation) {
+        old = layer_state.animation.easing();
     } else {
         nk::widget_disable_begin(ctx);
     }
 
-    if (layer.state.animation) {
-        Animation anim = layer.state.animation;
+    if (layer_state.animation) {
+        Animation anim = layer_state.animation;
     } else {
         nk::widget_disable_begin(ctx);
     }
@@ -215,8 +217,8 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
     current = nk::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
         30, nk::vec2(200, 200));
 
-    if (layer.state.animation) {
-        layer.state.animation.easing(true, current);
+    if (layer_state.animation) {
+        layer_state.animation.easing(true, current);
     } else {
         nk::widget_disable_end(ctx);
     }
@@ -225,25 +227,26 @@ fn void Manager.animation_selector(&self, StaticLayer *layer, nk::Context *ctx) 
     nk::layout_row_dynamic(ctx, 2, 1);
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
-    mask::configure(&layer.state.anim_mask, &layer.anim_input_key_buffer,
-        &layer.anim_input_key_len, ctx, "Animation Mask:");
+    mask::configure(&layer_state.anim_mask, &layer_state.anim_input_key_buffer,
+        &layer_state.anim_input_key_length, ctx, "Animation Mask:");
 
     nk::layout_row_dynamic(ctx, 2, 1);
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
-    if (layer.state.animation) {
+    if (layer_state.animation) {
         nk::layout_row_dynamic(ctx, 30, 2);
         nk::label(ctx, "Animation Config: ", nk::TEXT_LEFT);
         nk::label_colored(ctx, "(By updating values, you may reset the animation)",
             nk::TEXT_RIGHT, nk::rgb(0xFF,0xFF,0x33));
 
-        layer.state.animation.config(ctx);
+        layer_state.animation.config(ctx);
     }
 }
 
-fn void Manager.add_animation(&self, StaticLayer *layer, Animation animation) @export("animation_manager_add")
+fn void Manager.add_animation(&self, Layer layer, Animation animation) @export("animation_manager_add")
 {
-    layer.state.animation = animation;
+    State *state = layer.get_state();
+    state.animation = animation;
     self.animations.push(animation);
 }
 

@@ -266,7 +266,7 @@ static enum un_action draw(un_idle *task)
 
     BeginMode2D(ctx.camera);
 
-    layer_manager_render(ctx.editor.layer_manager);
+    layer_manager_render(ctx.editor.layer_manager, ctx.loop);
 
     EndMode2D();
 

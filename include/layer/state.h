@@ -17,5 +17,10 @@ struct layer_state {
     bool is_toggle_timer_ticking;
 
     int selected_animation;
+    char input_key_buffer[2];
+    int input_key_len;
+
+    char anim_input_key_buffer[2];
+    int anim_input_key_len;
 };
 

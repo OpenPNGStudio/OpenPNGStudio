@@ -54,6 +54,11 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
     nk::layout_row_dynamic(ctx, bounds.h, 1);
     bool res = nk::group_begin(ctx, "Layers", 0);
 
+    nk::layout_row_template_begin(ctx, 30);
+    nk::layout_row_template_push_static(ctx, 30);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 30);
+    nk::layout_row_template_end(ctx);
     foreach (i, layer : self.layers) {
         Properties *layer_props = layer.get_properties();
 
@@ -61,12 +66,6 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
             nk::layout_row_dynamic(ctx, 2, 1);
             nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
         }
-
-        nk::layout_row_template_begin(ctx, 30);
-        nk::layout_row_template_push_static(ctx, 30);
-        nk::layout_row_template_push_dynamic(ctx);
-        nk::layout_row_template_push_static(ctx, 30);
-        nk::layout_row_template_end(ctx);
 
         if (nk::button_image(ctx, icondb::get_icon(SELECT_ICON))) {
             if (self.selected_layer == -1) {
@@ -158,8 +157,12 @@ fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("d
 {
     if (window::window_begin(&self.config_win, nk::WINDOW_TITLE |
         nk::WINDOW_MOVABLE | nk::WINDOW_CLOSABLE | nk::WINDOW_BORDER |
-        nk::WINDOW_MINIMIZABLE | nk::WINDOW_CLOSABLE)) {
-        
+        nk::WINDOW_MINIMIZABLE | nk::WINDOW_SCALABLE)) {
+        *ui_focused = self.config_win.focus;
+
+        Layer layer = self.layers[self.selected_layer];
+        layer.configure(ctx);
+        self.animation_manager.animation_selector(layer, ctx);
     } else {
         self.selected_layer = -1;
     }

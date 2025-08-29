@@ -30,27 +30,8 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE |
         NK_WINDOW_CLOSABLE)) {
 
-        if (nk_input_is_mouse_hovering_rect(&ctx->input, nk_window_get_bounds(ctx)))
-            *ui_focused = true;
         struct layer *layer = mgr->layers[mgr->selected_layer];
         bool holding_shift = nk_input_is_key_down(&ctx->input, NK_KEY_SHIFT);
-
-        nk_layout_row_dynamic(ctx, 30, 1);
-        nk_label(ctx, "Position:", NK_TEXT_LEFT);
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
-        nk_layout_row_push(ctx, 0.5f);
-        if (!holding_shift) {
-            nk_property_float(ctx, "X", -FLT_MAX, &layer->properties.offset.x, FLT_MAX, 0.1f, 0.1f);
-            nk_layout_row_push(ctx, 0.49f);
-            nk_property_float(ctx, "Y", -FLT_MAX, &layer->properties.offset.y, FLT_MAX, 0.1f, 0.1f);
-        } else {
-            layer->properties.offset.x = roundf(layer->properties.offset.x);
-            layer->properties.offset.y = roundf(layer->properties.offset.y);
-            nk_property_float(ctx, "X", -FLT_MAX, &layer->properties.offset.x, FLT_MAX, 1, 1);
-            nk_layout_row_push(ctx, 0.49f);
-            nk_property_float(ctx, "Y", -FLT_MAX, &layer->properties.offset.y, FLT_MAX, 1, 1);
-        }
-        nk_layout_row_end(ctx);
 
         nk_layout_row_dynamic(ctx, 30, 1);
         nk_label(ctx, "Rotation:", NK_TEXT_LEFT);
@@ -79,8 +60,8 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         nk_layout_row_dynamic(ctx, 2, 1);
         nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
 
-        configure_mask(&layer->state.mask, layer->input_key_buffer,
-            &layer->input_key_length, ctx, "Mask:");
+        configure_mask(&layer->state.mask, layer->state.input_key_buffer,
+            &layer->state.input_key_len, ctx, "Mask:");
 
         animation_manager_selector(mgr->anims, layer, ctx);
     } else
