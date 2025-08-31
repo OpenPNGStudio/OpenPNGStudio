@@ -27,7 +27,7 @@ jobs:
           sudo apt install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
           sudo apt install -y ninja-build cmake meson make gcc g++ wget curl git
 
-          wget https://github.com/c3lang/c3c/releases/latest/download/c3-linux.tar.gz
+          wget https://github.com/c3lang/c3c/releases/download/latest-prerelease/c3-linux.tar.gz
           tar -xzf c3-linux.tar.gz
           export PATH="$PATH:$(pwd)/c3/"
 
