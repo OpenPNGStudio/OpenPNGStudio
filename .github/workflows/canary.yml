@@ -59,12 +59,15 @@ jobs:
           for dir in OpenPNGStudio-*-x86_64; do
             zip -r $dir.zip $dir
           done
+          echo "RELEASE_NAME=OpenPNGStudio-canary-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
           
-      - uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
+      - uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: canary
+          name: ${{ env.RELEASE_NAME }}
           prerelease: true
+          draft: false
           files: |
             OpenPNGStudio-*-x86_64.zip
