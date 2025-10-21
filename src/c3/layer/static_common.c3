@@ -60,13 +60,13 @@ fn void configure(StaticLayer *layer, nk::Context *ctx)
 {
     bool holding_shift = nk::input_is_key_down(&ctx.input, nk::KEY_SHIFT);
     float win_width = nk::window_get_width(ctx);
+    float min_width = math::max(win_width * 0.49f, 250.0f);
     float off = holding_shift ? 1.0f : 0.1f;
     nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
     defer nk::style_pop_vec2(ctx);
 
     nk::layout_row_template_begin(ctx, 35);
     nk::layout_row_template_push_dynamic(ctx);
-    float min_width = math::max(win_width * 0.49f, 250.0f);
     nk::layout_row_template_push_variable(ctx, min_width);
     nk::layout_row_template_end(ctx);
 
@@ -127,6 +127,13 @@ fn void configure(StaticLayer *layer, nk::Context *ctx)
 
         nk::group_end(ctx);
     }
+
+    nk::layout_row_dynamic(ctx, 2, 1);
+    nk::spacer(ctx);
+    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+
+    mask::configure(&layer.state.mask, &layer.state.input_key_buffer,
+        &layer.state.input_key_length, ctx, "Mask:");
 }
 
 fn void start_animation(StaticLayer *layer) @local

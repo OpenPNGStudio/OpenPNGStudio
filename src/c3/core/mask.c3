@@ -2,7 +2,7 @@
 module openpngstudio::core::mask;
 
 import raylib5::rl;
-import std::io, std::ascii;
+import std::io, std::ascii, std::math;
 import nk;
 
 alias Mask = ulong;
@@ -174,42 +174,61 @@ fn nk::Bool filter(nk::TextEdit *box, nk::Rune unicode) @local
 fn void configure(Mask *mask, char *input_buffer, int *input_size,
     nk::Context *ctx, char *label) @export("configure_mask")
 {
-    nk::layout_row_dynamic(ctx, 30, 1);
+    float win_width = nk::window_get_width(ctx);
+    float min_width = math::max(win_width * 0.49f, 250.0f);
+    nk::Rect bounds;
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
+
     nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 3);
-
-    nk::layout_row_push(ctx, 0.33f);
-    nk::checkbox_flags_label(ctx, "Normal", (CUInt*) mask, QUIET);
-    nk::layout_row_push(ctx, 0.33f);
-    nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
-    nk::layout_row_push(ctx, 0.329f);
-    nk::checkbox_flags_label(ctx, "Pause", (CUInt*) mask, PAUSE);
-    nk::layout_row_end(ctx);
-
-    nk::layout_row_dynamic(ctx, 30, 1);
-    nk::label(ctx, "Modifier keys:", nk::TEXT_LEFT);
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
-
-    nk::layout_row_push(ctx, 0.25f);
-    nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
-    nk::layout_row_push(ctx, 0.25f);
-    nk::checkbox_flags_label(ctx, "Ctrl", (CUInt*) mask, CTRL);
-    nk::layout_row_push(ctx, 0.25f);
-    nk::checkbox_flags_label(ctx, "Super", (CUInt*) mask, SUPER);
-    nk::layout_row_push(ctx, 0.249f);
-    nk::checkbox_flags_label(ctx, "Alt", (CUInt*) mask, META);
-    nk::layout_row_end(ctx);
-
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.5f);
-    nk::label(ctx, "Key press:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.49f);
-    nk::edit_string(ctx, nk::EDIT_SIMPLE, (CChar*) input_buffer, input_size, 2,
-        &filter);
-    if (*input_size > 0) {
-        input_buffer[0] = ascii::to_upper(input_buffer[0]);
-        *mask |= 1ULL << ((Mask) input_buffer[0] - 'A' + KEY_START);
-    } else {
-        reset(mask);
+    bounds = nk::widget_bounds(ctx);
+    nk::label_colored(ctx, "(?)", nk::TEXT_RIGHT, nk::rgb(0x9F, 0xCA, 0xFF));
+    if (nk::input_is_mouse_hovering_rect(&ctx.input, bounds) &&
+        nk::tooltip_begin(ctx, 250)) {
+        nk::layout_row_dynamic(ctx, 40, 1);
+        nk::label_wrap(ctx, "   The mask specifies the conditions for activating the layer");
+        nk::tooltip_end(ctx);
     }
+
+    // nk::layout_row_dynamic(ctx, 30, 1);
+    // nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);
+    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 3);
+    //
+    // nk::layout_row_push(ctx, 0.33f);
+    // nk::checkbox_flags_label(ctx, "Normal", (CUInt*) mask, QUIET);
+    // nk::layout_row_push(ctx, 0.33f);
+    // nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
+    // nk::layout_row_push(ctx, 0.329f);
+    // nk::checkbox_flags_label(ctx, "Pause", (CUInt*) mask, PAUSE);
+    // nk::layout_row_end(ctx);
+    //
+    // nk::layout_row_dynamic(ctx, 30, 1);
+    // nk::label(ctx, "Modifier keys:", nk::TEXT_LEFT);
+    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
+    //
+    // nk::layout_row_push(ctx, 0.25f);
+    // nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
+    // nk::layout_row_push(ctx, 0.25f);
+    // nk::checkbox_flags_label(ctx, "Ctrl", (CUInt*) mask, CTRL);
+    // nk::layout_row_push(ctx, 0.25f);
+    // nk::checkbox_flags_label(ctx, "Super", (CUInt*) mask, SUPER);
+    // nk::layout_row_push(ctx, 0.249f);
+    // nk::checkbox_flags_label(ctx, "Alt", (CUInt*) mask, META);
+    // nk::layout_row_end(ctx);
+    //
+    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
+    // nk::layout_row_push(ctx, 0.5f);
+    // nk::label(ctx, "Key press:", nk::TEXT_LEFT);
+    // nk::layout_row_push(ctx, 0.49f);
+    // nk::edit_string(ctx, nk::EDIT_SIMPLE, (CChar*) input_buffer, input_size, 2,
+    //     &filter);
+    // if (*input_size > 0) {
+    //     input_buffer[0] = ascii::to_upper(input_buffer[0]);
+    //     *mask |= 1ULL << ((Mask) input_buffer[0] - 'A' + KEY_START);
+    // } else {
+    //     reset(mask);
+    // }
 }

@@ -1,0 +1,8 @@
+Credit
+==========
+Credit given to assets used by OpenPNGStudio.
+
+Logo:
+- author:       Oxetene
+- website:      https://oxetene.pages.dev/
+- codeberg:     https://codeberg.org/oxetene

@@ -43,8 +43,8 @@ fn int main(String[] cli_args)
         "vendor/toml.c"});
 
     String[] headers = {
-        "https://raw.githubusercontent.com/Immediate-Mode-UI/Nuklear/refs/heads/master/nuklear.h",
-        "https://raw.githubusercontent.com/RobLoach/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h",
+        "https://raw.githubusercontent.com/OpenPNGStudio/Nuklear/refs/heads/master/nuklear.h",
+        "https://raw.githubusercontent.com/OpenPNGStudio/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h",
         "https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h",
         "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h",
         "https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h",
@@ -371,5 +371,5 @@ fn int? Program.exec_array(self, String[] args, bool output = false) => @pool() 
     return process.join()!;
 }
 
-macro log_info(String $fmt, args...) => io::eprintfn("| " +++ $fmt, $vasplat);
-macro log_err(String $fmt, args...) => io::eprintfn("! " +++ $fmt, $vasplat);
+macro log_info(String $fmt, args...) => io::eprintfn("| " +++ $fmt, ...args);
+macro log_err(String $fmt, args...) => io::eprintfn("! " +++ $fmt, ...args);

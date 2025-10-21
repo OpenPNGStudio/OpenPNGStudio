@@ -31,34 +31,6 @@ void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focu
         NK_WINDOW_CLOSABLE)) {
 
         struct layer *layer = mgr->layers[mgr->selected_layer];
-        bool holding_shift = nk_input_is_key_down(&ctx->input, NK_KEY_SHIFT);
-
-        nk_layout_row_dynamic(ctx, 30, 1);
-        nk_label(ctx, "Rotation:", NK_TEXT_LEFT);
-        nk_layout_row_static(ctx, 40, 40, 1);
-
-        nk_knob_float(ctx, 0, &layer->properties.rotation, 360, 0.1f, NK_DOWN, 0.0f);
-
-        if (holding_shift)
-            layer->properties.rotation = roundf(layer->properties.rotation / 15.0f) * 15.0f;
-
-        nk_layout_row_dynamic(ctx, 30, 1);
-        nk_checkbox_label(ctx, "Enable toggle mode", &layer->properties.has_toggle);
-
-        if (layer->properties.has_toggle)
-            nk_widget_disable_begin(ctx);
-
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
-        nk_layout_row_push(ctx, 0.5f);
-        nk_label(ctx, "Time to live:", NK_TEXT_LEFT);
-        nk_layout_row_push(ctx, 0.49f);
-        nk_property_int(ctx, "timeout (ms)", 0, &layer->state.time_to_live, INT_MAX, 1, 0.1f);
-
-        if (layer->properties.has_toggle)
-            nk_widget_disable_end(ctx);
-
-        nk_layout_row_dynamic(ctx, 2, 1);
-        nk_rule_horizontal(ctx, ctx->style.window.border_color, false);
 
         configure_mask(&layer->state.mask, layer->state.input_key_buffer,
             &layer->state.input_key_len, ctx, "Mask:");

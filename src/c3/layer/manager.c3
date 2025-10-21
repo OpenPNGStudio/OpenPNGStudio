@@ -163,7 +163,7 @@ fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("d
 
         Layer layer = self.layers[self.selected_layer];
         layer.configure(ctx);
-        self.animation_manager.animation_selector(layer, ctx);
+        // self.animation_manager.animation_selector(layer, ctx);
     } else {
         self.selected_layer = -1;
     }
