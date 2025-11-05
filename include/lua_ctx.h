@@ -3,6 +3,7 @@
 #pragma once
 /* TODO: possibly lua API wrappers and utils */
 
+#if 0
 #include <lua.h>
 #include <ui/line_edit.h>
 #include <stdbool.h>
@@ -31,3 +32,5 @@ void bind_logger_functions(lua_State *L);
 
 void script_manager_add_script(struct script_mgr *mgr, struct lua_script
     *script);
+
+#endif

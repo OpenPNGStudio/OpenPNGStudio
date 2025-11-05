@@ -1106,6 +1106,12 @@ fn void label(
   Flags align)
 @extern("nk_label");
 
+fn void label_with_tooltip(
+  Context*, 
+  CChar*, 
+  Flags align)
+@extern("nk_label_with_tooltip");
+
 fn void label_colored(
   Context*, 
   CChar*, 
@@ -2328,7 +2334,8 @@ const StyleColors COLOR_KNOB = 28;
 const StyleColors COLOR_KNOB_CURSOR = 29;
 const StyleColors COLOR_KNOB_CURSOR_HOVER = 30;
 const StyleColors COLOR_KNOB_CURSOR_ACTIVE = 31;
-const StyleColors COLOR_COUNT = 32;
+const StyleColors COLOR_TOOLTIP = 32;
+const StyleColors COLOR_COUNT = 33;
 
 typedef StyleCursor = inline CUInt;
 const StyleCursor CURSOR_ARROW = 0;
@@ -3969,6 +3976,7 @@ struct StyleToggle {
   float border;
   float color_factor;
   float disabled_factor;
+  float rounding;
   Handle userdata;
   UnnamedPFN3 draw_begin;
   UnnamedPFN3 draw_end;
@@ -4262,6 +4270,13 @@ struct StyleWindow {
   Vec2 tooltip_padding;
 }
 
+struct StyleTooltip {
+  Color color;
+  Vec2 offset;
+  CChar* text;
+  float text_padding;
+}
+
 struct Style {
   UserFont* font;
   Cursor*[7] cursors;
@@ -4286,6 +4301,7 @@ struct Style {
   StyleTab tab;
   StyleCombo combo;
   StyleWindow window;
+  StyleTooltip tooltip;
 }
 
 fn StyleItem style_item_color(
@@ -4605,6 +4621,7 @@ struct Context {
   ButtonBehavior button_behavior;
   ConfigurationStacks stacks;
   float delta_time_seconds;
+  Bool tooltip_active;
   Handle userdata;
   TextEdit text_edit;
   CommandBuffer overlay;
@@ -4618,4 +4635,5 @@ struct Context {
   PageElement* freelist;
   CUInt count;
   CUInt seq;
+  Bool show_tooltip;
 }

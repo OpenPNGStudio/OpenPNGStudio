@@ -2,11 +2,11 @@
   "langrev": "1",
   "warnings": [ "no-unused" ],
   "dependency-search-paths": [ "lib" ],
-  "dependencies": [ "raylib55", "raygui", "novacrash", "nk" ],
+  "dependencies": [ "raylib55", "novacrash", "nk" ],
   "authors": [ "LowByteFox" ],
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
-  "linker-search-paths": [ "build/miniroot/lib" ],
+  "linker-search-paths": [ "build/miniroot/usr/lib64" ],
   "linked-libraries": [ "OpenPNGStudio", "archive", "raylib", "unuv", "uv",
         "zstd", "m"],
   "test-sources": [ "test/**" ],
@@ -17,5 +17,6 @@
     }
   },
   "cpu": "generic",
-  "opt": "O0"
+  "opt": "O0",
+  "features": ["CUSTOM_FRONTEND"]
 }

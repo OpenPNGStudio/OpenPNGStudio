@@ -4,7 +4,7 @@
   "targets" : {
     "linux-x64" : {
       "link-args" : [],
-      "dependencies" : ["raylib55", "raygui"],
+      "dependencies" : ["raylib55"],
       "linked-libraries" : []
     }
   }
