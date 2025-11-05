@@ -6,7 +6,7 @@
   "authors": [ "LowByteFox" ],
   "version": "0.2.0",
   "sources": [ "src/c3/**" ],
-  "linker-search-paths": [ "build/miniroot/usr/lib64" ],
+  "linker-search-paths": [ "build/miniroot/usr/lib64", "build/miniroot/usr/lib/x86_64-linux-gnu" ],
   "linked-libraries": [ "OpenPNGStudio", "archive", "raylib", "unuv", "uv",
         "zstd", "m"],
   "test-sources": [ "test/**" ],
