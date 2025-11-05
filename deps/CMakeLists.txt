@@ -24,7 +24,6 @@ set(ENABLE_EXPAT OFF)
 set(ENABLE_WIN32_XMLLITE OFF)
 set(ENABLE_PCREPOSIX OFF)
 set(ENABLE_PCRE2POSIX OFF)
-set(ENABLE_LIBGCC OFF)
 set(ENABLE_CNG OFF)
 set(ENABLE_CPIO OFF)
 set(ENABLE_CAT OFF)
@@ -88,3 +87,22 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(libunuv)
+
+if (WIN32)
+    # mman
+    FetchContent_Declare(
+        mman
+        URL "https://github.com/boldowa/mman-win32/archive/refs/heads/master.tar.gz"
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+
+    FetchContent_MakeAvailable(mman)
+    # dirent
+    FetchContent_Declare(
+        dirent
+        URL "https://github.com/tronkko/dirent/archive/refs/heads/master.tar.gz"
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+
+    FetchContent_MakeAvailable(dirent)
+endif()

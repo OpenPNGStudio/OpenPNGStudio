@@ -11,6 +11,10 @@ set(ZSTD_VERSION 1.5.7 CACHE STRING "Zstandard version used")
 set(LIBARCHIVE_VERSION 3.8.2 CACHE STRING "Libarchive version used")
 set(LIBUV_VERSION 1.51.0 CACHE STRING "Libuv version used")
 
+if(MSVC)
+    add_compile_options(/wd5105 /experimental:c11atomics)
+endif()
+
 include(FetchContent)
 
 add_subdirectory(deps)
@@ -40,6 +44,11 @@ set(VENDOR_HEADERS
     "https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h"
 )
 
+if (WIN32)
+    list(APPEND VENDOR_HEADERS
+        "https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h")
+endif()
+
 set(VENDOR_SOURCES
     "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.c"
 )
@@ -61,6 +70,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${libarchive_SOURCE_DIR}/libarchive"
     "${raylib_SOURCE_DIR}"
     "${libunuv_SOURCE_DIR}/include")
+if (WIN32)
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "${mman_SOURCE_DIR}"
+    "${dirent_SOURCE_DIR}/include")
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC include include/vendor)
 
 install(TARGETS ${PROJECT_NAME})

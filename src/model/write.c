@@ -71,7 +71,11 @@ static void write_archive(struct work *work)
         int pathname_len = snprintf(NULL, 0, "layers/%s-%d.toml",
             layer->properties.name.buffer, wr->layer_index + 1);
 
+#ifndef _WIN32
         char pathname[pathname_len + 1];
+#else
+        char* pathname = _alloca(pathname_len + 1);
+#endif
         memset(pathname, 0, pathname_len + 1);
         snprintf(pathname, pathname_len + 1, "layers/%s-%d.toml",
             layer->properties.name.buffer, wr->layer_index + 1);
@@ -88,7 +92,11 @@ static void write_archive(struct work *work)
             animated_layer = layer_get_animated(layer);
             int length = snprintf(NULL, 0, "layers/%s-%d.gif",
                 layer->properties.name.buffer, wr->layer_index + 1);
+#ifndef _WIN32
             char pathname[length + 1];
+#else
+            char *pathname = _alloca(length + 1);
+#endif
             memset(pathname, 0, length + 1);
             snprintf(pathname, length + 1, "layers/%s-%d.gif", layer->properties.name.buffer,
                 wr->layer_index + 1);
@@ -97,7 +105,11 @@ static void write_archive(struct work *work)
         } else {
             int length = snprintf(NULL, 0, "layers/%s-%d.png",
                 layer->properties.name.buffer, wr->layer_index + 1);
+#ifndef _WIN32
             char pathname[length + 1];
+#else
+            char* pathname = _alloca(length + 1);
+#endif
             memset(pathname, 0, length + 1);
             snprintf(pathname, length + 1, "layers/%s-%d.png", layer->properties.name.buffer,
                 wr->layer_index + 1);

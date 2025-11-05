@@ -26,7 +26,11 @@ char *model_generate_manifest(struct model *model)
     color |= model->editor->background_color.g << 8;
     color |= model->editor->background_color.b;
 
+#ifndef _WIN32
     struct c3_serialize_layer layers[model->editor->layer_manager->layer_count];
+#else
+    struct c3_serialize_layer *layers = _alloca(model->editor->layer_manager->layer_count);
+#endif
     for (int i = 0; i < model->editor->layer_manager->layer_count; i++) {
         struct layer *layer = model->editor->layer_manager->layers[i];
         layers[i].name = layer->properties.name.buffer;

@@ -16,3 +16,5 @@ subprojects/wolfssl/
 subprojects/packagecache/
 subprojects/lua-5.4.6/
 .cache/
+CMakeSettings.json
+.vs/

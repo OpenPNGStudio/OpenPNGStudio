@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifdef _WIN32
+#include <raylib_win32.h>
+#endif
 #include <assert.h>
 #include <toml.h>
 #include <archive.h>
@@ -8,7 +11,12 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/mman.h>
+#else
+#include <mman.h>
+typedef unsigned short mode_t;
+#endif
 
 #define TOML_ERR_LEN 255
 

@@ -29,12 +29,12 @@
 #include <string.h>
 #include <model/model.h>
 #ifndef _WIN32
+#include <unistd.h>
 #include <sys/mman.h>
 #else
 #include <mman.h>
 #endif
 #include <sys/stat.h>
-#include <unistd.h>
 #include <unuv.h>
 #include <uv.h>
 #if 0
@@ -530,7 +530,11 @@ static void load_layer()
     /* submit to queue */
     struct stat s;
     size_t sz = filedialog_selsz(&ctx.dialog);
+#ifndef _WIN32
     char buffer[sz + 1];
+#else
+    char* buffer = _alloca(sz + 1);
+#endif
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);
 
@@ -550,7 +554,11 @@ static void load_layer()
 static void load_model()
 {
     size_t sz = filedialog_selsz(&ctx.dialog);
+#ifndef _WIN32
     char buffer[sz + 1];
+#else
+    char* buffer = _alloca(sz + 1);
+#endif
 
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);
@@ -566,7 +574,11 @@ static void write_model()
         const char *ext = ".opng";
         int ext_len = strlen(ext);
 
+#ifndef _WIN32
         char tmpbuf[sz + ext_len + 1];
+#else
+        char *tmpbuf = _alloca(sz + ext_len + 1);
+#endif
         memset(tmpbuf, 0, sz + ext_len + 1);
         path_str(&ctx.dialog.current_directory, sz, tmpbuf);
         strcat(tmpbuf, ext);
@@ -587,7 +599,11 @@ static void load_script()
     /* submit to queue */
     struct stat s;
     size_t sz = filedialog_selsz(&ctx.dialog);
+#ifndef _WIN32
     char buffer[sz + 1];
+#else
+    char* buffer = _alloca(sz + 1);
+#endif
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);
 
