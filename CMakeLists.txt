@@ -26,7 +26,7 @@ function(fetch_file url dest_dir)
 
     if(NOT EXISTS ${dest})
         message(STATUS "Fetching ${filename} from ${url}")
-        file(DOWNLOAD ${url} ${dest} SHOW_PROGRESS EXPECTED_HASH ANY)
+        file(DOWNLOAD ${url} ${dest} SHOW_PROGRESS)
     else()
         message(STATUS "Already fetched: ${filename}")
     endif()
