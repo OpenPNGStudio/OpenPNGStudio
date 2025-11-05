@@ -110,6 +110,8 @@ static void draw_grid(int line_width, int spacing, Color color)
     }
 }
 
+void opng_style_apply(struct nk_context *ctx);
+
 int c_main()
 {
     char cpubuff[4] = {0};
@@ -149,12 +151,12 @@ int c_main()
     ctx.model.editor = &ctx.editor;
     ctx.model.mic = &ctx.mic;
 
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(1024, 640, "OpenPNGStudio");
 
     SetExitKey(KEY_NULL);
-    Font font = LoadFont(PATH_START "assets/fonts/Ubuntu-R.ttf");
-    SetTextureFilter(font.texture, TEXTURE_FILTER_TRILINEAR);
+    Font font = LoadFont(PATH_START "assets/fonts/VarelaRound-Regular.ttf");
+    SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
 
     register_icon(UP_ICON, LoadNuklearImage(PATH_START "assets/icons/up.png"));
     register_icon(DOWN_ICON,
@@ -175,8 +177,9 @@ int c_main()
     register_icon(DRIVE_ICON,
         LoadNuklearImage(PATH_START "assets/images/drive.png"));
 
-    ctx.ctx = InitNuklearEx(font, 16);
+    ctx.ctx = InitNuklearEx(font, 18);
     set_nk_font(font);
+    opng_style_apply(ctx.ctx);
 
     /* MINIAUDIO */
     ctx.mic.multiplier = DEFAULT_MULTIPLIER;
@@ -226,7 +229,7 @@ int c_main()
     } else
         LOG_I("Lua runtime loaded successfuly!", 0);
 #endif
-    ctx.editor.background_color = (Color) { 0x18, 0x18, 0x18, 0xFF };
+    ctx.editor.background_color = (Color) { 0x88, 0x88, 0x88, 0xFF };
 
     SetTargetFPS(60);
 

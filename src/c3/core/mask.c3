@@ -183,15 +183,18 @@ fn void configure(Mask *mask, char *input_buffer, int *input_size,
     nk::layout_row_template_push_variable(ctx, min_width);
     nk::layout_row_template_end(ctx);
 
-    nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);
-    bounds = nk::widget_bounds(ctx);
-    nk::label_colored(ctx, "(?)", nk::TEXT_RIGHT, nk::rgb(0x9F, 0xCA, 0xFF));
-    if (nk::input_is_mouse_hovering_rect(&ctx.input, bounds) &&
-        nk::tooltip_begin(ctx, 250)) {
-        nk::layout_row_dynamic(ctx, 40, 1);
-        nk::label_wrap(ctx, "   The mask specifies the conditions for activating the layer");
-        nk::tooltip_end(ctx);
+    nk::label_with_tooltip(ctx, (CChar*) label, nk::TEXT_LEFT);
+    if (ctx.tooltip_active) {
+        nk::tooltip(ctx, "This is a tooltip");
     }
+
+    // nk::label_colored(ctx, "(?)", nk::TEXT_RIGHT, nk::rgb(0x9F, 0xCA, 0xFF));
+    // if (nk::input_is_mouse_hovering_rect(&ctx.input, bounds) &&
+    //     nk::tooltip_begin(ctx, 250)) {
+    //     nk::layout_row_dynamic(ctx, 40, 1);
+    //     nk::label_wrap(ctx, "   The mask specifies the conditions for activating the layer");
+    //     nk::tooltip_end(ctx);
+    // }
 
     // nk::layout_row_dynamic(ctx, 30, 1);
     // nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);

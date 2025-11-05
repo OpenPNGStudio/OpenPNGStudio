@@ -105,7 +105,7 @@ fn void configure(StaticLayer *layer, nk::Context *ctx)
     if (nk::group_begin(ctx, "Toggle Mode Goup", nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_template_begin(ctx, 30);
         nk::layout_row_template_push_dynamic(ctx);
-        nk::layout_row_template_push_static(ctx, 65);
+        nk::layout_row_template_push_static(ctx, 75);
         nk::layout_row_template_end(ctx);
 
         nk::spacing(ctx, 1);

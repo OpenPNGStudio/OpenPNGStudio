@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-
+#if 0
 #include <lua_ctx.h>
 
 #include <lua.h>
@@ -68,3 +68,5 @@ int lua_script_load_req(lua_State *L)
 
     return 1;
 }
+
+#endif

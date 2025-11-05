@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#if 0
 #include <lua_ctx.h>
 #include <lua.h>
 #include <lualib.h>
@@ -65,3 +66,5 @@ static int lua_console_error(lua_State *L)
     console_error(fn, line, txt);
     return 0;
 }
+
+#endif
