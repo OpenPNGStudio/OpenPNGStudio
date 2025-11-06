@@ -2,7 +2,6 @@
 #ifndef _EDITOR_H_
 #define _EDITOR_H_
 
-#include <archive.h>
 #include <core/microphone.h>
 #include "ui/window.h"
 #include <layer/manager.h>

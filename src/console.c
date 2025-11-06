@@ -106,7 +106,7 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
 #ifndef _WIN32
             char linebuff[size + 1];
 #else
-            char* linebuff = _alloca(size + 1);
+            char* linebuff = malloc(size + 1);
 #endif
             snprintf(linebuff, size + 1, "%ld", iter->line);
             nk_layout_row_push(ctx, 0.10f);
@@ -164,7 +164,7 @@ void console_debug(const char *fn, size_t line, const char *fmt, ...)
 #ifndef _WIN32
     char final[bufsz + add_sz + 1];
 #else
-    char* final = _alloca(bufsz + add_sz + 1);
+    char* final = malloc(bufsz + add_sz + 1);
 #endif
     snprintf(final, bufsz + 1, "%s:%lu \e[42;1m\e[37;1m D \e[0m ", fn, line);
 
@@ -197,7 +197,7 @@ void console_info(const char *fn, size_t line, const char *fmt, ...)
 #ifndef _WIN32
     char final[bufsz + add_sz + 1];
 #else
-    char* final = _alloca(bufsz + add_sz + 1);
+    char* final = malloc(bufsz + add_sz + 1);
 #endif
     snprintf(final, bufsz + 1, "%s:%lu \e[46;1m\e[37;1m I \e[0m ", fn, line);
 
@@ -230,7 +230,7 @@ void console_warn(const char *fn, size_t line, const char *fmt, ...)
 #ifndef _WIN32
     char final[bufsz + add_sz + 1];
 #else
-    char* final = _alloca(bufsz + add_sz + 1);
+    char* final = malloc(bufsz + add_sz + 1);
 #endif
     snprintf(final, bufsz + 1, "%s:%lu \e[43;1m\e[30;1m W \e[0m ", fn, line);
 
@@ -263,7 +263,7 @@ void console_error(const char *fn, size_t line, const char *fmt, ...)
 #ifndef _WIN32
     char final[bufsz + add_sz + 1];
 #else
-    char* final = _alloca(bufsz + add_sz + 1);
+    char* final = malloc(bufsz + add_sz + 1);
 #endif
     snprintf(final, bufsz + 1, "%s:%lu \e[41;1m\e[30m E \e[0m ", fn, line);
 

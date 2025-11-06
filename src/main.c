@@ -123,8 +123,6 @@ int c_main()
 #endif
     /* CFG */
     ctx.loop = un_loop_new();
-    filedialog_init(&ctx.dialog, 0);
-    console_init();
 
     LOG_I("Using %d threads", uv_available_parallelism());
 
@@ -135,6 +133,8 @@ int c_main()
     path_append_dir(&ctx.dialog.current_directory, strdup("home"));
     path_append_dir(&ctx.dialog.current_directory, strdup(getlogin()));
 #endif
+    filedialog_init(&ctx.dialog, 0);
+    console_init();
     filedialog_refresh(&ctx.dialog);
 
     ctx.camera.zoom = 1.0f;
@@ -533,7 +533,7 @@ static void load_layer()
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
-    char* buffer = _alloca(sz + 1);
+    char* buffer = malloc(sz + 1);
 #endif
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);
@@ -557,7 +557,7 @@ static void load_model()
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
-    char* buffer = _alloca(sz + 1);
+    char* buffer = malloc(sz + 1);
 #endif
 
     memset(buffer, 0, sz + 1);
@@ -577,7 +577,7 @@ static void write_model()
 #ifndef _WIN32
         char tmpbuf[sz + ext_len + 1];
 #else
-        char *tmpbuf = _alloca(sz + ext_len + 1);
+        char *tmpbuf = malloc(sz + ext_len + 1);
 #endif
         memset(tmpbuf, 0, sz + ext_len + 1);
         path_str(&ctx.dialog.current_directory, sz, tmpbuf);
@@ -602,7 +602,7 @@ static void load_script()
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
-    char* buffer = _alloca(sz + 1);
+    char* buffer = malloc(sz + 1);
 #endif
     memset(buffer, 0, sz + 1);
     filedialog_selected(&ctx.dialog, sz, buffer);

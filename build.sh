@@ -16,4 +16,4 @@ cd build
 ninja
 mkdir -p miniroot
 DESTDIR=./miniroot/ ninja install
-c3c build
+c3c build OpenPNGStudio-linux-x64

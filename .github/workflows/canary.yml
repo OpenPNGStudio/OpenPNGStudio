@@ -33,7 +33,7 @@ jobs:
 
           RELEASE_BUILD="${{ inputs.release_enabled }}" ./build.sh
           cd build
-          ln ./OpenPNGStudio ../OpenPNGStudio
+          ln ./OpenPNGStudio-linux-x64 ../OpenPNGStudio
           cd ..
       - uses: actions/upload-artifact@v4
         with:

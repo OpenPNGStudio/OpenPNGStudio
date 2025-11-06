@@ -1,9 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "console.h"
 #include <model/model.h>
-#include <archive_entry.h>
 #include <stdbool.h>
+#ifndef _WIN32
+#include <archive_entry.h>
 #include <archive.h>
+#else
+#define AE_IFREG 0
+#define AE_IFDIR 0
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <work/work.h>
@@ -32,6 +37,7 @@ static void add_directory_to_archive(struct model_writer *writer, const char *di
 
 void model_write(struct model *model, const char *path)
 {
+    return;
     struct model_writer *wr = calloc(1, sizeof(struct model_writer));
     wr->archive = archive_write_new();
     wr->model = model;
@@ -74,7 +80,7 @@ static void write_archive(struct work *work)
 #ifndef _WIN32
         char pathname[pathname_len + 1];
 #else
-        char* pathname = _alloca(pathname_len + 1);
+        char* pathname = malloc(pathname_len + 1);
 #endif
         memset(pathname, 0, pathname_len + 1);
         snprintf(pathname, pathname_len + 1, "layers/%s-%d.toml",
@@ -95,7 +101,7 @@ static void write_archive(struct work *work)
 #ifndef _WIN32
             char pathname[length + 1];
 #else
-            char *pathname = _alloca(length + 1);
+            char *pathname = malloc(length + 1);
 #endif
             memset(pathname, 0, length + 1);
             snprintf(pathname, length + 1, "layers/%s-%d.gif", layer->properties.name.buffer,
@@ -108,7 +114,7 @@ static void write_archive(struct work *work)
 #ifndef _WIN32
             char pathname[length + 1];
 #else
-            char* pathname = _alloca(length + 1);
+            char* pathname = malloc(length + 1);
 #endif
             memset(pathname, 0, length + 1);
             snprintf(pathname, length + 1, "layers/%s-%d.png", layer->properties.name.buffer,

@@ -4,8 +4,14 @@
 #endif
 #include <assert.h>
 #include <toml.h>
+#ifndef _WIN32
 #include <archive.h>
 #include <archive_entry.h>
+#else
+#define ARCHIVE_OK 0
+#define AE_IFREG 0
+#define AE_IFDIR 0
+#endif
 #include <console.h>
 #include <model/model.h>
 #include <fcntl.h>
@@ -80,6 +86,7 @@ static struct layer_info *manifest_find_layer(struct model_manifest *manifest, c
 
 void model_load(un_loop *loop, struct model *model, const char *path)
 {
+    return;
     struct stat s;
     stat(path, &s);
 

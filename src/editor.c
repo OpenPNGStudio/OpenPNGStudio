@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include <archive.h>
 #include <console.h>
 #include <context.h>
 #include <layer/manager.h>

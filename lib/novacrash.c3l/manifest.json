@@ -1,11 +1,16 @@
 {
   "provides" : "novacrash",
   "sources" : [ "src/**" ],
-  "targets" : {
-    "linux-x64" : {
-      "link-args" : [],
-      "dependencies" : ["raylib55"],
-      "linked-libraries" : []
+  "targets": {
+    "linux-x64": {
+      "link-args": [],
+      "dependencies": [ "raylib55" ],
+      "linked-libraries": []
+    },
+    "windows-x64": {
+      "link-args": [],
+      "dependencies": [ "raylib55" ],
+      "linked-libraries": []
     }
   }
 }

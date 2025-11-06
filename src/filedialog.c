@@ -206,7 +206,7 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
 #ifndef _WIN32
                 char split[len + 1];
 #else
-                char *split = _alloca(len + 1);
+                char *split = malloc(len + 1);
 #endif
                 memset(split, 0, len + 1);
                 memcpy(split, prev, len);
@@ -249,7 +249,7 @@ void filedialog_run(struct filedialog *dialog, struct nk_context *ctx, bool *ui_
 #ifndef _WIN32
                 char tmpbuf[sz + 1];
 #else
-                char *tmpbuf = _alloca(sz + 1);
+                char *tmpbuf = malloc(sz + 1);
 #endif
                 memset(tmpbuf, 0, sz + 1);
                 path_str(&dialog->current_directory, sz, tmpbuf);
@@ -307,7 +307,7 @@ static void draw_titlebar(struct filedialog *dialog, struct nk_context *ctx)
 #ifndef _WIN32
     char buf[sz + 1];
 #else
-    char *buf = _alloca(sz + 1);
+    char *buf = malloc(sz + 1);
 #endif
     memset(buf, 0, sz + 1);
     path_dir(&dialog->current_directory, sz, buf);
@@ -505,7 +505,7 @@ static void init_content(struct filedialog *dialog)
 #ifndef _WIN32
     char buf[sz + 1];
 #else
-    char* buf = _alloca(sz + 1);
+    char* buf = malloc(sz + 1);
 #endif
     memset(buf, 0, sz + 1);
     path_dir(&dialog->current_directory, sz, buf);
@@ -572,7 +572,7 @@ static void init_content(struct filedialog *dialog)
 #ifndef _WIN32
             char full_buf[full_sz + 1];
 #else
-            char *full_buf = _alloca(full_sz + 1);
+            char *full_buf = malloc(full_sz + 1);
 #endif
             memset(full_buf, 0, full_sz + 1);
             path_dir(&dialog->current_directory, full_sz, full_buf);

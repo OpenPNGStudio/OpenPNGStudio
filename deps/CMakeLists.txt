@@ -1,3 +1,4 @@
+if (!WIN32)
 # zstd
 set(ZSTD_BUILD_STATIC ON)
 set(ZSTD_BUILD_SHARED OFF)
@@ -40,7 +41,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(libarchive)
 
+endif()
+
 # libuv
+set(BUILD_SHARED_LIBS OFF)
+set(LIBUV_BUILD_TESTS OFF)
+set(LIBUV_BUILD_BENCH OFF)
 set(LIBUV_BUILD_SHARED OFF)
 
 FetchContent_Declare(

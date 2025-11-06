@@ -66,14 +66,16 @@ file(GLOB_RECURSE SRCS src/*.c)
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${libuv_SOURCE_DIR}/include"
-    "${zstd_SOURCE_DIR}/lib"
-    "${libarchive_SOURCE_DIR}/libarchive"
     "${raylib_SOURCE_DIR}"
     "${libunuv_SOURCE_DIR}/include")
 if (WIN32)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${mman_SOURCE_DIR}"
     "${dirent_SOURCE_DIR}/include")
+else()
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "${zstd_SOURCE_DIR}/lib"
+    "${libarchive_SOURCE_DIR}/libarchive")
 endif()
 target_include_directories(${PROJECT_NAME} PUBLIC include include/vendor)
 
