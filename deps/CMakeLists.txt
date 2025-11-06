@@ -1,4 +1,5 @@
-if (!WIN32)
+if (WIN32)
+else()
 # zstd
 set(ZSTD_BUILD_STATIC ON)
 set(ZSTD_BUILD_SHARED OFF)
