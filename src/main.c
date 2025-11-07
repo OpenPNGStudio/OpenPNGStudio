@@ -130,12 +130,12 @@ int c_main()
     path_append_dir(&ctx.dialog.current_directory, strdup("users"));
     path_append_dir(&ctx.dialog.current_directory, strdup(getenv("USERNAME")));
 #else
-    path_append_dir(&ctx.dialog.current_directory, strdup("home"));
-    path_append_dir(&ctx.dialog.current_directory, strdup(getlogin()));
+    // path_append_dir(&ctx.dialog.current_directory, strdup("home"));
+    // path_append_dir(&ctx.dialog.current_directory, strdup(getlogin()));
 #endif
-    filedialog_init(&ctx.dialog, 0);
+    ctx.dialog = filedialog_init(false);
     console_init();
-    filedialog_refresh(&ctx.dialog);
+    filedialog_refresh(ctx.dialog);
 
     ctx.camera.zoom = 1.0f;
     ctx.editor.layer_manager = layer_manager_init();
@@ -242,7 +242,7 @@ int c_main()
 
     cleanup_icons();
     ma_device_uninit(&ctx.mic.device);
-    filedialog_deinit(&ctx.dialog);
+    filedialog_deinit(ctx.dialog);
     console_deinit();
     UnloadNuklear(ctx.ctx);
     CloseWindow();
@@ -311,7 +311,7 @@ static enum un_action update(un_idle *task)
     if (!ctx.hide_ui)
         draw_menubar(&ui_focused);
 
-    filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
+    filedialog_run(ctx.dialog, nk_ctx, &ui_focused);
 
     if (!ctx.hide_ui) {
         if (ctx.mode == EDIT_MODE)
@@ -340,8 +340,8 @@ static enum un_action update(un_idle *task)
 
     context_welcome(&ctx, nk_ctx);
 
-    if (!ctx.dialog.win.show) {
-        if (ctx.dialog.selected_index != -1) {
+    if (!filedialog_is_open(ctx.dialog)) {
+        if (filedialog_is_selected(ctx.dialog)) {
             if (ctx.loading_state == SELECTING_IMAGE) {
                 load_layer();
             } else if (ctx.loading_state == WRITING_MODEL) {
@@ -447,11 +447,9 @@ static void draw_menubar(bool *ui_focused)
         if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
             nk_layout_row_dynamic(nk_ctx, 25, 1);
             if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT)) {
-                ctx.dialog.open_for_write = false;
-                ctx.dialog.filter = model_filter;
-                filedialog_refresh(&ctx.dialog);
-                ctx.dialog.win.title = "Load Model";
-                filedialog_show(&ctx.dialog);
+                filedialog_cfg(ctx.dialog, false, model_filter, "Load Model");
+                filedialog_refresh(ctx.dialog);
+                filedialog_show(ctx.dialog);
 
                 ctx.loading_state = LOADING_MODEL;
             }
@@ -460,11 +458,9 @@ static void draw_menubar(bool *ui_focused)
                 LOG_W("I don't do anything yet", 0);
 
             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
-                ctx.dialog.open_for_write = true;
-                ctx.dialog.filter = NULL;
-                filedialog_refresh(&ctx.dialog);
-                ctx.dialog.win.title = "Save Model As";
-                filedialog_show(&ctx.dialog);
+                filedialog_cfg(ctx.dialog, true, NULL, "Save Model As");
+                filedialog_refresh(ctx.dialog);
+                filedialog_show(ctx.dialog);
 
                 ctx.loading_state = WRITING_MODEL;
             }
@@ -476,11 +472,9 @@ static void draw_menubar(bool *ui_focused)
                 nk_layout_row_dynamic(nk_ctx, 25, 1);
 
                 if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
-                    ctx.dialog.open_for_write = false;
-                    ctx.dialog.filter = image_filter;
-                    filedialog_refresh(&ctx.dialog);
-                    ctx.dialog.win.title = "Open Image File";
-                    filedialog_show(&ctx.dialog);
+                    filedialog_cfg(ctx.dialog, false, image_filter, "Open Image");
+                    filedialog_refresh(ctx.dialog);
+                    filedialog_show(ctx.dialog);
                     
                     ctx.loading_state = SELECTING_IMAGE;
                 }
@@ -529,14 +523,14 @@ static void load_layer()
 {
     /* submit to queue */
     struct stat s;
-    size_t sz = filedialog_selsz(&ctx.dialog);
+    size_t sz = filedialog_selsz(ctx.dialog);
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
     char* buffer = malloc(sz + 1);
 #endif
     memset(buffer, 0, sz + 1);
-    filedialog_selected(&ctx.dialog, sz, buffer);
+    filedialog_selected(ctx.dialog, sz, buffer);
 
     if (stat(buffer, &s) == -1) {
         perror("stat");
@@ -553,7 +547,7 @@ static void load_layer()
 
 static void load_model()
 {
-    size_t sz = filedialog_selsz(&ctx.dialog);
+    size_t sz = filedialog_selsz(ctx.dialog);
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
@@ -561,34 +555,17 @@ static void load_model()
 #endif
 
     memset(buffer, 0, sz + 1);
-    filedialog_selected(&ctx.dialog, sz, buffer);
+    filedialog_selected(ctx.dialog, sz, buffer);
     model_load(ctx.loop, &ctx.model, buffer);
 }
 
 static void write_model()
 {
-    if (ctx.dialog.selected_index == -2) {
-        path_append_file(&ctx.dialog.current_directory,
-            strdup(ctx.dialog.file_out_name.buffer));
-        size_t sz = path_bufsz(&ctx.dialog.current_directory);
-        const char *ext = ".opng";
-        int ext_len = strlen(ext);
-
-#ifndef _WIN32
-        char tmpbuf[sz + ext_len + 1];
-#else
-        char *tmpbuf = malloc(sz + ext_len + 1);
-#endif
-        memset(tmpbuf, 0, sz + ext_len + 1);
-        path_str(&ctx.dialog.current_directory, sz, tmpbuf);
-        strcat(tmpbuf, ext);
-
-#ifdef _WIN32
-        *tmpbuf = ctx.dialog.current_drive_letter;
-#endif
+    if (filedialog_ready_for_write(ctx.dialog)) {
+        char *tmpbuf = filedialog_path(ctx.dialog);
         model_write(&ctx.model, tmpbuf);
-        filedialog_up(&ctx.dialog);
-        ctx.dialog.file_out_name.cleanup = true;
+        filedialog_up(ctx.dialog);
+        filedialog_write_cleanup(ctx.dialog);
     } else {
         LOG_E("Selection not yet implemented!", 0);
     }
@@ -598,14 +575,14 @@ static void load_script()
 {
     /* submit to queue */
     struct stat s;
-    size_t sz = filedialog_selsz(&ctx.dialog);
+    size_t sz = filedialog_selsz(ctx.dialog);
 #ifndef _WIN32
     char buffer[sz + 1];
 #else
     char* buffer = malloc(sz + 1);
 #endif
     memset(buffer, 0, sz + 1);
-    filedialog_selected(&ctx.dialog, sz, buffer);
+    filedialog_selected(ctx.dialog, sz, buffer);
 
     if (stat(buffer, &s) == -1) {
         perror("stat");

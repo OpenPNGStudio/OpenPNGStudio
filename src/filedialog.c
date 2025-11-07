@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-
+#if 0
 #include <console.h>
 #include <core/icon_db.h>
 #include <ui/line_edit.h>
@@ -857,3 +857,4 @@ void filedialog_refresh(struct filedialog *dialog)
     deinit_content(dialog);
     init_content(dialog);
 }
+#endif

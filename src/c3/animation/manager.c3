@@ -11,7 +11,7 @@ import openpngstudio::animation::spinner;
 import openpngstudio::animation::shake;
 import openpngstudio::animation::fade;
 import openpngstudio::animation::easings;
-import openpngstudio::ui::window;
+import openpngstudio::ui;
 import nk;
 
 struct Manager {
@@ -21,7 +21,7 @@ struct Manager {
     char[2] global_input_key_buffer;
     int global_input_key_len;
     int selected;
-    window::Window cfg_win;
+    ui::Window cfg_win;
 }
 
 const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade"};
@@ -57,10 +57,10 @@ fn void Manager.show(&self) @export("animation_manager_show")
 fn void Manager.global_anim(&self, nk::Context *ctx) @export("animation_manager_global_anim")
 {
     if (self.cfg_win.ctx == null) {
-        window::window_init(&self.cfg_win, ctx, "Global Animation Config");
+        ui::window_init(&self.cfg_win, ctx, "Global Animation Config");
     }
 
-    if (window::window_begin(&self.cfg_win, nk::WINDOW_TITLE | nk::WINDOW_MOVABLE |
+    if (ui::window_begin(&self.cfg_win, nk::WINDOW_TITLE | nk::WINDOW_MOVABLE |
         nk::WINDOW_SCALABLE | nk::WINDOW_BORDER | nk::WINDOW_MINIMIZABLE | 
         nk::WINDOW_CLOSABLE)) {
         nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
@@ -141,7 +141,7 @@ fn void Manager.global_anim(&self, nk::Context *ctx) @export("animation_manager_
         }
     }
 
-    if (self.cfg_win.state != HIDE) window::window_end(&self.cfg_win);
+    if (self.cfg_win.state != HIDE) ui::window_end(&self.cfg_win);
 }
 
 fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev) @export("animation_manager_animate_global")

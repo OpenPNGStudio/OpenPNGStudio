@@ -84,7 +84,7 @@ struct context {
 
     un_loop *loop;
     struct nk_context *ctx;
-    struct filedialog dialog;
+    struct filedialog *dialog;
     float width, height;
 
     mask_t mask;
