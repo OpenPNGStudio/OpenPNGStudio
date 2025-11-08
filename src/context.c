@@ -15,7 +15,6 @@
 #include <string.h>
 #ifndef _WIN32
 #include <sys/mman.h>
-#include <unistd.h>
 #else
 #include <mman.h>
 #endif

@@ -7,7 +7,7 @@ import openpngstudio::layer;
 import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
 import openpngstudio::animation::manager;
-import openpngstudio::ui;
+import openpngstudio::ui::window;
 import openpngstudio::core::icondb;
 import openpngstudio::ui::line_edit;
 import nk;
@@ -18,7 +18,7 @@ alias animation = module openpngstudio::animation::manager;
 struct Manager {
     List{Layer} layers;
     animation::Manager *animation_manager;
-    ui::Window config_win;
+    window::Window config_win;
     isz selected_layer;
 }
 
@@ -46,7 +46,7 @@ fn void Manager.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_
 fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
 {
     if (self.config_win.ctx == null) {
-        ui::window_init(&self.config_win, ctx, "Layer Configuration");
+        window::window_init(&self.config_win, ctx, "Layer Configuration");
     }
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
@@ -156,7 +156,7 @@ fn void Manager.draw(&self, void *loop) @export("layer_manager_render")
 
 fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("draw_props")
 {
-    if (ui::window_begin(&self.config_win, nk::WINDOW_TITLE |
+    if (window::window_begin(&self.config_win, nk::WINDOW_TITLE |
         nk::WINDOW_MOVABLE | nk::WINDOW_CLOSABLE | nk::WINDOW_BORDER |
         nk::WINDOW_MINIMIZABLE | nk::WINDOW_SCALABLE)) {
         *ui_focused = self.config_win.focus;
@@ -168,5 +168,5 @@ fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("d
         self.selected_layer = -1;
     }
 
-    if (self.config_win.state != HIDE) ui::window_end(&self.config_win);
+    if (self.config_win.state != HIDE) window::window_end(&self.config_win);
 }

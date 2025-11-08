@@ -76,7 +76,7 @@ $if env::OS_TYPE != WIN32 && !env::os_is_darwin():
     if (session_type == "tty") return RAYLIB_DIDNT_INIT?;
 $endif
 
-    if (novacrash::uses_raylib && rl::isWindowReady()) rl::closeWindow();
+    if (novacrash::uses_raylib) rl::closeWindow();
 
     rl::setTraceLogLevel(ERROR);
     rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE);

@@ -20,39 +20,37 @@ struct dir_entry {
     nk_bool selected;
 };
 
-struct filedialog;
+struct filedialog {
+    /* UI */
+    struct window win;
+    struct messagebox msg_box;
 
-// struct filedialog {
-//     /* UI */
-//     struct window win;
-//     struct messagebox msg_box;
-//
-//     /* STATE */
-//     struct path current_directory;
-//     struct dir_entry *dir_content;
-//     size_t content_size;
-//     int selected_index;
-//     bool open_for_write;
-//     struct {
-//         struct line_edit input;
-//         bool is_file;
-//     } new_file;
-//     struct line_edit search_filter;
-//     struct line_edit file_out_name;
-//     bool show_hidden;
-//     bool submenu_new_open;
-//     bool context_menu_open;
-//
-//     #ifdef _WIN32
-//     char current_drive_letter;
-//     bool show_system_hidden;
-//     #endif
-//
-//     /* CFG */
-//     const char *filter;
-// };
+    /* STATE */
+    struct path current_directory;
+    struct dir_entry *dir_content;
+    size_t content_size;
+    int selected_index;
+    bool open_for_write;
+    struct {
+        struct line_edit input;
+        bool is_file;
+    } new_file;
+    struct line_edit search_filter;
+    struct line_edit file_out_name;
+    bool show_hidden;
+    bool submenu_new_open;
+    bool context_menu_open;
 
-struct filedialog *filedialog_init(bool write);
+    #ifdef _WIN32
+    char current_drive_letter;
+    bool show_system_hidden;
+    #endif
+
+    /* CFG */
+    const char *filter;
+};
+
+void filedialog_init(struct filedialog *dialog, bool write);
 /* returns false when in the root of the FS */
 bool filedialog_up(struct filedialog *dialog);
 void filedialog_enter(struct filedialog *dialog, const char *dir);
@@ -62,16 +60,6 @@ size_t filedialog_selsz(const struct filedialog *dialog);
 
 void filedialog_selected(const struct filedialog *dialog, size_t selsz,
     char *buf);
-
-void filedialog_cfg(struct filedialog *dialog, bool write, const char *filter,
-    const char *title);
-
-bool filedialog_is_selected(const struct filedialog *dialog);
-bool filedialog_is_open(const struct filedialog *dialog);
-bool filedialog_ready_for_write(const struct filedialog *dialog);
-
-char *filedialog_path(const struct filedialog *dialog);
-void filedialog_write_cleanup(struct filedialog *dialog);
 
 /* once everything is setup, trigger opening */
 void filedialog_show(struct filedialog *dialog);
