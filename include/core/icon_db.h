@@ -5,9 +5,10 @@
 
 enum icon_type {
     /* UI Icons */
+    LEFT_ICON,
+    RIGHT_ICON,
     UP_ICON,
     DOWN_ICON,
-    BACK_ICON,
     SELECT_ICON,
     LOOP_ICON,
     TRASH_ICON,

@@ -90,7 +90,6 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     cmb.rounding = 5.0f;
 
     nk::StyleWindow *win = &ctx.style.window;
-    win.border = 0.0f;
     win.combo_border = 0.0f;
     win.menu_border = 0.0f;
     win.group_border = 0.0f;

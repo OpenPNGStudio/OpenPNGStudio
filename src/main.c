@@ -123,6 +123,9 @@ int c_main()
 #endif
     /* CFG */
     ctx.loop = un_loop_new();
+    ctx.fdialog = fdialog_init();
+    fdialog_open_at_home(ctx.fdialog);
+    fdialog_populate(ctx.fdialog);
 
     LOG_I("Using %d threads", uv_available_parallelism());
 
@@ -143,7 +146,6 @@ int c_main()
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
     ctx.mask |= QUIET;
-    ctx.welcome_win.show = true;
 
     /* scheduler */
     ctx.sched.loop = ctx.loop;
@@ -161,8 +163,10 @@ int c_main()
     register_icon(UP_ICON, LoadNuklearImage(PATH_START "assets/icons/up.png"));
     register_icon(DOWN_ICON,
         LoadNuklearImage(PATH_START "assets/icons/down.png"));
-    register_icon(BACK_ICON,
+    register_icon(LEFT_ICON,
         LoadNuklearImage(PATH_START "assets/icons/back.png"));
+    register_icon(RIGHT_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/forward.png"));
     register_icon(LOOP_ICON,
         LoadNuklearImage(PATH_START "assets/icons/loop.png"));
     register_icon(TRASH_ICON,
@@ -312,10 +316,12 @@ static enum un_action update(un_idle *task)
         draw_menubar(&ui_focused);
 
     filedialog_run(&ctx.dialog, nk_ctx, &ui_focused);
+    fdialog_run(ctx.fdialog, nk_ctx, &ui_focused);
 
     if (!ctx.hide_ui) {
         if (ctx.mode == EDIT_MODE)
-            editor_draw(&ctx.editor, nk_ctx, &ui_focused);
+            // editor_draw(&ctx.editor, nk_ctx, &ui_focused);
+                0;
         else
             editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
 

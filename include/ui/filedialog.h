@@ -50,6 +50,15 @@ struct filedialog {
     const char *filter;
 };
 
+struct filedialog2;
+
+struct filedialog2 *fdialog_init();
+void fdialog_run(struct filedialog2 *dialog,
+    struct nk_context *ctx, bool *ui_focused);
+
+void fdialog_open_at_home(struct filedialog2 *dialog);
+void fdialog_populate(struct filedialog2 *dialog);
+
 void filedialog_init(struct filedialog *dialog, bool write);
 /* returns false when in the root of the FS */
 bool filedialog_up(struct filedialog *dialog);
