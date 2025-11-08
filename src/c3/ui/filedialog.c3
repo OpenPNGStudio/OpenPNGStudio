@@ -21,7 +21,9 @@ struct FileDialog {
     window::Window win;
     Path path;
     List{DirectoryEntry} content;
+    List{String} filter;
     usz last_selected;
+    bool show_hidden;
 
     char *title;
 }
@@ -32,6 +34,7 @@ fn FileDialog *new_filedialog() @export("fdialog_init")
     fd.title = "FileOpenDialog";
     fd.win.show = true;
     fd.last_selected = -1;
+    fd.filter.init(mem);
 
     return fd;
 }
@@ -54,15 +57,45 @@ fn void FileDialog.populate(&self) @export("fdialog_populate")
 
             ent.path = path::new(mem, file.str_view())!!;
             ent.is_file = !path::is_dir(full_path);
-            /* TODO: properly hide files */
-            ent.is_hidden = false;
-            ent.is_system = false;
             ent.selected = false;
+            os_extra(&ent)!!;
+
+            if (ent.is_file && !matches(self, file.str_view())) continue;
             self.content.push(ent);
         }
 
         sort::quicksort(&self.content);
     };
+}
+
+fn void? os_extra(DirectoryEntry *ent)
+{
+    $if env::POSIX:
+        if (String b = ent.path.basename()) {
+            ent.is_hidden = b[0] == '.';
+            ent.is_system = false;
+        }
+    $else
+        Win32_FILE_ATTRIBUTE_DATA data;
+        String s = ent.path.str_view();
+        @pool() {
+            win32::getFileAttributesExW(s.to_temp_wstring()!,
+                Win32_GET_FILEEX_INFO_LEVELS.STANDARD, &data);
+            ent.is_hidden = data.dwFileAttributes &
+                win32::FILE_ATTRIBUTE_HIDDEN ? true : false;
+            ent.is_system = data.dwFileAttributes &
+                win32::FILE_ATTRIBUTE_SYSTEM ? true : false;
+        };
+    $endif
+}
+
+fn bool matches(FileDialog *self, String file) @local
+{
+    foreach (fil : self.filter) {
+        if (file.ends_with(fil)) return true;
+    }
+
+    return false;
 }
 
 fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_run")
@@ -88,6 +121,8 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
                 nk::vec2(0, 0));
 
             foreach (i, &ent : self.content) {
+                if (ent.is_hidden && !self.show_hidden) continue;
+
                 if (draw_entry(self, ctx, ent)) {
                     if (!ent.is_file && i == self.last_selected) {
                         self.enter(ent.path.str_view())!!;
@@ -146,7 +181,11 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx) @local
     @pool() {
         nk::layout_row_template_begin(ctx, 32);
         nk::layout_row_template_push_dynamic(ctx);
-        nk::layout_row_template_push_static(ctx, 80);
+
+        if (self.filter.len() > 0) {
+            nk::layout_row_template_push_static(ctx, 96);
+        }
+
         nk::layout_row_template_push_static(ctx, 80);
         nk::layout_row_template_push_static(ctx, 80);
         nk::layout_row_template_end(ctx);
@@ -164,7 +203,18 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx) @local
         nk::edit_string(ctx, nk::EDIT_DEACTIVATED, (CChar*) selected.ptr,
             (CInt*) &&selected.len, selected.len + 1, &nk::filter_default);
 
-        nk::button_label(ctx, "Filters");
+        if (self.filter.len() > 0) {
+            if (nk::combo_begin_label(ctx, "Filters", nk::vec2(96, 64))) {
+                nk::layout_row_dynamic(ctx, 30, 1);
+                @pool() {
+                    foreach (fil : self.filter) {
+                        nk::label(ctx, (CChar*) fil.zstr_tcopy(), nk::TEXT_LEFT);
+                    }
+                };
+                nk::combo_end(ctx);
+            }
+        }
+
         nk::button_label(ctx, "Open");
         nk::button_label(ctx, "Cancel");
     };
@@ -202,6 +252,20 @@ fn void? FileDialog.enter(&self, String name)
 {
     self.path = self.path.append(mem, name)!;
 }
+
+fn void FileDialog.set_filter(&self, ZString filter) @export("fdialog_set_filter")
+{
+    String s = filter.str_view();
+    Splitter sp = s.tokenize(";");
+
+    self.filter.free();
+    self.filter.init(mem);
+
+    while (try String tok = sp.next()) {
+        self.filter.push(tok);
+    }
+}
+
 
 fn bool DirectoryEntry.less(&self, DirectoryEntry b)
 {

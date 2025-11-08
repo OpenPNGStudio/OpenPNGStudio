@@ -125,6 +125,7 @@ int c_main()
     ctx.loop = un_loop_new();
     ctx.fdialog = fdialog_init();
     fdialog_open_at_home(ctx.fdialog);
+    fdialog_set_filter(ctx.fdialog, "qoi;png;bmp;jpg;jpeg;gif;opng");
     fdialog_populate(ctx.fdialog);
 
     LOG_I("Using %d threads", uv_available_parallelism());

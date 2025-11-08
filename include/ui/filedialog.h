@@ -58,6 +58,7 @@ void fdialog_run(struct filedialog2 *dialog,
 
 void fdialog_open_at_home(struct filedialog2 *dialog);
 void fdialog_populate(struct filedialog2 *dialog);
+void fdialog_set_filter(struct filedialog2 *dialog, const char *filter);
 
 void filedialog_init(struct filedialog *dialog, bool write);
 /* returns false when in the root of the FS */
