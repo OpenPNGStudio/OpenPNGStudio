@@ -73,15 +73,13 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
         struct nk_rect bounds = nk_window_get_content_region(ctx);
 
         nk_layout_row_dynamic(ctx, bounds.h - 50, 1);
-        if (nk_group_begin(ctx, "Notebook", 0)) {
+        if (nk_group_begin(ctx, "Notebook", NK_WINDOW_NO_SCROLLBAR)) {
             nk_style_pop_vec2(ctx);
 
             switch (editor->current_tab) {
             case OVERVIEW:
                 nk_layout_row_dynamic(ctx, 30, 1);
                 nk_label(ctx, "Model Information: ", NK_TEXT_LEFT);
-                if (nk_button_label(ctx, "Global Animation Settings"))
-                    animation_manager_show(editor->layer_manager->anims);
                 break;
             case LAYERS:
                 layer_manager_ui(editor->layer_manager, ctx);

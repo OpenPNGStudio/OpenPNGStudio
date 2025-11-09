@@ -11,6 +11,7 @@ enum Type : inline int {
     SELECT,
     LOOP,
     TRASH,
+    CFG,
 
     DIR,
     FILE,

@@ -12,6 +12,7 @@ enum icon_type {
     SELECT_ICON,
     LOOP_ICON,
     TRASH_ICON,
+    CFG_ICON,
 
     /* Image Icons */
     DIR_ICON,

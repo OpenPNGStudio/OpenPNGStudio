@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::layer::manager;
 
+import std::io;
 import std::core::mem;
 import std::collections::list;
 import openpngstudio::layer;
@@ -49,6 +50,23 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
         window::window_init(&self.config_win, ctx, "Layer Configuration");
     }
 
+    // float win_width = nk::window_get_width(ctx);
+    // float min_width = max(win_width * 0.49f, 250.0f);
+    //
+    // nk::layout_row_template_begin(ctx, 35);
+    // nk::layout_row_template_push_dynamic(ctx);
+    // nk::layout_row_template_push_variable(ctx, min_width);
+    // nk::layout_row_template_end(ctx);
+    //
+    // nk::label(ctx, "Global Animations: ", nk::TEXT_LEFT);
+    // if (nk::group_begin(ctx, "Global Animations", nk::WINDOW_NO_SCROLLBAR)) {
+    //     nk::layout_row_dynamic(ctx, 30, 1);
+    //     if (nk::button_label(ctx, "Configure")) {
+    //         self.animation_manager.show();
+    //     }
+    //     nk::group_end(ctx);
+    // }
+
     nk::Rect bounds = nk::window_get_content_region(ctx);
     bounds.h -= 45;
     nk::layout_row_dynamic(ctx, bounds.h, 1);
@@ -62,11 +80,13 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
             nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
         }
 
-        nk::layout_row_template_begin(ctx, 30);
-        nk::layout_row_template_push_static(ctx, 30);
+        nk::layout_row_template_begin(ctx, 32);
         nk::layout_row_template_push_dynamic(ctx);
-        nk::layout_row_template_push_static(ctx, 30);
+        nk::layout_row_template_push_static(ctx, 32);
+        nk::layout_row_template_push_static(ctx, 32);
         nk::layout_row_template_end(ctx);
+
+        line_edit::line_edit_draw(&layer_props.name, ctx);
 
         if (nk::button_image(ctx, icons::get(SELECT))) {
             if (self.selected_layer == -1) {
@@ -76,7 +96,6 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
             }
         }
 
-        line_edit::line_edit_draw(&layer_props.name, ctx);
 
         if (nk::button_image(ctx, icons::get(TRASH))) {
             State *layer_state = layer.get_state();
@@ -95,10 +114,12 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
     if (self.selected_layer == -1) nk::widget_disable_begin(ctx);
 
     nk::layout_row_template_begin(ctx, 30);
-    nk::layout_row_template_push_static(ctx, 30);
-    nk::layout_row_template_push_static(ctx, 30);
     nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 30);
+    nk::layout_row_template_push_static(ctx, 30);
     nk::layout_row_template_end(ctx);
+
+    nk::spacer(ctx);
 
     isz i = self.selected_layer;
     Layer layer = i != -1 ? self.layers[i] : null;

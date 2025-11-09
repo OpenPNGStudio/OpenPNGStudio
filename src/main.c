@@ -165,6 +165,8 @@ int c_main()
         LoadNuklearImage(PATH_START "assets/icons/trash.png"));
     register_icon(SELECT_ICON,
         LoadNuklearImage(PATH_START "assets/icons/select.png"));
+    register_icon(CFG_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/cfg.png"));
 
     register_icon(DIR_ICON,
         LoadNuklearImage(PATH_START "assets/images/dir.png"));
