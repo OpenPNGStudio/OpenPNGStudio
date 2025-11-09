@@ -37,7 +37,7 @@ struct FileDialog {
     List{ZString} selected;
     FileDialogState state;
     bool open_for_reading, single_file_mode, contextual_open;
-    LineEdit search_filter;
+    LineEdit search_filter, write_file_name;
     MessageBox msgbox;
 }
 
@@ -179,7 +179,7 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
                 if (ent.selected) selected++;
             }
 
-            if (self.single_file_mode) selected = 1;
+            if (self.single_file_mode) selected = min(selected, 1);
 
             if (to_populate) self.populate();
 
@@ -315,9 +315,17 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
             }
         }
 
-        /* TODO: handle write */
-        nk::edit_string(ctx, nk::EDIT_DEACTIVATED, (CChar*) selected.ptr,
-            (CInt*) &&selected.len, selected.len + 1, &nk::filter_default);
+        if (self.open_for_reading) {
+            nk::edit_string(ctx, nk::EDIT_DEACTIVATED, (CChar*) selected.ptr,
+                (CInt*) &&selected.len, selected.len + 1, &nk::filter_default);
+        } else {
+            if (count == 1) {
+                self.write_file_name.buffer = selected.copy(mem);
+                self.write_file_name.len = selected.len;
+                self.write_file_name.cleanup = false;
+            }
+            line_edit::line_edit_draw(&self.write_file_name, ctx);
+        }
 
         if (self.filter.len() > 0) {
             if (nk::combo_begin_label(ctx, "Filters", nk::vec2(96, 64))) {
@@ -331,10 +339,19 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
             }
         }
 
-        if (nk::button_label(ctx, self.open_for_reading ? "Open" : "Save") &&
-            count > 0) {
+        if OUT: (nk::button_label(ctx, self.open_for_reading ? "Open" : "Save")) {
             if (!has_dir) {
-                handle_open(self);
+                if (self.open_for_reading) {
+                    if (count > 0) {
+                        handle_open(self);
+                    } else {
+                        self.msgbox = messagebox::warn("Warning", "No file was"
+                            " selected");
+                        break OUT;
+                    }
+                } else {
+                    handle_write(self);
+                }
                 self.state = READ_READY;
             } else {
                 self.msgbox = messagebox::warn("Warning", "A directory was"
@@ -346,6 +363,20 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
             self.state = CLOSED;
         }
     };
+}
+
+fn void handle_write(FileDialog *self) @local
+{
+    self.selected.free();
+    self.selected.init(mem);
+
+    @pool() {
+        String s = (String)
+            self.write_file_name.buffer[:self.write_file_name.len];
+        Path full_path = self.path.tappend(s)!!;
+        self.selected.push(full_path.str_view().zstr_copy(mem));
+    };
+    self.selected.push(null);
 }
 
 fn void handle_open(FileDialog *self) @local
@@ -429,6 +460,8 @@ fn void FileDialog.write_file(&self) @export("fdialog_write_file")
     self.open_for_reading = false;
     self.single_file_mode = true;
     self.state = CLOSED;
+    self.write_file_name.cleanup = true;
+    line_edit::line_edit_cleanup(&self.write_file_name);
 }
 
 fn ZString* FileDialog.get_selection(&self) @export("fdialog_get_selection")

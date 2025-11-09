@@ -563,29 +563,7 @@ static void load_model()
 
 static void write_model()
 {
-//     if (ctx.dialog.selected_index == -2) {
-//         path_append_file(&ctx.dialog.current_directory,
-//             strdup(ctx.dialog.file_out_name.buffer));
-//         size_t sz = path_bufsz(&ctx.dialog.current_directory);
-//         const char *ext = ".opng";
-//         int ext_len = strlen(ext);
-//
-// #ifndef _WIN32
-//         char tmpbuf[sz + ext_len + 1];
-// #else
-//         char *tmpbuf = malloc(sz + ext_len + 1);
-// #endif
-//         memset(tmpbuf, 0, sz + ext_len + 1);
-//         path_str(&ctx.dialog.current_directory, sz, tmpbuf);
-//         strcat(tmpbuf, ext);
-//
-// #ifdef _WIN32
-//         *tmpbuf = ctx.dialog.current_drive_letter;
-// #endif
-//         model_write(&ctx.model, tmpbuf);
-//         filedialog_up(&ctx.dialog);
-//         ctx.dialog.file_out_name.cleanup = true;
-//     } else {
+    LOG_I("%s", fdialog_get_selection(ctx.fdialog)[0]);
     LOG_E("Save as not yet implemented!", 0);
 }
 
