@@ -16,7 +16,6 @@
 #include <editor.h>
 #include <stdatomic.h>
 #include <raylib.h>
-#include <ui/filedialog.h>
 #include <core/microphone.h>
 #if 0
 #include <lua.h>
@@ -84,7 +83,6 @@ struct context {
 
     un_loop *loop;
     struct nk_context *ctx;
-    struct filedialog dialog;
     struct filedialog2 *fdialog;
     float width, height;
 

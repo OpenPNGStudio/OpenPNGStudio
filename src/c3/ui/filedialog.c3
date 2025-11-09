@@ -7,9 +7,16 @@ import openpngstudio::ui::icons;
 import std::core::string;
 import std::core::mem;
 import std::io;
-import std::io::path, std::sort;
+import std::io::path, std::sort, std::time;
 import std::collections::list;
 import nk;
+
+enum FileDialogState : const int {
+    CLOSED,
+    BROWSING,
+    READ_READY,
+    WRITE_READY
+}
 
 struct DirectoryEntry {
     Path path;
@@ -24,32 +31,32 @@ struct FileDialog {
     List{String} filter;
     usz last_selected;
     bool show_hidden;
-
-    char *title;
+    Time time_to_click;
+    List{ZString} selected;
+    FileDialogState state;
+    bool open_for_reading;
 }
 
 fn FileDialog *new_filedialog() @export("fdialog_init")
 {
     FileDialog *fd = calloc(FileDialog.sizeof);
-    fd.title = "FileOpenDialog";
-    fd.win.show = true;
     fd.last_selected = -1;
-    fd.filter.init(mem);
+    fd.path = path::home_directory(mem)!!;
 
     return fd;
-}
-
-fn void FileDialog.open_at_home(&self) @export("fdialog_open_at_home")
-{
-    self.path = path::home_directory(mem)!!;
 }
 
 fn void FileDialog.populate(&self) @export("fdialog_populate")
 {
     self.content.free();
     @pool() {
-        PathList files = path::ls(tmem, self.path)!!;
+        PathList? files = path::ls(tmem, self.path);
+
         self.content.init(mem);
+
+        if (catch excuse = files) {
+            return;
+        }
 
         foreach (file : files) {
             DirectoryEntry ent;
@@ -68,7 +75,7 @@ fn void FileDialog.populate(&self) @export("fdialog_populate")
     };
 }
 
-fn void? os_extra(DirectoryEntry *ent)
+fn void? os_extra(DirectoryEntry *ent) @local
 {
     $if env::POSIX:
         if (String b = ent.path.basename()) {
@@ -91,6 +98,8 @@ fn void? os_extra(DirectoryEntry *ent)
 
 fn bool matches(FileDialog *self, String file) @local
 {
+    if (self.filter.len() == 0) return true;
+
     foreach (fil : self.filter) {
         if (file.ends_with(fil)) return true;
     }
@@ -100,7 +109,8 @@ fn bool matches(FileDialog *self, String file) @local
 
 fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_run")
 {
-    if (self.win.ctx == null) window::window_init(&self.win, ctx, self.title);
+    if (self.win.ctx == null) window::window_init(&self.win, ctx, null);
+    if (self.state != BROWSING) return;
 
     if (window::window_begin(&self.win, nk::WINDOW_TITLE | nk::WINDOW_CLOSABLE |
         nk::WINDOW_MOVABLE | nk::WINDOW_SCALABLE | nk::WINDOW_BORDER |
@@ -113,6 +123,8 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
         bounds.h -= 35 * 2;
         bounds.h -= ctx.style.window.spacing.y * 2;
 
+        usz selected = 0;
+
         nk::layout_row_dynamic(ctx, bounds.h, 1);
         if (nk::group_begin(ctx, "Files", 0)) {
             bool to_populate = false;
@@ -124,13 +136,22 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
                 if (ent.is_hidden && !self.show_hidden) continue;
 
                 if (draw_entry(self, ctx, ent)) {
-                    if (!ent.is_file && i == self.last_selected) {
-                        self.enter(ent.path.str_view())!!;
-                        to_populate = true;
+                    if (!ent.is_file) {
+                        Time now = time::now();
+
+                        if (i == self.last_selected &&
+                            now < self.time_to_click) {
+                            self.enter(ent.path.str_view())!!;
+                            to_populate = true;
+                        } else {
+                            self.time_to_click = now + 250 * time::MS;
+                        }
                     }
                     
                     self.last_selected = ent.selected ? i : -1;
                 }
+
+                if (ent.selected) selected++;
             }
 
             if (to_populate) self.populate();
@@ -139,10 +160,13 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
             nk::group_end(ctx);
         }
 
-        draw_footerbar(self, ctx);
+        draw_footerbar(self, ctx, selected);
+    } else {
+        self.last_selected = -1;
+        self.state = CLOSED;
     }
 
-    if (self.win.state != HIDE)  window::window_end(&self.win);
+    if (self.win.state != HIDE) window::window_end(&self.win);
 }
 
 fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
@@ -176,7 +200,7 @@ fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
     }
 }
 
-fn void draw_footerbar(FileDialog *self, nk::Context *ctx) @local
+fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
 {
     @pool() {
         nk::layout_row_template_begin(ctx, 32);
@@ -193,6 +217,11 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx) @local
 
         foreach (ent : self.content) {
             if (ent.selected) {
+                if (count == 1) {
+                    selected = ent.path.str_view();
+                    break;
+                }
+
                 selected = selected.tconcat(
                     string::tformat("\"%s\" ", ent.path.str_view())
                 );
@@ -215,13 +244,31 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx) @local
             }
         }
 
-        nk::button_label(ctx, "Open");
+        if (nk::button_label(ctx, "Open") && count > 0) {
+            handle_open(self);
+            self.state = READ_READY;
+        }
+
         nk::button_label(ctx, "Cancel");
     };
 }
 
+fn void handle_open(FileDialog *self) @local
+{
+    self.selected.free();
+    self.selected.init(mem);
 
-fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent)
+    foreach (ent : self.content) {
+        @pool() {
+            if (ent.selected) {
+                Path full_path = self.path.tappend(ent.path.str_view())!!;
+                self.selected.push(full_path.str_view().zstr_copy(mem));
+            }
+        };
+    }
+}
+
+fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent) @local
 {
     @pool() {
         ZString name = ent.path.str_view().zstr_tcopy();
@@ -234,7 +281,6 @@ fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent)
             bool res = nk::selectable_image_label(ctx, icon, (CChar*) name,
                 nk::TEXT_LEFT, &ent.selected);
 
-
             nk::group_end(ctx);
             return res;
         }
@@ -245,7 +291,6 @@ fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent)
 fn void? FileDialog.up(&self)
 {
     self.path = self.path.parent()!;
-    io::printn(self.path.str_view());
 }
 
 fn void? FileDialog.enter(&self, String name)
@@ -253,19 +298,64 @@ fn void? FileDialog.enter(&self, String name)
     self.path = self.path.append(mem, name)!;
 }
 
-fn void FileDialog.set_filter(&self, ZString filter) @export("fdialog_set_filter")
+fn void? FileDialog.free(&self) @export("fdialog_free")
 {
-    String s = filter.str_view();
-    Splitter sp = s.tokenize(";");
+    self.filter.free();
+    self.selected.free();
+}
 
+fn void FileDialog.show(&self) @export("fdialog_show")
+{
+    self.win.show = true;
+    self.state = BROWSING;
+}
+
+fn void FileDialog.open_file(&self) @export("fdialog_open_file")
+{
+    self.open_for_reading = true;
+    self.state = CLOSED;
+}
+
+fn void FileDialog.write_file(&self) @export("fdialog_write_file")
+{
+    self.open_for_reading = false;
+    self.state = CLOSED;
+}
+
+fn ZString* FileDialog.get_selection(&self) @export("fdialog_get_selection")
+{
+    return self.selected.entries;
+}
+
+fn void FileDialog.set_title(&self, ZString title) @export("fdialog_set_title")
+{
+    self.win.title = title;
+}
+
+fn void FileDialog.set_filter(&self, ZString filter) @export("fdialog_set_filter")
+{ 
     self.filter.free();
     self.filter.init(mem);
+
+    if (filter == null) return;
+
+    String s = filter.str_view();
+    Splitter sp = s.tokenize(";");
 
     while (try String tok = sp.next()) {
         self.filter.push(tok);
     }
 }
 
+fn FileDialogState FileDialog.get_state(&self) @export("fdialog_get_state")
+{
+    return self.state;
+}
+
+fn void FileDialog.reset(&self) @export("fdialog_reset")
+{
+    self.state = CLOSED;
+}
 
 fn bool DirectoryEntry.less(&self, DirectoryEntry b)
 {
