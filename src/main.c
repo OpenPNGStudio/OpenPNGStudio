@@ -11,7 +11,6 @@
 #include <raylib.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <core/pathbuf.h>
 #include <core/nk.h>
 #include <core/icon_db.h>
 

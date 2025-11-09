@@ -1,14 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #pragma once
 
-#include <ui/line_edit.h>
-#include <ui/window.h>
-#include <ui/messagebox.h>
-#include <core/pathbuf.h>
-#include <stdbool.h>
-#include <stddef.h>
-
 #include <raylib-nuklear.h>
+
+#ifndef _WIN32
+#define PATH_SEPARATOR '/'
+#else
+#define PATH_SEPARATOR '\\'
+#endif
 
 enum filedialog2_state {
     CLOSED,

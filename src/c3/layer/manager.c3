@@ -8,7 +8,7 @@ import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
 import openpngstudio::animation::manager;
 import openpngstudio::ui::window;
-import openpngstudio::core::icondb;
+import openpngstudio::ui::icons;
 import openpngstudio::ui::line_edit;
 import nk;
 import raylib5::rl;
@@ -68,7 +68,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
         nk::layout_row_template_push_static(ctx, 30);
         nk::layout_row_template_end(ctx);
 
-        if (nk::button_image(ctx, icondb::get_icon(SELECT_ICON))) {
+        if (nk::button_image(ctx, icons::get(SELECT))) {
             if (self.selected_layer == -1) {
                 self.selected_layer = i;
             } else {
@@ -78,7 +78,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
 
         line_edit::line_edit_draw(&layer_props.name, ctx);
 
-        if (nk::button_image(ctx, icondb::get_icon(TRASH_ICON))) {
+        if (nk::button_image(ctx, icons::get(TRASH))) {
             State *layer_state = layer.get_state();
             layer_state.prepare_for_deletion = true;
             self.selected_layer = -1;
@@ -105,7 +105,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
 
     if (i == 0) nk::widget_disable_begin(ctx);
 
-    if (nk::button_image(ctx, icondb::get_icon(UP_ICON))) {
+    if (nk::button_image(ctx, icons::get(UP))) {
         Layer prev = self.layers[i - 1];
         self.layers[i - 1] = layer;
         self.layers[i] = prev;
@@ -115,7 +115,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
     if (i == 0) nk::widget_disable_end(ctx);
     if (i == self.layers.len() - 1) nk::widget_disable_begin(ctx);
 
-    if (nk::button_image(ctx, icondb::get_icon(DOWN_ICON))) {
+    if (nk::button_image(ctx, icons::get(DOWN))) {
         Layer next= self.layers[i + 1];
         self.layers[i + 1] = layer;
         self.layers[i] = next;
