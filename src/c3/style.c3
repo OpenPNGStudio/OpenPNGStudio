@@ -1,4 +1,5 @@
-module openpngstudio::style;
+module openpngstudio::ui::style;
+import openpngstudio::ui::icons;
 import nk;
 
 fn void apply(nk::Context *ctx) @export("opng_style_apply")
@@ -93,4 +94,39 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     win.menu_border = 0.0f;
     win.group_border = 0.0f;
     win.tooltip_padding = nk::vec2(5.0f, 5.0f);
+
+    nk::StyleWindowHeader *hdr = &win.header;
+
+    hdr.close_button.normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(CANCEL),
+        },
+    };
+
+    hdr.close_button.hover = hdr.close_button.normal;
+    hdr.close_button.active = hdr.close_button.normal;
+    hdr.close_button.border = 0.0f;
+
+    // hdr.minimize_button.normal = {
+    //     .type = nk::STYLE_ITEM_IMAGE,
+    //     .data = {
+    //         .image = icons::get(MINIMIZE),
+    //     },
+    // };
+    //
+    // hdr.minimize_symbol = nk::SYMBOL_UNDERSCORE;
+    // hdr.maximize_symbol = nk::SYMBOL_NONE;
+    //
+    // hdr.minimize_button.hover = hdr.minimize_button.normal;
+    // hdr.minimize_button.active = hdr.minimize_button.normal;
+
+    chk.cursor_normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(CHECK),
+        },
+    };
+
+    chk.cursor_hover = chk.cursor_normal;
 }

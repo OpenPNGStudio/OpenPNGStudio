@@ -167,6 +167,12 @@ int c_main()
         LoadNuklearImage(PATH_START "assets/icons/select.png"));
     register_icon(CFG_ICON,
         LoadNuklearImage(PATH_START "assets/icons/cfg.png"));
+    register_icon(CANCEL_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/cancel.png"));
+    register_icon(CHECK_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/check.png"));
+    register_icon(MINIMIZE_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/minimize.png"));
 
     register_icon(DIR_ICON,
         LoadNuklearImage(PATH_START "assets/images/dir.png"));

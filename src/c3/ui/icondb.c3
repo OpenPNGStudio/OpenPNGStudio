@@ -12,6 +12,9 @@ enum Type : inline int {
     LOOP,
     TRASH,
     CFG,
+    CANCEL,
+    CHECK,
+    MINIMIZE,
 
     DIR,
     FILE,

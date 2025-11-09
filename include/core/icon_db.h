@@ -13,6 +13,9 @@ enum icon_type {
     LOOP_ICON,
     TRASH_ICON,
     CFG_ICON,
+    CANCEL_ICON,
+    CHECK_ICON,
+    MINIMIZE_ICON,
 
     /* Image Icons */
     DIR_ICON,
