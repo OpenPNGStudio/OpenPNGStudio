@@ -60,7 +60,7 @@ fn void Manager.global_anim(&self, nk::Context *ctx) @export("animation_manager_
         window::window_init(&self.cfg_win, ctx, "Global Animation Config");
     }
 
-    if (window::window_begin(&self.cfg_win, nk::WINDOW_TITLE | nk::WINDOW_MOVABLE |
+if (window::window_begin(&self.cfg_win, nk::WINDOW_TITLE | nk::WINDOW_MOVABLE |
         nk::WINDOW_SCALABLE | nk::WINDOW_BORDER | nk::WINDOW_MINIMIZABLE | 
         nk::WINDOW_CLOSABLE)) {
         nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
@@ -163,19 +163,28 @@ fn Properties Manager.animate_global(&self, StaticLayer *layer, Properties prev)
 
 fn void Manager.animation_selector(&self, Layer layer, nk::Context *ctx) @export("animation_manager_selector")
 {
-    nk::layout_row_dynamic(ctx, 2, 1);
-    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    float win_width = nk::window_get_width(ctx);
+    float min_width = max(win_width * 0.49f, 250.0f);
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
 
     State *layer_state = layer.get_state();
+    int current, old;
 
-    int old = layer_state.selected_animation;
-    int current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30, nk::vec2(200, 200)
-        );
-    layer_state.selected_animation = current;
+    nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Animation", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
+
+        old = layer_state.selected_animation;
+        current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
+            nk::vec2(b.w, 128));
+        layer_state.selected_animation = current;
+        nk::group_end(ctx);
+    }
 
     if (old != current) {
         if (layer_state.animation) {
@@ -194,44 +203,44 @@ fn void Manager.animation_selector(&self, Layer layer, nk::Context *ctx) @export
         }
     }
 
-    nk::layout_row_end(ctx);
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Easing: ", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    nk::label(ctx, "Animation Easing: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Animation Easing", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
+        old = 0;
 
-    old = 0;
+        if (layer_state.animation) {
+            old = layer_state.animation.easing();
+        } else {
+            nk::widget_disable_begin(ctx);
+        }
 
-    if (layer_state.animation) {
-        old = layer_state.animation.easing();
-    } else {
-        nk::widget_disable_begin(ctx);
+        if (layer_state.animation) {
+            Animation anim = layer_state.animation;
+        } else {
+            nk::widget_disable_begin(ctx);
+        }
+
+        current = nk::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
+            30, nk::vec2(b.w, 200));
+
+        if (layer_state.animation) {
+            layer_state.animation.easing(true, current);
+        } else {
+            nk::widget_disable_end(ctx);
+        }
+        nk::group_end(ctx);
     }
-
-    if (layer_state.animation) {
-        Animation anim = layer_state.animation;
-    } else {
-        nk::widget_disable_begin(ctx);
-    }
-
-    current = nk::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
-        30, nk::vec2(200, 200));
-
-    if (layer_state.animation) {
-        layer_state.animation.easing(true, current);
-    } else {
-        nk::widget_disable_end(ctx);
-    }
-    nk::layout_row_end(ctx);
-
-    nk::layout_row_dynamic(ctx, 2, 1);
-    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
     mask::configure(&layer_state.anim_mask, &layer_state.anim_input_key_buffer,
         &layer_state.anim_input_key_length, ctx, "Animation Mask:");
 
+    nk::layout_row_dynamic(ctx, 4, 1);
+    nk::spacer(ctx);
     nk::layout_row_dynamic(ctx, 2, 1);
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+    nk::layout_row_dynamic(ctx, 4, 1);
+    nk::spacer(ctx);
 
     if (layer_state.animation) {
         nk::layout_row_dynamic(ctx, 30, 2);

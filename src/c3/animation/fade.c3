@@ -100,75 +100,82 @@ const CChar*[] MODES = {"Fade In", "Fade Out"};
 
 fn void Fade.config(&self, nk::Context *ctx) @dynamic
 {
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Fade in limit:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    float win_width = nk::window_get_width(ctx);
+    float min_width = max(win_width * 0.49f, 250.0f);
 
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
+    
     float old_f = self.target_opacity_in / 255.0f;
     float current_f = old_f;
-    nk::property_float(ctx, "in limit: ", 0.0f, &current_f, 1.0f, 0.01f, 0.01f);
-    char current = (char) $$round(current_f * 255.0f);
+    char current;
 
-    if (current != self.target_opacity_in) {
-        self.is_done(SET_TRUE);
-        self.target_opacity_in = current;
+    nk::label(ctx, "Fade In Limit: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Fade In Limit", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::property_float(ctx, "in limit: ", 0.0f, &current_f, 1.0f, 0.01f, 0.01f);
+        current = (char) $$round(current_f * 255.0f);
+
+        if (current != self.target_opacity_in) {
+            self.is_done(SET_TRUE);
+            self.target_opacity_in = current;
+        }
+
+        nk::group_end(ctx);
     }
 
-    nk::layout_row_end(ctx);
+    nk::label(ctx, "Fade Out Limit: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Fade Out Limit", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        old_f = self.target_opacity_out / 255.0f;
+        current_f = old_f;
+        nk::property_float(ctx, "out limit: ", 0.0f, &current_f, 1.0f, 0.01f, 0.01f);
+        current = (char) $$round(current_f * 255.0f);
 
+        if (current != self.target_opacity_out) {
+            self.is_done(SET_TRUE);
+            self.target_opacity_out = current;
+        }
 
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Fade out limit:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
-
-    old_f = self.target_opacity_out / 255.0f;
-    current_f = old_f;
-    nk::property_float(ctx, "out limit: ", 0.0f, &current_f, 1.0f, 0.01f, 0.01f);
-    current = (char) $$round(current_f * 255.0f);
-
-    if (current != self.target_opacity_out) {
-        self.is_done(SET_TRUE);
-        self.target_opacity_out = current;
+        nk::group_end(ctx);
     }
 
-    nk::layout_row_end(ctx);
+    nk::label(ctx, "Mode: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Mode", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
 
-
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Mode:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
-
-    int old = (int) self.mode;
-    self.mode = (FadeMode) nk::combo(ctx, MODES.ptr, MODES.len, old, 30, nk::vec2(200, 200));
-
-    nk::layout_row_end(ctx);
-
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Repeat:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
-
-    nk::checkbox_label(ctx, "Toggle repeat", &self.repeat);
-    nk::layout_row_end(ctx);
-
-
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Length:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
-
-    int delay = self.delay / 1000;
-    nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
-
-    if ((delay * 1000) != self.delay) {
-        self.is_done(SET_TRUE);
-        self.delay = delay * 1000;
+        int old = (int) self.mode;
+        self.mode = (FadeMode) nk::combo(ctx, MODES.ptr, MODES.len, old, 30,
+            nk::vec2(b.w, 200));
+        nk::group_end(ctx);
     }
 
-    nk::layout_row_end(ctx);
+    nk::label(ctx, "Repeat: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Repeat", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+
+        nk::checkbox_label(ctx, "Toggle repeat", &self.repeat);
+        nk::group_end(ctx);
+    }
+
+
+    nk::label(ctx, "Length: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Length", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+
+        int delay = self.delay / 1000;
+        nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
+
+        if ((delay * 1000) != self.delay) {
+            self.is_done(SET_TRUE);
+            self.delay = delay * 1000;
+        }
+
+        nk::group_end(ctx);
+    }
 }
 
 fn int Fade.easing(&self, bool set, int easing_id) @dynamic

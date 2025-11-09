@@ -161,9 +161,12 @@ fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("d
         nk::WINDOW_MINIMIZABLE | nk::WINDOW_SCALABLE)) {
         *ui_focused = self.config_win.focus;
 
+        nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
+        defer nk::style_pop_vec2(ctx);
+
         Layer layer = self.layers[self.selected_layer];
         layer.configure(ctx);
-        // self.animation_manager.animation_selector(layer, ctx);
+        self.animation_manager.animation_selector(layer, ctx);
     } else {
         self.selected_layer = -1;
     }

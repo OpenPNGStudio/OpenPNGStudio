@@ -172,7 +172,7 @@ fn nk::Bool filter(nk::TextEdit *box, nk::Rune unicode) @local
 }
 
 fn void configure(Mask *mask, char *input_buffer, int *input_size,
-    nk::Context *ctx, char *label) @export("configure_mask")
+    nk::Context *ctx, ZString activation) @export("configure_mask")
 {
     float win_width = nk::window_get_width(ctx);
     float min_width = math::max(win_width * 0.49f, 250.0f);
@@ -183,55 +183,51 @@ fn void configure(Mask *mask, char *input_buffer, int *input_size,
     nk::layout_row_template_push_variable(ctx, min_width);
     nk::layout_row_template_end(ctx);
 
-    nk::label_with_tooltip(ctx, (CChar*) label, nk::TEXT_LEFT);
-    if (ctx.tooltip_active) {
-        nk::tooltip(ctx, "This is a tooltip");
+    nk::label(ctx, (CChar*) activation, nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, (CChar*) activation, nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
+        if (nk::combo_begin_label(ctx, "When", nk::vec2(min_width, 128))) {
+            nk::layout_row_dynamic(ctx, 32, 1);
+            nk::checkbox_flags_label(ctx, "Quiet", (CUInt*) mask, QUIET);
+            nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
+            nk::checkbox_flags_label(ctx, "Pause", (CUInt*) mask, PAUSE);
+            nk::layout_row_dynamic(ctx, 4, 1);
+            nk::spacer(ctx);
+            nk::combo_end(ctx);
+        }
+        nk::group_end(ctx);
     }
 
-    // nk::label_colored(ctx, "(?)", nk::TEXT_RIGHT, nk::rgb(0x9F, 0xCA, 0xFF));
-    // if (nk::input_is_mouse_hovering_rect(&ctx.input, bounds) &&
-    //     nk::tooltip_begin(ctx, 250)) {
-    //     nk::layout_row_dynamic(ctx, 40, 1);
-    //     nk::label_wrap(ctx, "   The mask specifies the conditions for activating the layer");
-    //     nk::tooltip_end(ctx);
-    // }
+    nk::label(ctx, "Modifier keys", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Modifier Keys", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
+        if (nk::combo_begin_label(ctx, "Keys", nk::vec2(b.w, 144))) {
+            nk::layout_row_dynamic(ctx, 32, 1);
+            nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
+            nk::checkbox_flags_label(ctx, "Control", (CUInt*) mask, CTRL);
+            nk::checkbox_flags_label(ctx, "Super (Windows Key)", (CUInt*) mask,
+                SUPER);
+            nk::checkbox_flags_label(ctx, "Alt", (CUInt*) mask, META);
+            nk::layout_row_dynamic(ctx, 4, 1);
+            nk::spacer(ctx);
+            nk::combo_end(ctx);
+        }
+        nk::group_end(ctx);
+    }
 
-    // nk::layout_row_dynamic(ctx, 30, 1);
-    // nk::label(ctx, (CChar*) label, nk::TEXT_LEFT);
-    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 3);
-    //
-    // nk::layout_row_push(ctx, 0.33f);
-    // nk::checkbox_flags_label(ctx, "Normal", (CUInt*) mask, QUIET);
-    // nk::layout_row_push(ctx, 0.33f);
-    // nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
-    // nk::layout_row_push(ctx, 0.329f);
-    // nk::checkbox_flags_label(ctx, "Pause", (CUInt*) mask, PAUSE);
-    // nk::layout_row_end(ctx);
-    //
-    // nk::layout_row_dynamic(ctx, 30, 1);
-    // nk::label(ctx, "Modifier keys:", nk::TEXT_LEFT);
-    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
-    //
-    // nk::layout_row_push(ctx, 0.25f);
-    // nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
-    // nk::layout_row_push(ctx, 0.25f);
-    // nk::checkbox_flags_label(ctx, "Ctrl", (CUInt*) mask, CTRL);
-    // nk::layout_row_push(ctx, 0.25f);
-    // nk::checkbox_flags_label(ctx, "Super", (CUInt*) mask, SUPER);
-    // nk::layout_row_push(ctx, 0.249f);
-    // nk::checkbox_flags_label(ctx, "Alt", (CUInt*) mask, META);
-    // nk::layout_row_end(ctx);
-    //
-    // nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    // nk::layout_row_push(ctx, 0.5f);
-    // nk::label(ctx, "Key press:", nk::TEXT_LEFT);
-    // nk::layout_row_push(ctx, 0.49f);
-    // nk::edit_string(ctx, nk::EDIT_SIMPLE, (CChar*) input_buffer, input_size, 2,
-    //     &filter);
-    // if (*input_size > 0) {
-    //     input_buffer[0] = ascii::to_upper(input_buffer[0]);
-    //     *mask |= 1ULL << ((Mask) input_buffer[0] - 'A' + KEY_START);
-    // } else {
-    //     reset(mask);
-    // }
+    nk::label(ctx, "Key Shortcut", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Key Shortcut", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::edit_string(ctx, nk::EDIT_SIMPLE, (CChar*) input_buffer, input_size, 2,
+            &filter);
+        if (*input_size > 0) {
+            input_buffer[0] = ascii::to_upper(input_buffer[0]);
+            *mask |= 1ULL << ((Mask) input_buffer[0] - 'A' + KEY_START);
+        } else {
+            reset(mask);
+        }
+        nk::group_end(ctx);
+    }
 }

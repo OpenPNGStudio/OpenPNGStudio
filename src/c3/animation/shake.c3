@@ -91,46 +91,51 @@ fn Properties Shake.animate(&self, Properties *props) @dynamic
 
 fn void Shake.config(&self, nk::Context *ctx) @dynamic
 {
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "Start range:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    float win_width = nk::window_get_width(ctx);
+    float min_width = math::max(win_width * 0.49f, 250.0f);
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
 
     int old_range = self.start_range;
-    nk::property_int(ctx, "Start: ", int.min, &self.start_range, 0, 1, 1);
 
-    if (old_range != self.start_range) {
-        self.is_done(SET_TRUE);
+    nk::label(ctx, "Start Range:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Start Range", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::property_int(ctx, "Start: ", int.min, &self.start_range, 0, 1, 1);
+
+        if (old_range != self.start_range) {
+            self.is_done(SET_TRUE);
+        }
+        nk::group_end(ctx);
     }
-    nk::layout_row_end(ctx);
 
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
-    nk::label(ctx, "End range:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    nk::label(ctx, "End Range:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "End Range", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        old_range = self.end_range;
+        nk::property_int(ctx, "End: ", 0, &self.end_range, int.max, 1, 1);
 
-    old_range = self.end_range;
-    nk::property_int(ctx, "End: ", 0, &self.end_range, int.max, 1, 1);
-
-    if (old_range != self.end_range) {
-        self.is_done(SET_TRUE);
+        if (old_range != self.end_range) {
+            self.is_done(SET_TRUE);
+        }
+        nk::group_end(ctx);
     }
-    nk::layout_row_end(ctx);
 
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 2);
-    nk::layout_row_push(ctx, 0.75f);
     nk::label(ctx, "Length:", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.24f);
+    if (nk::group_begin(ctx, "Length", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        int delay = self.delay / 1000;
+        nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
 
-    int delay = self.delay / 1000;
-    nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
-
-    if ((delay * 1000) != self.delay) {
-        self.is_done(SET_TRUE);
-        self.delay = delay * 1000;
+        if ((delay * 1000) != self.delay) {
+            self.is_done(SET_TRUE);
+            self.delay = delay * 1000;
+        }
+        nk::group_end(ctx);
     }
-
-    nk::layout_row_end(ctx);
 }
 
 fn Vector2 Shake.gen_pos(&self) @local
