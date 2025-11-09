@@ -5,6 +5,7 @@ import libc;
 import openpngstudio::ui::window;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::messagebox;
+import openpngstudio::ui::line_edit;
 import std::core::string;
 import std::core::mem;
 import std::io;
@@ -31,11 +32,12 @@ struct FileDialog {
     List{DirectoryEntry} content;
     List{String} filter;
     isz last_selected;
-    bool show_hidden;
+    bool show_hidden, show_system;
     Time time_to_click;
     List{ZString} selected;
     FileDialogState state;
-    bool open_for_reading, single_file_mode;
+    bool open_for_reading, single_file_mode, contextual_open;
+    LineEdit search_filter;
     MessageBox msgbox;
 }
 
@@ -133,7 +135,9 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
         usz selected = 0;
 
         nk::layout_row_dynamic(ctx, bounds.h, 1);
+        bounds = nk::widget_bounds(ctx);
         if (nk::group_begin(ctx, "Files", 0)) {
+            draw_contextual(self, ctx, bounds);
             bool to_populate = false;
             nk::layout_row_dynamic(ctx, 32, 1);
             nk::style_push_vec2(ctx, &ctx.style.window.group_padding,
@@ -141,6 +145,14 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
 
             foreach (i, &ent : self.content) {
                 if (ent.is_hidden && !self.show_hidden) continue;
+                if (ent.is_system && !self.show_system) continue;
+                if LEN: (self.search_filter.buffer != null) {
+                    String s = (String)
+                        self.search_filter.buffer[:self.search_filter.len];
+
+                    if (s.len == 0) break LEN; 
+                    if (!ent.path.str_view().contains(s)) continue;
+                }
 
                 if (draw_entry(self, ctx, ent)) {
                     if (!ent.is_file) {
@@ -213,6 +225,62 @@ fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
     if (nk::button_image(ctx, icons::get(LOOP))) {
         self.populate();
     }
+}
+
+fn void draw_contextual(FileDialog *self, nk::Context *ctx, nk::Rect bounds)
+    @local
+{
+    self.contextual_open = self.msgbox.res != -1;
+
+    if (nk::contextual_begin(ctx, 0, nk::vec2(128, 128), bounds)) {
+        do BEGIN:
+        {
+            if (!self.contextual_open) {
+                nk::contextual_close(ctx);
+                break BEGIN;
+            }
+
+            nk::layout_row_dynamic(ctx, 30, 1);
+
+            if (nk::contextual_item_label(ctx, "Search", nk::TEXT_LEFT)) {
+                self.search_filter.cleanup = true;
+                self.msgbox = messagebox::custom("Search", &on_search, 
+                    &self.search_filter);
+            }
+
+            nk::checkbox_label(ctx, "Show Hidden Files", &self.show_hidden);
+            $if env::WIN32:
+            nk::checkbox_label(ctx, "Show System Files", &self.show_system);
+            $endif
+        };
+        nk::contextual_end(ctx);
+    }
+
+}
+
+fn int on_search(nk::Context *ctx, MessageBox *box) @local
+{
+    LineEdit *line = box.userdata;
+
+    nk::layout_row_dynamic(ctx, 30, 1);
+    nk::label(ctx, "Search Term: ", nk::TEXT_LEFT);
+    line_edit::line_edit_draw(line, ctx);
+
+    nk::Rect bounds = nk::window_get_content_region(ctx);
+
+    bounds.h -= 30 * 4;
+
+    nk::layout_row_dynamic(ctx, bounds.h, 1);
+    nk::spacer(ctx);
+    nk::layout_row_template_begin(ctx, 32);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 64);
+    nk::layout_row_template_end(ctx);
+
+    nk::spacer(ctx);
+    if (nk::button_label(ctx, "Ok")) return 0;
+
+    return -1;
 }
 
 fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
@@ -319,11 +387,15 @@ fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent) @loc
 fn void? FileDialog.up(&self)
 {
     self.path = self.path.parent()!;
+    self.search_filter.cleanup = true;
+    line_edit::line_edit_cleanup(&self.search_filter);
 }
 
 fn void? FileDialog.enter(&self, String name)
 {
     self.path = self.path.append(mem, name)!;
+    self.search_filter.cleanup = true;
+    line_edit::line_edit_cleanup(&self.search_filter);
 }
 
 fn void? FileDialog.free(&self) @export("fdialog_free")

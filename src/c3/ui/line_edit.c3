@@ -9,4 +9,5 @@ struct LineEdit {
     bool cleanup;
 }
 
+extern fn void line_edit_cleanup(LineEdit *edit);
 extern fn void line_edit_draw(LineEdit *edit, nk::Context *ctx);

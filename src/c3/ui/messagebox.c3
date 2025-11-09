@@ -16,12 +16,14 @@ struct MessageBox {
     char *body;
     Type type;
     int res;
-    CustomFn *custom;
+    CustomFn custom;
     void *userdata;
 }
 
 extern fn MessageBox info(char *title, char *body) @extern("messagebox_info");
 extern fn MessageBox warn(char *title, char *body) @extern("messagebox_warn");
 extern fn MessageBox error(char *title, char *body) @extern("messagebox_error");
+extern fn MessageBox custom(char *title, CustomFn fun, void *userdata)
+    @extern("messagebox_custom");
 
 extern fn void run(MessageBox *box, nk::Context *ctx) @extern("messagebox_run");
