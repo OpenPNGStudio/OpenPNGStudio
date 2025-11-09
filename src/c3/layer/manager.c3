@@ -80,22 +80,21 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
             nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
         }
 
-        nk::layout_row_template_begin(ctx, 32);
+        nk::layout_row_template_begin(ctx, 30);
         nk::layout_row_template_push_dynamic(ctx);
-        nk::layout_row_template_push_static(ctx, 32);
-        nk::layout_row_template_push_static(ctx, 32);
+        nk::layout_row_template_push_static(ctx, 30);
+        nk::layout_row_template_push_static(ctx, 30);
         nk::layout_row_template_end(ctx);
 
         line_edit::line_edit_draw(&layer_props.name, ctx);
 
-        if (nk::button_image(ctx, icons::get(SELECT))) {
+        if (nk::button_image(ctx, icons::get(CFG))) {
             if (self.selected_layer == -1) {
                 self.selected_layer = i;
             } else {
                 self.selected_layer = -1;
             }
         }
-
 
         if (nk::button_image(ctx, icons::get(TRASH))) {
             State *layer_state = layer.get_state();

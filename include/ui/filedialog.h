@@ -29,6 +29,7 @@ void fdialog_set_filter(struct filedialog2 *dialog, const char *filter);
 void fdialog_set_title(struct filedialog2 *dialog, const char *title);
 void fdialog_free(struct filedialog2 *dialog);
 void fdialog_open_file(struct filedialog2 *dialog);
+void fdialog_open_files(struct filedialog2 *dialog);
 void fdialog_write_file(struct filedialog2 *dialog);
 char **fdialog_get_selection(struct filedialog2 *dialog);
 void fdialog_reset(struct filedialog2 *dialog);

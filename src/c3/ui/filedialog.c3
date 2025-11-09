@@ -4,6 +4,7 @@ module openpngstudio::ui;
 import libc;
 import openpngstudio::ui::window;
 import openpngstudio::ui::icons;
+import openpngstudio::ui::messagebox;
 import std::core::string;
 import std::core::mem;
 import std::io;
@@ -29,12 +30,13 @@ struct FileDialog {
     Path path;
     List{DirectoryEntry} content;
     List{String} filter;
-    usz last_selected;
+    isz last_selected;
     bool show_hidden;
     Time time_to_click;
     List{ZString} selected;
     FileDialogState state;
-    bool open_for_reading;
+    bool open_for_reading, single_file_mode;
+    MessageBox msgbox;
 }
 
 fn FileDialog *new_filedialog() @export("fdialog_init")
@@ -55,6 +57,9 @@ fn void FileDialog.populate(&self) @export("fdialog_populate")
         self.content.init(mem);
 
         if (catch excuse = files) {
+            if (excuse == io::CANNOT_READ_DIR){ 
+                self.msgbox = messagebox::error("Error", "Permissions Denied!");
+            }
             return;
         }
 
@@ -117,6 +122,8 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
         nk::WINDOW_NO_SCROLLBAR)) {
         if (self.win.focus) *focused = true;
 
+        messagebox::run(&self.msgbox, ctx);
+
         draw_titlebar(self, ctx);
 
         nk::Rect bounds = nk::window_get_content_region(ctx);
@@ -144,8 +151,14 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
                             self.enter(ent.path.str_view())!!;
                             to_populate = true;
                         } else {
-                            self.time_to_click = now + 250 * time::MS;
+                            self.time_to_click = now + 350 * time::MS;
                         }
+                    }
+
+                    if (self.single_file_mode && self.last_selected != -1) {
+                        DirectoryEntry *prev = self.content.get_ref(
+                            self.last_selected);
+                        prev.selected = false;
                     }
                     
                     self.last_selected = ent.selected ? i : -1;
@@ -153,6 +166,8 @@ fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_
 
                 if (ent.selected) selected++;
             }
+
+            if (self.single_file_mode) selected = 1;
 
             if (to_populate) self.populate();
 
@@ -203,6 +218,7 @@ fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
 fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
 {
     @pool() {
+        bool has_dir = false;
         nk::layout_row_template_begin(ctx, 32);
         nk::layout_row_template_push_dynamic(ctx);
 
@@ -219,8 +235,11 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
             if (ent.selected) {
                 if (count == 1) {
                     selected = ent.path.str_view();
+                    has_dir = !ent.is_file;
                     break;
                 }
+
+                if (!ent.is_file) has_dir = true;
 
                 selected = selected.tconcat(
                     string::tformat("\"%s\" ", ent.path.str_view())
@@ -244,12 +263,20 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
             }
         }
 
-        if (nk::button_label(ctx, "Open") && count > 0) {
-            handle_open(self);
-            self.state = READ_READY;
+        if (nk::button_label(ctx, self.open_for_reading ? "Open" : "Save") &&
+            count > 0) {
+            if (!has_dir) {
+                handle_open(self);
+                self.state = READ_READY;
+            } else {
+                self.msgbox = messagebox::warn("Warning", "A directory was"
+                    " selected");
+            }
         }
 
-        nk::button_label(ctx, "Cancel");
+        if (nk::button_label(ctx, "Cancel")) {
+            self.state = CLOSED;
+        }
     };
 }
 
@@ -266,6 +293,7 @@ fn void handle_open(FileDialog *self) @local
             }
         };
     }
+    self.selected.push(null);
 }
 
 fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent) @local
@@ -313,12 +341,21 @@ fn void FileDialog.show(&self) @export("fdialog_show")
 fn void FileDialog.open_file(&self) @export("fdialog_open_file")
 {
     self.open_for_reading = true;
+    self.single_file_mode = true;
+    self.state = CLOSED;
+}
+
+fn void FileDialog.open_files(&self) @export("fdialog_open_files")
+{
+    self.open_for_reading = true;
+    self.single_file_mode = false;
     self.state = CLOSED;
 }
 
 fn void FileDialog.write_file(&self) @export("fdialog_write_file")
 {
     self.open_for_reading = false;
+    self.single_file_mode = true;
     self.state = CLOSED;
 }
 

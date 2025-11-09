@@ -479,7 +479,7 @@ static void draw_menubar(bool *ui_focused)
                 nk_layout_row_dynamic(nk_ctx, 25, 1);
 
                 if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
-                    fdialog_open_file(ctx.fdialog);
+                    fdialog_open_files(ctx.fdialog);
                     fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
                     fdialog_populate(ctx.fdialog);
                     fdialog_set_title(ctx.fdialog, "Open Image File");
@@ -534,19 +534,23 @@ static void load_layer()
     struct stat s;
 
     char **selection = fdialog_get_selection(ctx.fdialog);
-    char *buffer = selection[0];
 
-    if (stat(buffer, &s) == -1) {
-        perror("stat");
-        abort();
+    char **iter = selection;
+    for (;*iter != NULL;iter++) {
+        char *buffer = *iter;
+
+        if (stat(buffer, &s) == -1) {
+            perror("stat");
+            abort();
+        }
+
+        int fd = open(buffer, O_RDONLY);
+
+        LOG_I("Preparing layer to be loaded", NULL);
+
+        context_load_image(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
+            s.st_size, load_layer_file, after_layer_loaded);
     }
-
-    int fd = open(buffer, O_RDONLY);
-
-    LOG_I("Preparing layer to be loaded", NULL);
-
-    context_load_image(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
-        s.st_size, load_layer_file, after_layer_loaded);
 }
 
 static void load_model()
@@ -582,7 +586,7 @@ static void write_model()
 //         filedialog_up(&ctx.dialog);
 //         ctx.dialog.file_out_name.cleanup = true;
 //     } else {
-    LOG_E("Selection not yet implemented!", 0);
+    LOG_E("Save as not yet implemented!", 0);
 }
 
 static void load_script()
