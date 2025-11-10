@@ -7,7 +7,7 @@ import novacrash::options;
 
 extern fn int c_main();
 
-fn int main() {
+fn int main() @winmain {
     novacrash::uses_raylib = true;
     options::cfg.app_name = "OpenPNGStudio";
     options::cfg.message = "has reached a";
