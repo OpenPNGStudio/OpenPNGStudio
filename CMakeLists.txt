@@ -41,7 +41,6 @@ set(VENDOR_HEADERS
     "https://raw.githubusercontent.com/OpenPNGStudio/Nuklear/refs/heads/master/nuklear.h"
     "https://raw.githubusercontent.com/OpenPNGStudio/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h"
     "https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h"
-    "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.h"
     "https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h"
 )
 
@@ -50,16 +49,8 @@ if (WIN32)
         "https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h")
 endif()
 
-set(VENDOR_SOURCES
-    "https://raw.githubusercontent.com/cktan/tomlc99/refs/heads/master/toml.c"
-)
-
 foreach(url IN LISTS VENDOR_HEADERS)
     fetch_file(${url} ${VENDOR_INCLUDE_DIR})
-endforeach()
-
-foreach(url IN LISTS VENDOR_SOURCES)
-    fetch_file(${url} ${VENDOR_SRC_DIR})
 endforeach()
 
 file(GLOB_RECURSE SRCS src/*.c)
