@@ -38,6 +38,7 @@ static void add_directory_to_archive(struct model_writer *writer, const char *di
 void model_write(struct model *model, const char *path)
 {
     return;
+#ifndef _WIN32
     struct model_writer *wr = calloc(1, sizeof(struct model_writer));
     wr->archive = archive_write_new();
     wr->model = model;
@@ -53,10 +54,12 @@ void model_write(struct model *model, const char *path)
     work_set_context(work, wr);
 
     work_scheduler_add_work(model->scheduler, work);
+#endif
 }
 
 static void write_archive(struct work *work)
 {
+#ifndef _WIN32
     struct model_writer *wr = work->ctx;
     switch (wr->state) {
     case WRITER_WRITE_MANIFEST:
@@ -131,10 +134,12 @@ static void write_archive(struct work *work)
         break;
     }
     /* TODO: Implement script saving */
+#endif
 }
 
 static void after_write(struct work *work)
 {
+#ifndef _WIN32
     struct model_writer *wr = work->ctx;
     switch (wr->state) {
     case WRITER_WRITE_MANIFEST:
@@ -157,17 +162,21 @@ static void after_write(struct work *work)
 
     /* re-schedule */
     work_scheduler_add_work(wr->model->scheduler, work);
+#endif
 }
 
 static void write_string_to_archive(struct model_writer *writer, const char *pathname, char *str)
 {
+#ifndef _WIN32
     int length = strlen(str);
     write_buffer_to_archive(writer, pathname, (uint8_t*) str, length + 1);
     free(str);
+#endif
 }
 
 static void write_buffer_to_archive(struct model_writer *writer, const char *pathname, uint8_t *buffer, int size)
 {
+#ifndef _WIN32
     writer->entry = archive_entry_new();
     archive_entry_set_pathname(writer->entry, pathname);
     archive_entry_set_size(writer->entry, size);
@@ -176,14 +185,17 @@ static void write_buffer_to_archive(struct model_writer *writer, const char *pat
     archive_write_header(writer->archive, writer->entry);
     archive_write_data(writer->archive, buffer, size);
     archive_entry_free(writer->entry);
+#endif
 }
 
 static void add_directory_to_archive(struct model_writer *writer, const char *dirname)
 {
+#ifndef _WIN32
     writer->entry = archive_entry_new();
     archive_entry_set_pathname(writer->entry, dirname);
     archive_entry_set_filetype(writer->entry, AE_IFDIR);
     archive_entry_set_perm(writer->entry, 0755);
     archive_write_header(writer->archive, writer->entry);
     archive_entry_free(writer->entry);
+#endif
 }

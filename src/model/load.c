@@ -87,6 +87,7 @@ static struct layer_info *manifest_find_layer(struct model_manifest *manifest, c
 void model_load(un_loop *loop, struct model *model, const char *path)
 {
     return;
+#ifndef _WIN32
     struct stat s;
     stat(path, &s);
 
@@ -119,10 +120,12 @@ void model_load(un_loop *loop, struct model *model, const char *path)
     work_set_context(work, rd);
 
     work_scheduler_add_work(model->scheduler, work);
+#endif
 }
 
 static void read_archive(struct work *work)
 {
+#ifndef _WIN32
     struct model_reader *rd = work->ctx;
     switch (rd->state) {
     case READER_READ_MANIFEST: {
@@ -223,10 +226,12 @@ static void read_archive(struct work *work)
     case READER_READ_FAIL:
         break;
     }
+#endif
 }
 
 static void after_read(struct work *work)
 {
+#ifndef _WIN32
     struct model_reader *rd = work->ctx;
     switch (rd->state) {
     case READER_LAYER_PREPARE: 
@@ -266,10 +271,12 @@ static void after_read(struct work *work)
 
     /* re-schedule */
     work_scheduler_add_work(rd->model->scheduler, work);
+#endif
 }
 
 static int parse_layer_info(struct model_reader *rd)
 {
+#ifndef _WIN32
     char errbuf[TOML_ERR_LEN];
     double x, y, rot;
     int msk, to_live, n_frames;
@@ -412,12 +419,13 @@ end:
 
     toml_free(conf);
     free(rd->current->buffer);
-
+#endif
     return 0;
 }
 
 static int parse_manifest(struct model_reader *rd)
 {
+#ifndef _WIN32
     char errbuf[TOML_ERR_LEN];
 
     LOG_I("Reading model manifest", 0);
@@ -490,11 +498,13 @@ static int parse_manifest(struct model_reader *rd)
 
     toml_free(conf);
     free(config_str);
+#endif
     return 0;
 }
 
 static int manifest_load_layers(struct model_manifest *manifest, toml_table_t *conf)
 {
+#ifndef _WIN32
     char errbuf[TOML_ERR_LEN];
     struct layer_info *lazy = NULL;
 
@@ -545,12 +555,13 @@ static int manifest_load_layers(struct model_manifest *manifest, toml_table_t *c
             lazy = table;
         }
     }
-
+#endif
     return 0;
 }
 
 static struct layer_info *manifest_find_layer(struct model_manifest *manifest, const char *pathname)
 {
+#ifndef _WIN32
     const char *start = strrchr(pathname, '-') + 1;
     size_t index = atoll(start);
 
@@ -561,6 +572,6 @@ static struct layer_info *manifest_find_layer(struct model_manifest *manifest, c
 
         lazy = lazy->next;
     }
-
+#endif
     return NULL;
 }

@@ -50,16 +50,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
       - name: Windows Build
         run: |
-          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/c3lang/c3c/releases/download/latest-prerelease-tag/c3-windows.zip' -OutFile 'c3-windows.zip'"
-          powershell -Command "Expand-Archive -Path 'c3-windows.zip' -DestinationPath '.' -Force"
-          set "PATH=%CD%\c3;%PATH%"
-          python3 c3\msvc_build_libraries.py --accept-license
+          choco install wget
+          wget https://github.com/c3lang/c3c/releases/download/latest-prerelease-tag/c3-windows.zip
+          unzip c3-windows.zip
+          set "PATH=%CD%\c3-windows-Release;%PATH%"
+          python3 c3-windows-Release\msvc_build_libraries.py --accept-license
           set RELEASE_BUILD=${{ inputs.release_enabled }}
           .\build.bat
           cd build
-          copy /Y ".\OpenPNGStudio-windows-x64" "..\OpenPNGStudio"
+          Copy-Item -Path '.\OpenPNGStudio-windows-x64.exe' -Destination '..\OpenPNGStudio.exe' -Force
           cd ..
       - uses: actions/upload-artifact@v4
         with:
@@ -67,7 +69,7 @@ jobs:
           path: |
             assets/
             licenses/
-            OpenPNGStudio
+            OpenPNGStudio.exe
             COPYING
 
   release:

@@ -9,7 +9,7 @@ if /i "%RELEASE_BUILD%"=="true" (
 
 mkdir build
 cd build
-cmake -G "Ninja" -DCMAKE_GENERATOR_PLATFORM="" -DCMAKE_BUILD_TYPE="%RELEASE_BUILD%" -DCMAKE_INSTALL_PREFIX=".\miniroot" ..
+cmake -G "Ninja" -DCMAKE_GENERATOR_PLATFORM="" -DCMAKE_BUILD_TYPE="%RELEASE_BUILD%" -DCMAKE_INSTALL_PREFIX=".\miniroot" -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
 if errorlevel 1 exit /b %errorlevel%
 
 ninja
@@ -17,6 +17,7 @@ if errorlevel 1 exit /b %errorlevel%
 
 ninja install
 if errorlevel 1 exit /b %errorlevel%
+cd ..
 
-c3c build OpenPNGStudio-windows-x64
+.\c3-windows-Release\c3c.exe build OpenPNGStudio-windows-x64
 if errorlevel 1 exit /b %errorlevel%
