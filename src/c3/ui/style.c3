@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::ui::style;
 import openpngstudio::ui::icons;
 import nk;
