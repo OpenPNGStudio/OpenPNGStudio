@@ -12,6 +12,7 @@ import std::io;
 import std::io::path, std::sort, std::time;
 import std::collections::list;
 import nk;
+import std::os::win32;
 
 enum FileDialogState : const int {
     CLOSED,

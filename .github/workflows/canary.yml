@@ -44,8 +44,34 @@ jobs:
             OpenPNGStudio
             COPYING
 
+  windows:
+    runs-on: windows-2022
+    name: Windows build
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows Build
+        run: |
+          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/c3lang/c3c/releases/download/latest-prerelease-tag/c3-windows.zip' -OutFile 'c3-windows.zip'"
+          powershell -Command "Expand-Archive -Path 'c3-windows.zip' -DestinationPath '.' -Force"
+          set "PATH=%CD%\c3;%PATH%"
+          python3 c3\msvc_build_libraries.py --accept-license
+          set RELEASE_BUILD=${{ inputs.release_enabled }}
+          .\build.bat
+          cd build
+          copy /Y ".\OpenPNGStudio-windows-x64" "..\OpenPNGStudio"
+          cd ..
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-windows-x86_64
+          path: |
+            assets/
+            licenses/
+            OpenPNGStudio
+            COPYING
+
   release:
-    needs: [linux]
+    needs: [linux, windows]
     runs-on: ubuntu-24.04
     name: Publish built binaries
     steps:
