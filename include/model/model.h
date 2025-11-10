@@ -11,6 +11,5 @@ struct model {
     struct editor *editor;
 };
 
-char *model_generate_manifest(struct model *model);
 void model_write(struct model *model, const char *path);
 void model_load(un_loop *loop, struct model *model, const char *path);

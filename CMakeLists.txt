@@ -71,12 +71,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${libunuv_SOURCE_DIR}/include")
 if (WIN32)
 target_include_directories(${PROJECT_NAME} PUBLIC
-    "${mman_SOURCE_DIR}"
-    "${dirent_SOURCE_DIR}/include")
-else()
-target_include_directories(${PROJECT_NAME} PUBLIC
-    "${zstd_SOURCE_DIR}/lib"
-    "${libarchive_SOURCE_DIR}/libarchive")
+    "${mman_SOURCE_DIR}")
 endif()
 target_include_directories(${PROJECT_NAME} PUBLIC include include/vendor)
 

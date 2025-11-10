@@ -14,11 +14,9 @@
       "linker-search-paths": ["build/miniroot/usr/lib64", "build/miniroot/usr/lib/x86_64-linux-gnu"],
       "linked-libraries": [
         "OpenPNGStudio",
-        "archive",
         "raylib",
         "unuv",
         "uv",
-        "zstd",
         "m"
       ]
     },
