@@ -102,6 +102,8 @@ struct context {
     bool hide_ui;
 };
 
+un_loop *get_loop();
+
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after);
 void context_load_script(struct context *ctx, const char *name,

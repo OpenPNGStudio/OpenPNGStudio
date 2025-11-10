@@ -1,0 +1,144 @@
+module unuv;
+
+typedef UnAction = inline CUInt;
+const UnAction DISARM = 0;
+const UnAction REARM = 1;
+
+typedef UnBufferType = inline CUInt;
+const UnBufferType READ_BUFFER = 0;
+const UnBufferType WRITE_BUFFER = 1;
+
+alias UnIdle = void;
+
+alias UnLoop = void;
+
+alias UnFile = void;
+
+alias UnTimer = void;
+
+alias UnIdleTaskCb = fn UnAction(
+  UnIdle* task);
+
+alias UnFsOpenCb = fn void(
+  UnFile* file, 
+  CInt result);
+
+alias UnFsReadCb = fn UnAction(
+  UnFile* file, 
+  CChar* buffer, 
+  CInt result);
+
+alias UnFsWriteCb = fn UnAction(
+  UnFile* file, 
+  CInt result);
+
+alias UnFsCloseCb = fn void(
+  UnFile* file, 
+  CInt result);
+
+alias UnTimerCb = fn UnAction(
+  UnTimer* timer);
+
+fn UnLoop* loop_new()
+@extern("un_loop_new");
+
+fn void loop_run(
+  UnLoop* loop)
+@extern("un_loop_run");
+
+fn void loop_del(
+  UnLoop* loop)
+@extern("un_loop_del");
+
+fn void run_idle(
+  UnLoop* loop, 
+  UnIdleTaskCb fun)
+@extern("un_run_idle");
+
+fn UnLoop* idle_get_loop(
+  UnIdle* task)
+@extern("un_idle_get_loop");
+
+fn void fs_open(
+  UnLoop* loop, 
+  CChar* path, 
+  CInt flags, 
+  CInt mode, 
+  UnFsOpenCb fun)
+@extern("un_fs_open");
+
+fn void fs_read(
+  UnFile* file, 
+  CChar* buffer, 
+  usz len, 
+  UnFsReadCb fun)
+@extern("un_fs_read");
+
+fn void fs_pread(
+  UnFile* file, 
+  CChar* buffer, 
+  usz len, 
+  isz offset, 
+  UnFsReadCb fun)
+@extern("un_fs_pread");
+
+fn void fs_write(
+  UnFile* file, 
+  CChar* buffer, 
+  usz len, 
+  UnFsWriteCb fun)
+@extern("un_fs_write");
+
+fn void fs_pwrite(
+  UnFile* file, 
+  CChar* buffer, 
+  usz len, 
+  isz offset, 
+  UnFsWriteCb fun)
+@extern("un_fs_pwrite");
+
+fn void fs_close(
+  UnFile* file, 
+  UnFsCloseCb fun)
+@extern("un_fs_close");
+
+fn void fs_update_buffer(
+  UnFile* file, 
+  UnBufferType type, 
+  CChar* buffer, 
+  usz len)
+@extern("un_fs_update_buffer");
+
+fn UnLoop* fs_get_loop(
+  UnFile* file)
+@extern("un_fs_get_loop");
+
+fn CChar* fs_get_buffer(
+  UnFile* file, 
+  UnBufferType type)
+@extern("un_fs_get_buffer");
+
+fn UnTimer* timer_new(
+  UnLoop* loop)
+@extern("un_timer_new");
+
+fn void timer_start(
+  UnTimer* timer, 
+  ulong timeout, 
+  ulong repeat, 
+  UnTimerCb fun)
+@extern("un_timer_start");
+
+fn void timer_set_repeat(
+  UnTimer* timer, 
+  ulong repeat)
+@extern("un_timer_set_repeat");
+
+fn void timer_set_data(
+  UnTimer* timer, 
+  void* data)
+@extern("un_timer_set_data");
+
+fn void* timer_get_data(
+  UnTimer* timer)
+@extern("un_timer_get_data");

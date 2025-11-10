@@ -3,8 +3,10 @@ module openpngstudio::layer::static_layer;
 
 import raylib5::rl;
 import nk;
+import unuv;
 import std::math;
 import openpngstudio::core::mask;
+import libc;
 
 fn void defaults(StaticLayer *layer)
 {
@@ -20,6 +22,8 @@ fn void defaults(StaticLayer *layer)
     layer.state.animation = null;
     layer.state.selected_animation = 0;
 }
+
+extern fn unuv::UnLoop *get_loop();
 
 fn bool draw(StaticLayer *layer, rl::Vector2 anchor)
 {
@@ -41,20 +45,29 @@ fn bool draw(StaticLayer *layer, rl::Vector2 anchor)
         }, props.rotation, props.tint);
         start_animation(layer);
 
-        // TODO: LIBUV
-        // if (!layer->properties.has_toggle) {
-        //     /* spawn live timeout */
-        //     if (!layer->state.active && layer->state.time_to_live > 0)
-        //         layer_start_timeout(layer, ctx.loop);
-        // } else {
-        //     if (!layer->state.is_toggle_timer_ticking && mask_test)
-        //         layer_toggle(layer, ctx.loop);
-        // }
+        if (!layer.props.has_toggle) {
+            /* spawn live timeout */
+            if (!layer.state.active && layer.state.time_to_live > 0) {
+                start_timeout(layer, get_loop());
+            }
+        } else {
+            if (!layer.state.is_toggle_timer_ticking && mask_test) {
+                toggle(layer, get_loop());
+            }
+        }
         return true;
     }
     stop_animation(layer);
 
     return false;
+}
+
+fn void override_name(StaticLayer *layer, ZString name)
+    @export("layer_override_name")
+{
+    layer.props.name.len = (int) name.len();
+    layer.props.name.cleanup = false;
+    layer.props.name.buffer = (char*) name;
 }
 
 fn void configure(StaticLayer *layer, nk::Context *ctx)
@@ -164,4 +177,49 @@ fn void stop_animation(StaticLayer *layer) @local
         }
         layer.state.animation.can_play(SET_FALSE);
     }
+}
+
+fn void cleanup(StaticLayer *layer) @export("layer_cleanup")
+{
+}
+
+fn void start_timeout(StaticLayer *layer, unuv::UnLoop *loop)
+    @export("layer_start_timeout")
+{
+    layer.state.active = true;
+    unuv::UnTimer *timer = unuv::timer_new(loop);
+    unuv::timer_set_data(timer, layer);
+    unuv::timer_start(timer, layer.state.time_to_live, 0, &after_timeout);
+}
+
+fn void toggle(StaticLayer *layer, unuv::UnLoop *loop)
+    @export("layer_toggle")
+{
+    layer.state.is_toggled = !layer.state.is_toggled;
+    layer.state.is_toggle_timer_ticking = true;
+    unuv::UnTimer *timer = unuv::timer_new(loop);
+    unuv::timer_set_data(timer, layer);
+    unuv::timer_start(timer, 250, 0, &after_toggle);
+}
+
+fn unuv::UnAction after_timeout(unuv::UnTimer *timer) @local
+{
+    StaticLayer *layer = unuv::timer_get_data(timer);
+    layer.state.active = false;
+
+    if (layer.state.prepare_for_deletion) {
+        if (!layer.props.is_animated) {
+            cleanup(layer); /* not a GIF */
+        }
+    }
+
+    return unuv::DISARM;
+}
+
+fn unuv::UnAction after_toggle(unuv::UnTimer *timer)
+{
+    StaticLayer *layer = unuv::timer_get_data(timer);
+    layer.state.is_toggle_timer_ticking = false;
+
+    return unuv::DISARM;
 }

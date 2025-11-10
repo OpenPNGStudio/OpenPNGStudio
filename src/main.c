@@ -619,3 +619,8 @@ static void after_script_loaded(uv_work_t *req, int status)
     work->ready = true;
     LOG_I("Script \"%s\" loaded, now to hook it up", work->name);
 }
+
+un_loop *get_loop()
+{
+    return ctx.loop;
+}
