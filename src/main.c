@@ -54,7 +54,7 @@
 
 #define TOML_ERR_LEN UINT8_MAX
 
-static const char *fdialog_open_filter = "qoi;png;bmp;jpg;jpeg;gif;opng";
+static const char *fdialog_open_filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 
 static char image_filter[] = "png;bmp;jpg;jpeg;gif;";
 static char script_filter[] = "lua;";
