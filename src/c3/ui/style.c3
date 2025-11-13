@@ -27,9 +27,9 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     theme[nk::COLOR_EDIT_CURSOR] = nk::rgba(0xD9, 0xD9, 0xD9, 0xFF);
     theme[nk::COLOR_COMBO] = nk::rgba(0x38, 0x38, 0x38, 0xFF);
     theme[nk::COLOR_SCROLLBAR] = nk::rgba(0x19, 0x19, 0x19, 0xFF);
-    theme[nk::COLOR_SCROLLBAR_CURSOR] = nk::rgba(0x17, 0xA0, 0x86, 0xFF);
-    theme[nk::COLOR_SCROLLBAR_CURSOR_HOVER] = nk::rgba(0x17, 0xA0, 0x86, 0xEE);
-    theme[nk::COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk::rgba(0x17, 0xA0, 0x86, 0xDD);
+    theme[nk::COLOR_SCROLLBAR_CURSOR] = nk::rgba(0x7E, 0x57, 0xC2, 0xFF);
+    theme[nk::COLOR_SCROLLBAR_CURSOR_HOVER] = nk::rgba(0x7E, 0x57, 0xC2, 0xEE);
+    theme[nk::COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk::rgba(0x7E, 0x57, 0xC2, 0xDD);
 
     theme[nk::COLOR_CHART] = nk::rgba(50, 58, 61, 255);
     theme[nk::COLOR_CHART_COLOR] = nk::rgba(48, 83, 111, 255);
