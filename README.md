@@ -11,36 +11,36 @@
 OpenPNGStudio is a free (free as in freedom) software for creating and streaming PNGTuber models, offering a rich set of features. The project was created as a free alternative to other PNG tubing software, while also enabling the addition of new features - not found in existing alternatives.
 
 ## Features
-### 🖼️ Supported Formats
+### Supported Formats
 - Supports image formats: `qoi`, `png`, `bmp`, `jpg/jpeg`, `tga`, `psd`, `dds`, and `gif`
 
-### 🎛️ Layer Controls
+### Layer Controls
 - Move, rotate, toggle, and set timeouts for layers  
 - Activate layers based on:
   - Voice activity: when you are quiet, talking, or pausing
   - Modifier keys: `Shift`, `Ctrl`, `Super (Windows key)`, or `Alt`
   - Regular keys: any from `A–Z`
 
-### 🎨 Model Management
+### Model Management
 - Save and load PNGTuber models *(coming soon)*  
 - Adjustable background color  
 - Switch between `Edit` and `Stream` modes
 
-### 🌀 Animations
+### Animations
 - Assign animations to individual layers or the entire model  
 - Trigger animations using the same activation system as layers  
 - Configure animation settings to your liking
 
-### 🎤 Audio & Input *(in progress)*
+### Audio & Input *(in progress)*
 - Microphone settings *(coming soon)*
 
 ## Installation
 
-### 🪟 Windows
+### Windows
 1. Download the latest release from the [Releases page](https://github.com/OpenPNGStudio/OpenPNGStudio/releases).
 2. Extract the archive and run `OpenPNGStudio.exe`.
 
-### 🐧 Linux
+### Linux
 #### Precompiled Binaries
 1. Download the latest release from the [Releases page](https://github.com/OpenPNGStudio/OpenPNGStudio/releases).
 2. Extract the archive, grant executable permissions, and run:
@@ -64,7 +64,7 @@ cd OpenPNGStudio
 3. Configure each layer's behavior and triggers.
 4. Switch to `Stream` mode using `Tab` - and you’re ready to go live!
 
-> 💡 tip: You can change the background color in `Stream` mode to make it match your setup in your streaming software.
+> tip: You can change the background color in `Stream` mode to make it match your setup in your streaming software.
 
 ## Screenshots
 Coming soon.

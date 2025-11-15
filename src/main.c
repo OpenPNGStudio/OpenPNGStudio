@@ -145,7 +145,18 @@ int c_main()
     ctx.model.editor = &ctx.editor;
     ctx.model.mic = &ctx.mic;
 
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+    int flags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT;
+
+#ifndef _WIN32
+    const char *desktop = NULL;
+
+    if ((desktop = getenv("XDG_CURRENT_DESKTOP")) != NULL &&
+        strcasecmp(desktop, "gnome") == 0) {
+        flags |= FLAG_WINDOW_UNDECORATED;
+    }
+#endif
+
+    SetConfigFlags(flags);
     InitWindow(1024, 640, "OpenPNGStudio");
 
     SetExitKey(KEY_NULL);
