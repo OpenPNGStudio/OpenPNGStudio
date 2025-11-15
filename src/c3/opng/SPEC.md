@@ -64,10 +64,10 @@ Directory info header:
 | ------ | ---- | ----------------- |
 | 0x0    | 0x1  | Image Type*       |
 | 0x1    | 0x4  | Image ID          |
-| 0x0    | 0x8  | Uncompressed Size |
-| 0x0    | 0x8  | Unencrypted Size  |
-| 0x0    | 0x8  | Size              |
-| 0x0    | 0x8  | Image Offset*     |
+| 0x9    | 0x8  | Uncompressed Size |
+| 0x11   | 0x8  | Unencrypted Size  |
+| 0x19   | 0x8  | Size              |
+| 0x21   | 0x8  | Image Offset*     |
 
 *Image Type - type of the image: `0 (Static)`, `1 (Animated e.g. GIF)`<br>
 *Image Offset - file cursor position from the start where data is located<br>
@@ -76,9 +76,9 @@ Directory info header:
 | Offset | Size | Description          |
 | ------ | ---- | -------------------- |
 | 0x0    | 0x1  | Animation Type*      |
-| 0x0    | 0x1  | Animation Easing*    |
-| 0x0    | 0x4  | Animation Mask*      |
-| 0x0    | 0x4  | Animation Data Size* |
+| 0x1    | 0x1  | Animation Easing*    |
+| 0x2    | 0x4  | Animation Mask*      |
+| 0x6    | 0x4  | Animation Data Size* |
 
 *Animation Type - type of the animation applied to the layer: `0 (None)`, `1 (Spinner)`, `2 (Shake)`, `3 (Fade)`<br>
 *Animation Easing - ID of easing applied to the animation: `0 (None)`, [list](https://github.com/OpenPNGStudio/OpenPNGStudio/blob/main/src/c3/animation/easings.c3#L7)<br>
