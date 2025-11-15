@@ -72,6 +72,8 @@ Directory info header:
 *Image Type - type of the image: `0 (Static)`, `1 (Animated e.g. GIF)`<br>
 *Image Offset - file cursor position from the start where data is located<br>
 
+> Note: every image is stored using QOI format
+
 `Animations` header:
 | Offset | Size | Description          |
 | ------ | ---- | -------------------- |
