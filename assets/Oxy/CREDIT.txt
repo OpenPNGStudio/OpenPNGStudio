@@ -8,11 +8,6 @@ Protogen base:
 - ko-fi:                https://ko-fi.com/s/7d068af0ae
 - license:              CUSTOM License (TOS on ko-fi)
 
-QOI logo:
-- author:               Dominic Szablewski
-- website:              https://qoiformat.org/
-- license:              CC0 License
-
 C3 logo:
 - author:               Christoffer Lerno
 - website:              https://c3-lang.org/
