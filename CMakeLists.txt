@@ -21,7 +21,7 @@ include(FetchContent)
 add_subdirectory(deps)
 
 set(VENDOR_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include/vendor)
-set(VENDOR_SRC_DIR ${CMAKE_SOURCE_DIR}/src/vendor)
+set(VENDOR_SRC_DIR ${CMAKE_SOURCE_DIR}/src/c/vendor)
 file(MAKE_DIRECTORY ${VENDOR_INCLUDE_DIR})
 file(MAKE_DIRECTORY ${VENDOR_SRC_DIR})
 
@@ -53,7 +53,7 @@ foreach(url IN LISTS VENDOR_HEADERS)
     fetch_file(${url} ${VENDOR_INCLUDE_DIR})
 endforeach()
 
-file(GLOB_RECURSE SRCS src/*.c)
+file(GLOB_RECURSE SRCS src/c/*.c)
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PUBLIC

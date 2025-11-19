@@ -223,6 +223,7 @@ void context_welcome(struct context *context, struct nk_context *ctx)
 
     if (window_begin(&context->welcome_win, NK_WINDOW_TITLE | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE)) {
+
         nk_layout_row_dynamic(ctx, 30, 1);
         nk_label(ctx, "Welcome to OpenPNGStudio!", NK_TEXT_LEFT);
         nk_layout_row_dynamic(ctx, 60, 1);
@@ -253,6 +254,7 @@ void context_welcome(struct context *context, struct nk_context *ctx)
         nk_layout_row_push(ctx, 0.14f);
         if (nk_button_label(ctx, "Ok"))
             context->welcome_win.show = false;
+        
     }
 
     if (context->welcome_win.state != HIDE)

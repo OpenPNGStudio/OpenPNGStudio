@@ -17,6 +17,7 @@
 #include <stdatomic.h>
 #include <raylib.h>
 #include <core/microphone.h>
+#include <ui/messagebox.h>
 #if 0
 #include <lua.h>
 #endif

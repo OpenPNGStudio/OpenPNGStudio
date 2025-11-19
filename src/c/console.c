@@ -137,7 +137,7 @@ void console_draw(struct nk_context *ctx, bool *ui_focused)
 
             ctx->style.text.color = old_color;
 
-            nk_layout_row_push(ctx, 0.43f);
+            nk_layout_row_push(ctx, 0.5f);
             nk_label_wrap(ctx, iter->buffer);
 
             nk_layout_row_end(ctx);

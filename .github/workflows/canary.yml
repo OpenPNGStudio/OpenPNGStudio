@@ -33,7 +33,7 @@ jobs:
 
           RELEASE_BUILD="${{ inputs.release_enabled }}" ./build.sh
           cd build
-          ln ./OpenPNGStudio-linux-x64 ../OpenPNGStudio
+          ln ./OpenPNGStudio ../OpenPNGStudio
           cd ..
       - uses: actions/upload-artifact@v4
         with:
@@ -61,7 +61,7 @@ jobs:
           set RELEASE_BUILD=${{ inputs.release_enabled }}
           .\build.bat
           cd build
-          Copy-Item -Path '.\OpenPNGStudio-windows-x64.exe' -Destination '..\OpenPNGStudio.exe' -Force
+          Copy-Item -Path '.\OpenPNGStudio.exe' -Destination '..\OpenPNGStudio.exe' -Force
           cd ..
       - uses: actions/upload-artifact@v4
         with:

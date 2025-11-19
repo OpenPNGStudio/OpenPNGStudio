@@ -128,9 +128,9 @@ int c_main()
     fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
     fdialog_populate(ctx.fdialog);
 
-    LOG_I("Using %d threads", uv_available_parallelism());
-
     console_init();
+
+    LOG_I("Using %d threads", uv_available_parallelism());
 
     ctx.camera.zoom = 1.0f;
     ctx.editor.layer_manager = layer_manager_init();
@@ -150,9 +150,12 @@ int c_main()
 #ifndef _WIN32
     const char *desktop = NULL;
 
-    if ((desktop = getenv("XDG_CURRENT_DESKTOP")) != NULL &&
+    if (getenv("ENABLE_DECORATIONS") == NULL &&
+        (desktop = getenv("XDG_CURRENT_DESKTOP")) != NULL &&
         strcasecmp(desktop, "gnome") == 0) {
         flags |= FLAG_WINDOW_UNDECORATED;
+        LOG_W("This app is not fully supported on this desktop", 0);
+        LOG_W("Enable decorations by setting ENABLE_DECORATIONS env", 0);
     }
 #endif
 
