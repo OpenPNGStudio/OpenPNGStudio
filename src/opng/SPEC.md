@@ -79,8 +79,8 @@ Directory info header:
 | 0x0    | 0x1  | Animation Type*      |
 | 0x1    | 0x4  | Animation ID         |
 | 0x5    | 0x1  | Animation Easing*    |
-| 0x6    | 0x4  | Animation Mask*      |
-| 0xA    | 0x4  | Animation Data Size* |
+| 0x6    | 0x8  | Animation Mask*      |
+| 0xE    | 0x4  | Animation Data Size* |
 
 *Animation Type - type of the animation applied to the layer: `0 (Spinner)`, `1 (Shake)`, `2 (Fade)`<br>
 *Animation Easing - ID of easing applied to the animation: [list](https://github.com/OpenPNGStudio/OpenPNGStudio/blob/main/src/c3/animation/easings.c3#L7)<br>

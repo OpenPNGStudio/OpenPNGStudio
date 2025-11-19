@@ -3,7 +3,6 @@
     "warnings": ["no-unused"],
     "dependency-search-paths": ["lib"],
     "dependencies": ["raylib55", "novacrash", "nk", "unuv", "raygui"],
-//    "dependencies": [],
     "authors": ["LowByteFox"],
     "version": "0.3.0",
     "sources": ["src/**"],
@@ -19,7 +18,7 @@
         },
         "OpenPNGStudio-windows-x64": {
             "type": "executable",
-            "name": "OpenPNGStudio.exe",
+            "name": "OpenPNGStudio",
             "linker-search-paths": ["build\\miniroot\\lib"],
             "linked-libraries": ["OpenPNGStudio", "raylib", "unuv", "libuv",
                 "mman", "Advapi32", "Userenv", "Ole32", "Iphlpapi"]
@@ -33,6 +32,7 @@
             "test-sources-override": ["test/opng/**"]
         }
     },
+    "cpu": "generic",
     "opt": "O0",
     "features": [],
     "quiet": true

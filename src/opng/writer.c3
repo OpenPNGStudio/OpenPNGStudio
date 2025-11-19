@@ -2,6 +2,7 @@
 module opng::writer;
 
 import std;
+import std::collections::map;
 
 import opng::types, opng::stream;
 
@@ -17,9 +18,11 @@ struct Writer {
     Stream stream;
     State state;
     usz[DirType.COUNT] offsets;
-    usz dirs_start, nlayers;
+    usz dirs_start, nlayers, nimages, nanims;
 
     uint image_ids, animation_ids;
+
+    HashMap{uint,usz} images_to_update;
 }
 
 const DIR_SIZE = 13; /* 1 + 8 + 4 */
@@ -27,6 +30,7 @@ const DIR_SIZE = 13; /* 1 + 8 + 4 */
 fn void Writer.free(&self)
 {
     self.stream.free();
+    self.images_to_update.free();
 }
 
 fn void? Writer.start_configure(&self, Configuration cfg)
@@ -68,6 +72,78 @@ fn void? Writer.start_layers(&self)
 }
 
 <*
+@require self.state == DEFAULT
+@require self.nimages == 0 : "Image info was already written"
+*>
+fn void? Writer.start_image_info(&self)
+{
+    self.state = IMAGE_INFO;
+    usz offset = self.stream.offset()!;
+
+    find_dir(self, IMAGES)!;
+    DirType t = IMAGES;
+
+    stream::@write(self.stream, t)!;
+    stream::@write(self.stream, offset)!;
+    stream::@write(self.stream, self.nimages)!;
+
+    self.stream.offset(true, offset)!;
+}
+
+<*
+@require self.state == DEFAULT
+@require self.nimages > 0 : "Image info needs to be written"
+*>
+fn void? Writer.start_images(&self)
+{
+    self.state = IMAGES;
+}
+
+<*
+@require self.state == DEFAULT
+@require self.nanims == 0 : "Animations were written"
+*>
+fn void? Writer.start_animations(&self)
+{
+    self.state = ANIMATIONS;
+    usz offset = self.stream.offset()!;
+
+    find_dir(self, ANIMATIONS)!;
+    DirType t = ANIMATIONS;
+
+    stream::@write(self.stream, t)!;
+    stream::@write(self.stream, offset)!;
+    stream::@write(self.stream, self.nanims)!;
+
+    self.stream.offset(true, offset)!;
+}
+
+<*
+@require self.state == IMAGES
+*>
+fn void? Writer.end_images(&self)
+{
+    self.state = DEFAULT;
+}
+
+<*
+@require self.state == IMAGE_INFO
+*>
+fn void? Writer.end_image_info(&self)
+{
+    usz offset = self.stream.offset()!;
+
+    find_dir(self, IMAGES)!;
+
+    self.stream.skip(0x9)!;
+    stream::@write(self.stream, self.nimages)!;
+
+    self.stream.offset(true, offset)!;
+
+    self.state = DEFAULT;
+}
+
+<*
 @require self.state == LAYER_INFO
 *>
 fn void? Writer.end_layers(&self)
@@ -78,6 +154,23 @@ fn void? Writer.end_layers(&self)
 
     self.stream.skip(0x9)!;
     stream::@write(self.stream, self.nlayers)!;
+
+    self.stream.offset(true, offset)!;
+
+    self.state = DEFAULT;
+}
+
+<*
+@require self.state == ANIMATIONS
+*>
+fn void? Writer.end_animations(&self)
+{
+    usz offset = self.stream.offset()!;
+
+    find_dir(self, ANIMATIONS)!;
+
+    self.stream.skip(0x9)!;
+    stream::@write(self.stream, self.nanims)!;
 
     self.stream.offset(true, offset)!;
 
@@ -103,6 +196,67 @@ fn IdPair? Writer.add_layer(&self, LayerInfo info, bool is_animated)
     self.nlayers++;
 
     return pair;
+}
+
+<*
+@require self.state == IMAGE_INFO
+*>
+fn void? Writer.add_image_info(&self, Images info)
+{
+    usz offset = self.stream.offset()!;
+
+    stream::@write(self.stream, info.type)!;
+    stream::@write(self.stream, info.id)!;
+    stream::@write(self.stream, info.uncompressed_size)!;
+    stream::@write(self.stream, info.size)!;
+    stream::@write(self.stream, info.offset)!;
+    self.nimages++;
+
+    self.images_to_update[info.id] = offset;
+}
+
+<*
+@require self.state == IMAGES
+*>
+fn void? Writer.add_image(&self, uint id, char[] buffer)
+{
+    /* TODO: Handle compression and encryption */
+    usz offset = self.stream.offset()!;
+    usz info_offset = self.images_to_update[id]!;
+    defer self.images_to_update.remove(id);
+
+    self.stream.offset(true, info_offset)!;
+    self.stream.skip(0x5)!;
+
+    usz len = buffer.len;
+
+    stream::@write(self.stream, len)!;
+    stream::@write(self.stream, len)!;
+    stream::@write(self.stream, offset)!;
+
+    self.stream.offset(true, offset)!;
+    self.stream.write(buffer)!;
+}
+
+<*
+@require self.state == ANIMATIONS
+*>
+fn void? Writer.add_animation(&self, Animations info)
+{
+    stream::@write(self.stream, info.type)!;
+    stream::@write(self.stream, info.id)!;
+    stream::@write(self.stream, info.easing)!;
+    stream::@write(self.stream, info.mask)!;
+    stream::@write(self.stream, info.data_size)!;
+    self.nanims++;
+}
+
+<*
+@require self.state == ANIMATIONS
+*>
+fn void? Writer.add_animation_data(&self, char[] data)
+{
+    self.stream.write(data)!;
 }
 
 fn void? find_dir(Writer *self, DirType type) @local
@@ -132,6 +286,7 @@ fn Writer? write_memory()
     Writer w;
     w.animation_ids = 1;
     w.image_ids = 1;
+    w.images_to_update.init(mem);
 
     MemoryStream *s = calloc(MemoryStream.sizeof);
     w.stream = s;
