@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module opng::stream;
 
-import std;
+import std, std::io;
 
 faultdef OUT_OF_BOUNDS;
 
@@ -65,10 +65,36 @@ fn void grow(MemoryStream *self) @local
     }
 }
 
-/*
 struct FileStream (Stream) {
+    File file;
 }
-*/
+
+fn void? FileStream.write(&self, char[] data) @dynamic
+{
+    self.file.write(data)!;
+}
+
+fn void? FileStream.skip(&self, usz nbytes) @dynamic
+{
+    self.file.seek(nbytes, CURSOR)!;
+}
+
+fn usz? FileStream.offset(&self, bool set = false, usz off = 0) @dynamic
+{
+    if (!set) return self.file.seek(0, CURSOR)!;
+    self.file.seek(off, SET)!;
+    return 0;
+}
+
+fn void FileStream.free(&self) @dynamic
+{
+    self.file.close()!!;
+}
+
+fn char[] FileStream.get_buf(&self) @dynamic
+{
+    return {};
+}
 
 <*
 @require $defined(Stream s = #stream)

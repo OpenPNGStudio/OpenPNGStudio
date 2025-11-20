@@ -281,34 +281,51 @@ fn void? find_dir(Writer *self, DirType type) @local
 
 module opng;
 
-fn Writer? write_memory()
+import std::io::file;
+
+struct WriterConfig {
+    ushort version;
+    Compression compression;
+    Kdf kdf;
+    Encryption encryption;
+}
+
+fn Writer? write_memory(Allocator alloc, WriterConfig cfg)
 {
     Writer w;
-    w.animation_ids = 1;
-    w.image_ids = 1;
-    w.images_to_update.init(mem);
+    w.stream = (MemoryStream*) calloc(MemoryStream.sizeof);
 
-    MemoryStream *s = calloc(MemoryStream.sizeof);
-    w.stream = s;
-    w.stream.write("OPNG")!;
-    ushort ver = 0x0003;
-    stream::@write(w.stream, ver)!;
-    Compression comp = NONE;
-    Kdf kdf = NONE;
-    Encryption enc = NONE;
-    stream::@write(w.stream, comp)!;
-    stream::@write(w.stream, kdf)!;
-    stream::@write(w.stream, enc)!;
-
-    w.dirs_start = w.stream.offset()!;
-
-    char[DirType.COUNT * writer::DIR_SIZE] empty;
-    w.stream.write(&empty)!;
+    init_writer(&w, alloc, cfg)!;
 
     return w;
 }
 
-fn Writer write_file(ZString *path)
+fn Writer? write_file(Allocator alloc, String path, WriterConfig cfg)
 {
-    unreachable("unimplemented");
+    Writer w;
+    FileStream *s = calloc(FileStream.sizeof);
+    s.file = file::open(path, "w")!;
+    w.stream = s;
+
+    init_writer(&w, alloc, cfg)!;
+
+    return w;
+}
+
+fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
+{
+    self.animation_ids = 1;
+    self.image_ids = 1;
+    self.images_to_update.init(alloc);
+
+    self.stream.write("OPNG")!;
+    stream::@write(self.stream, cfg.version)!;
+    stream::@write(self.stream, cfg.compression)!;
+    stream::@write(self.stream, cfg.kdf)!;
+    stream::@write(self.stream, cfg.encryption)!;
+
+    self.dirs_start = self.stream.offset()!;
+
+    char[DirType.COUNT * writer::DIR_SIZE] empty;
+    self.stream.write(&empty)!;
 }
