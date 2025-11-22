@@ -12,9 +12,7 @@ fn void layer_with_text() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     wr.end_layers()!!;
 
@@ -76,9 +74,7 @@ fn void layer_with_anim() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, true)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, true)!!;
 
     wr.end_layers()!!;
     wr.start_animations()!!;

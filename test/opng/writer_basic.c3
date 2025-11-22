@@ -83,9 +83,7 @@ fn void layers_with_layer() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     test::eq(pair.image_id, 1);
     test::eq(pair.animation_id, 0);
@@ -105,11 +103,11 @@ fn void layers_with_layer() @test
     LayerInfo info;
     copy(@as_char_view(info.x), layer[0x0:4]);
     copy(@as_char_view(info.y), layer[0x4:4]);
-    copy(@as_char_view(info.timeout), layer[0x8:4]);
-    copy(@as_char_view(info.toggle_mode), layer[0xC:1]);
-    copy(@as_char_view(info.mask), layer[0xD:8]);
-    copy(@as_char_view(info.image_id), layer[0x15:4]);
-    copy(@as_char_view(info.animation_id), layer[0x19:4]);
+    copy(@as_char_view(info.timeout), layer[0xC:4]);
+    copy(@as_char_view(info.toggle_mode), layer[0x10:1]);
+    copy(@as_char_view(info.mask), layer[0x11:8]);
+    copy(@as_char_view(info.image_id), layer[0x19:4]);
+    copy(@as_char_view(info.animation_id), layer[0x1D:4]);
 
     test::eq(info.x, 6);
     test::eq(info.y, 7);
@@ -128,9 +126,7 @@ fn void layers_with_cfg_and_layer() @test
     wr.start_configure({1000, 2000, 0x161616FF})!!;
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     test::eq(pair.image_id, 1);
     test::eq(pair.animation_id, 0);
@@ -156,11 +152,11 @@ fn void layers_with_cfg_and_layer() @test
     LayerInfo info;
     copy(@as_char_view(info.x), layer[0x0:4]);
     copy(@as_char_view(info.y), layer[0x4:4]);
-    copy(@as_char_view(info.timeout), layer[0x8:4]);
-    copy(@as_char_view(info.toggle_mode), layer[0xC:1]);
-    copy(@as_char_view(info.mask), layer[0xD:8]);
-    copy(@as_char_view(info.image_id), layer[0x15:4]);
-    copy(@as_char_view(info.animation_id), layer[0x19:4]);
+    copy(@as_char_view(info.timeout), layer[0xC:4]);
+    copy(@as_char_view(info.toggle_mode), layer[0x10:1]);
+    copy(@as_char_view(info.mask), layer[0x11:8]);
+    copy(@as_char_view(info.image_id), layer[0x19:4]);
+    copy(@as_char_view(info.animation_id), layer[0x1D:4]);
 
     test::eq(info.x, 6);
     test::eq(info.y, 7);
@@ -192,9 +188,7 @@ fn void layers_with_layer_and_cfg() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     test::eq(pair.image_id, 1);
     test::eq(pair.animation_id, 0);
@@ -222,11 +216,11 @@ fn void layers_with_layer_and_cfg() @test
     LayerInfo info;
     copy(@as_char_view(info.x), layer[0x0:4]);
     copy(@as_char_view(info.y), layer[0x4:4]);
-    copy(@as_char_view(info.timeout), layer[0x8:4]);
-    copy(@as_char_view(info.toggle_mode), layer[0xC:1]);
-    copy(@as_char_view(info.mask), layer[0xD:8]);
-    copy(@as_char_view(info.image_id), layer[0x15:4]);
-    copy(@as_char_view(info.animation_id), layer[0x19:4]);
+    copy(@as_char_view(info.timeout), layer[0xC:4]);
+    copy(@as_char_view(info.toggle_mode), layer[0x10:1]);
+    copy(@as_char_view(info.mask), layer[0x11:8]);
+    copy(@as_char_view(info.image_id), layer[0x19:4]);
+    copy(@as_char_view(info.animation_id), layer[0x1D:4]);
 
     test::eq(info.x, 6);
     test::eq(info.y, 7);
@@ -258,12 +252,10 @@ fn void layers_with_2_layers() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     IdPair pair2 = wr.add_layer({
-        7, 6, 2000, true, 0xDD, 0, 0
+        7, 6, 0, 2000, true, 0xDD, 0, 0
     }, true)!!;
 
     test::eq(pair.image_id, 1);
@@ -287,11 +279,11 @@ fn void layers_with_2_layers() @test
     LayerInfo info;
     copy(@as_char_view(info.x), layer[0x0:4]);
     copy(@as_char_view(info.y), layer[0x4:4]);
-    copy(@as_char_view(info.timeout), layer[0x8:4]);
-    copy(@as_char_view(info.toggle_mode), layer[0xC:1]);
-    copy(@as_char_view(info.mask), layer[0xD:8]);
-    copy(@as_char_view(info.image_id), layer[0x15:4]);
-    copy(@as_char_view(info.animation_id), layer[0x19:4]);
+    copy(@as_char_view(info.timeout), layer[0xC:4]);
+    copy(@as_char_view(info.toggle_mode), layer[0x10:1]);
+    copy(@as_char_view(info.mask), layer[0x11:8]);
+    copy(@as_char_view(info.image_id), layer[0x19:4]);
+    copy(@as_char_view(info.animation_id), layer[0x1D:4]);
 
     test::eq(info.x, 6);
     test::eq(info.y, 7);
@@ -301,16 +293,15 @@ fn void layers_with_2_layers() @test
     test::eq(info.image_id, pair.image_id);
     test::eq(info.animation_id, pair.animation_id);
 
-    layer = layer[0x1D..];
+    layer = layer[0x21..];
 
-    info;
     copy(@as_char_view(info.x), layer[0x0:4]);
     copy(@as_char_view(info.y), layer[0x4:4]);
-    copy(@as_char_view(info.timeout), layer[0x8:4]);
-    copy(@as_char_view(info.toggle_mode), layer[0xC:1]);
-    copy(@as_char_view(info.mask), layer[0xD:8]);
-    copy(@as_char_view(info.image_id), layer[0x15:4]);
-    copy(@as_char_view(info.animation_id), layer[0x19:4]);
+    copy(@as_char_view(info.timeout), layer[0xC:4]);
+    copy(@as_char_view(info.toggle_mode), layer[0x10:1]);
+    copy(@as_char_view(info.mask), layer[0x11:8]);
+    copy(@as_char_view(info.image_id), layer[0x19:4]);
+    copy(@as_char_view(info.animation_id), layer[0x1D:4]);
 
     test::eq(info.x, 7);
     test::eq(info.y, 6);

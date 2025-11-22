@@ -40,8 +40,6 @@ fn void? Writer.start_configure(&self, Configuration cfg)
     DirType t = CONFIGURATION;
 
     self.stream.@write(t)!;
-
-    self.stream.@write(t)!;
     self.stream.@write(offset)!;
     self.stream.@write(nentries)!;
 

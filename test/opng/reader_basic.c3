@@ -59,9 +59,7 @@ fn void layers_with_layer() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     wr.end_layers()!!;
 
@@ -95,9 +93,7 @@ fn void layers_with_cfg_and_layer() @test
     wr.start_configure({1000, 2000, 0x161616FF})!!;
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     wr.end_layers()!!;
 
@@ -137,9 +133,7 @@ fn void layers_with_layer_and_cfg() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     wr.end_layers()!!;
 
@@ -181,12 +175,10 @@ fn void layers_with_2_layers() @test
 
     wr.start_layers()!!;
 
-    IdPair pair = wr.add_layer({
-        6, 7, 1000, false, 0xFF, 0, 0
-    }, false)!!;
+    IdPair pair = wr.add_layer(opng_test_common::INFO, false)!!;
 
     IdPair pair2 = wr.add_layer({
-        7, 6, 2000, true, 0xDD, 0, 0
+        7, 6, 0, 2000, true, 0xDD, 0, 0
     }, true)!!;
 
     wr.end_layers()!!;

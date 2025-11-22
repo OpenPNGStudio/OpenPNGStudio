@@ -32,6 +32,7 @@ jobs:
           export PATH="$PATH:$(pwd)/c3/"
 
           RELEASE_BUILD="${{ inputs.release_enabled }}" ./build.sh
+          c3c test
           cd build
           ln ./OpenPNGStudio ../OpenPNGStudio
           cd ..
@@ -60,6 +61,7 @@ jobs:
           python3 c3-windows-Release\msvc_build_libraries.py --accept-license
           set RELEASE_BUILD=${{ inputs.release_enabled }}
           .\build.bat
+          c3c test
           cd build
           Copy-Item -Path '.\OpenPNGStudio.exe' -Destination '..\OpenPNGStudio.exe' -Force
           cd ..

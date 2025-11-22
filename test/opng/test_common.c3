@@ -10,3 +10,7 @@ const WriterConfig CFG = {
 const ReaderConfig RCFG = {
     0x0003,
 };
+
+const LayerInfo INFO = {
+    6, 7, 180, 1000, false, 0xFF, 0, 0
+};

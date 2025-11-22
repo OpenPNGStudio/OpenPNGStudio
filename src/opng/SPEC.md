@@ -51,11 +51,11 @@ Directory info header:
 | 0x0    | 0x4  | X Position offset |
 | 0x4    | 0x4  | Y Position offset |
 | 0x8    | 0x4  | Rotation          |
-| 0x8    | 0x4  | Timeout           |
-| 0xC    | 0x1  | Toggle mode*      |
-| 0xD    | 0x8  | Mask*             |
-| 0x15   | 0x4  | Image ID          |
-| 0x19   | 0x4  | Animation ID      |
+| 0xC    | 0x4  | Timeout           |
+| 0x10   | 0x1  | Toggle mode*      |
+| 0x11   | 0x8  | Mask*             |
+| 0x19   | 0x4  | Image ID          |
+| 0x1D   | 0x4  | Animation ID      |
 
 *Toggle mode - when enabled, timeout is ignored<br>
 *Mask - bit mask of when layer can be shown<br>
