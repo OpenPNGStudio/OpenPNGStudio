@@ -1,14 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module writer_basic;
 
-import std::io;
-
-import std::core::test;
+import std::io, std::core::test;
+import opng_test_common;
 import opng;
 
 fn void basic() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     char[] buf = wr.stream.get_buf();
@@ -29,7 +28,7 @@ fn void basic() @test
 
 fn void configuration() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_configure({1000, 2000, 0x161616FF})!!;
@@ -59,7 +58,7 @@ fn void configuration() @test
 
 fn void configuration_corruption_check() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_configure({1000, 2000, 0x161616FF})!!;
@@ -91,7 +90,7 @@ fn void configuration_corruption_check() @test
 
 fn void layers() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;
@@ -111,7 +110,7 @@ fn void layers() @test
 
 fn void layers_with_layer() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;
@@ -155,7 +154,7 @@ fn void layers_with_layer() @test
 
 fn void layers_with_cfg_and_layer() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_configure({1000, 2000, 0x161616FF})!!;
@@ -220,7 +219,7 @@ fn void layers_with_cfg_and_layer() @test
 
 fn void layers_with_layer_and_cfg() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;
@@ -286,7 +285,7 @@ fn void layers_with_layer_and_cfg() @test
 
 fn void layers_with_2_layers() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;

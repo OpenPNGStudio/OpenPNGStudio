@@ -6,16 +6,22 @@ module opng::types;
 enum Compression : inline char {
     NONE,
     LZF,
+
+    LIMIT, /* used for comparison */
 }
 
 enum Kdf : inline char {
     NONE,
     ARGON2ID,
+
+    LIMIT, /* used for comparison */
 }
 
 enum Encryption : inline char {
     NONE,
-    CHACHA20_POLY1305
+    CHACHA20_POLY1305,
+
+    LIMIT, /* used for comparison */
 }
 
 struct Header {
@@ -23,7 +29,7 @@ struct Header {
     ushort version;
     Compression compression_method;
     Kdf password_encryption_method;
-    Encryption encryption;
+    Encryption encryption_method;
 }
 
 enum DirType : inline char {
@@ -32,7 +38,7 @@ enum DirType : inline char {
     IMAGES,
     ANIMATIONS,
 
-    COUNT,
+    COUNT, /* for writer and comparison */
 }
 
 struct Dir {
@@ -40,6 +46,8 @@ struct Dir {
     usz offset;
     uint nentries;
 }
+
+const DIR_SIZE = 13; /* 1 + 8 + 4 */
 
 struct Configuration {
     usz microphone_trigger;
@@ -55,32 +63,35 @@ struct LayerInfo {
     uint image_id, animation_id;
 }
 
-enum ImageType : char {
+enum ImageType : inline char {
     STATIC,
     ANIMATED,
+
+    LIMIT, /* used for comparison */
 }
 
-struct Images {
+struct Image {
     ImageType type;
     uint id;
     usz uncompressed_size, size;
     usz offset;
 }
 
-enum AnimationType : char {
+enum AnimationType : inline char {
     SPINNER,
     SHAKE,
     FADE,
+
+    LIMIT, /* used for comparison */
 }
 
-struct Animations {
+struct Animation {
     AnimationType type;
     uint id;
     char easing;
     ulong mask;
     uint data_size;
 }
-
 
 struct IdPair {
     uint image_id, animation_id;

@@ -3,9 +3,10 @@ module opng::stream;
 
 import std, std::io;
 
-faultdef OUT_OF_BOUNDS;
+faultdef OUT_OF_BOUNDS, ONLY_READING_ALLOWED;
 
 interface Stream {
+    fn void? read(char[] data);
     fn void? write(char[] data);
     fn void? skip(usz nbytes);
     fn usz? offset(bool set = false, usz off = 0);
@@ -17,10 +18,12 @@ struct MemoryStream (Stream) {
     char *buffer;
     usz len, allocated;
     usz cursor;
+    bool read_only;
 }
 
 fn void? MemoryStream.write(&self, char[] data) @dynamic
 {
+    if (self.read_only) return ONLY_READING_ALLOWED?;
     while (self.len + data.len >= self.allocated) grow(self);
 
     foreach (c : data) {
@@ -28,6 +31,15 @@ fn void? MemoryStream.write(&self, char[] data) @dynamic
     }
 
     self.len = max(self.len, self.cursor);
+}
+
+fn void? MemoryStream.read(&self, char[] data) @dynamic
+{
+    if (self.cursor + data.len > self.len) return OUT_OF_BOUNDS?;
+
+    foreach (&c : data) {
+        *c = self.buffer[self.cursor++];
+    }
 }
 
 fn void? MemoryStream.skip(&self, usz nbytes) @dynamic
@@ -39,13 +51,14 @@ fn void? MemoryStream.skip(&self, usz nbytes) @dynamic
 fn usz? MemoryStream.offset(&self, bool set = false, usz off = 0) @dynamic
 {
     if (!set) return self.cursor;
+    if (off > self.len) return OUT_OF_BOUNDS?;
     self.cursor = off;
     return 0;
 }
 
 fn void MemoryStream.free(&self) @dynamic
 {
-    free(self.buffer);
+    if (!self.read_only) free(self.buffer);
     free(self);
 }
 
@@ -74,6 +87,11 @@ fn void? FileStream.write(&self, char[] data) @dynamic
     self.file.write(data)!;
 }
 
+fn void? FileStream.read(&self, char[] data) @dynamic
+{
+    self.file.read(data)!;
+}
+
 fn void? FileStream.skip(&self, usz nbytes) @dynamic
 {
     self.file.seek(nbytes, CURSOR)!;
@@ -100,3 +118,8 @@ fn char[] FileStream.get_buf(&self) @dynamic
 @require $defined(Stream s = #stream)
 *>
 macro @write(#stream, #val) => #stream.write(@as_char_view(#val));
+
+<*
+@require $defined(Stream s = #stream)
+*>
+macro @read(#stream, #val) => #stream.read(@as_char_view(#val));

@@ -25,8 +25,6 @@ struct Writer {
     HashMap{uint,usz} images_to_update;
 }
 
-const DIR_SIZE = 13; /* 1 + 8 + 4 */
-
 fn void Writer.free(&self)
 {
     self.stream.free();
@@ -201,7 +199,7 @@ fn IdPair? Writer.add_layer(&self, LayerInfo info, bool is_animated)
 <*
 @require self.state == IMAGE_INFO
 *>
-fn void? Writer.add_image_info(&self, Images info)
+fn void? Writer.add_image_info(&self, Image info)
 {
     usz offset = self.stream.offset()!;
 
@@ -241,7 +239,7 @@ fn void? Writer.add_image(&self, uint id, char[] buffer)
 <*
 @require self.state == ANIMATIONS
 *>
-fn void? Writer.add_animation(&self, Animations info)
+fn void? Writer.add_animation(&self, Animation info)
 {
     stream::@write(self.stream, info.type)!;
     stream::@write(self.stream, info.id)!;
@@ -268,7 +266,7 @@ fn void? find_dir(Writer *self, DirType type) @local
         }
 
         if (largest > 0) {
-            largest += DIR_SIZE;  /* to offset already written dir */
+            largest += types::DIR_SIZE;  /* to offset already written dir */
         } else {
             largest = self.dirs_start;
         }
@@ -326,6 +324,6 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
 
     self.dirs_start = self.stream.offset()!;
 
-    char[DirType.COUNT * writer::DIR_SIZE] empty;
+    char[DirType.COUNT * types::DIR_SIZE] empty;
     self.stream.write(&empty)!;
 }

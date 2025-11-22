@@ -1,14 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module writer_images;
 
-import std::io;
-
-import std::core::test;
+import std::io, std::core::test;
+import opng_test_common;
 import opng;
 
 fn void layer_with_text() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;
@@ -53,7 +52,7 @@ fn void layer_with_text() @test
 
     char[] image = buf[image_off..];
 
-    Images info;
+    Image info;
     copy(@as_char_view(info.type), image[0x0:1]);
     copy(@as_char_view(info.id), image[0x1:4]);
     copy(@as_char_view(info.uncompressed_size), image[0x5:8]);
@@ -72,7 +71,7 @@ fn void layer_with_text() @test
 
 fn void layer_with_anim() @test
 {
-    Writer wr = opng::write_memory()!!;
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
     wr.start_layers()!!;
@@ -112,7 +111,7 @@ fn void layer_with_anim() @test
 
     char[] anim = buf[anim_off..];
 
-    Animations info;
+    Animation info;
     copy(@as_char_view(info.type), anim[0x0:1]);
     copy(@as_char_view(info.id), anim[0x1:4]);
     copy(@as_char_view(info.easing), anim[0x5:1]);
