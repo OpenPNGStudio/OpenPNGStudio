@@ -61,7 +61,7 @@ jobs:
           python3 c3-windows-Release\msvc_build_libraries.py --accept-license
           set RELEASE_BUILD=${{ inputs.release_enabled }}
           .\build.bat
-          .\c3-windows-Release\c3c.exe  test
+          .\c3-windows-Release\c3c.exe test OpenPNGStudio-windows-x64
           cd build
           Copy-Item -Path '.\OpenPNGStudio.exe' -Destination '..\OpenPNGStudio.exe' -Force
           cd ..
