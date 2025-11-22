@@ -21,3 +21,6 @@ cd ..
 
 .\c3-windows-Release\c3c.exe build OpenPNGStudio-windows-x64
 if errorlevel 1 exit /b %errorlevel%
+
+.\c3-windows-Release\c3c.exe build opng
+if errorlevel 1 exit /b %errorlevel%
