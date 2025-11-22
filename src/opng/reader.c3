@@ -2,16 +2,13 @@
 module opng::reader;
 
 import std::core::mem, std::core::mem::allocator;
+import std::collections::map;
 import opng::types, opng::stream;
 
 faultdef NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
     COMPRESSION_METHOD_MISMATCH, KDF_METHOD_MISMATCH,
-    ENCRYPTION_METHOD_MISMATCH, NO_MORE_DIRS, DIR_TYPE_MISMATCH;
-
-struct ReadAnimation {
-    Animation anim;
-    void *data;
-}
+    ENCRYPTION_METHOD_MISMATCH, NO_MORE_DIRS, DIR_TYPE_MISMATCH,
+    IMAGE_TYPE_MISMATCH, ANIMATION_TYPE_MISMATCH;
 
 struct DirResult {
     DirType type;
@@ -19,7 +16,7 @@ struct DirResult {
         Configuration cfg;
         LayerInfo[] layers;
         Image[] images;
-        ReadAnimation[] animations;
+        Animation[] animations;
     }
 }
 
@@ -30,11 +27,14 @@ struct Reader {
     Header header;
     usz next_dir;
     usz dir_count;
+
+    HashMap{uint,usz} animation_data_offsets;
 }
 
 fn void Reader.free(&self)
 {
     self.stream.free();
+    self.animation_data_offsets.free();
 }
 
 fn DirResult? Reader.read_dir(&self)
@@ -68,10 +68,12 @@ fn DirResult? Reader.read_dir(&self)
     case IMAGES:
         res.value.images = allocator::alloc_array(self.alloc, Image,
             nentries);
+        read_images(self, &res)!;
         break;
     case ANIMATIONS:
-        res.value.animations = allocator::alloc_array(self.alloc,
-            ReadAnimation, nentries);
+        res.value.animations = allocator::alloc_array(self.alloc, Animation,
+            nentries);
+        read_animations(self, &res)!;
         break;
     default:
         unreachable("NOT IMPLEMENTED");
@@ -81,6 +83,21 @@ fn DirResult? Reader.read_dir(&self)
     self.dir_count++;
 
     return res;
+}
+
+fn void? Reader.read_image(&self, Image info, char[] out)
+{
+    self.stream.offset(true, info.offset)!;
+
+    self.stream.read(out)!;
+}
+
+fn void? Reader.read_animation_data(&self, Animation info, char[] out)
+{
+    self.stream.offset(true, self.animation_data_offsets[info.id]!)!;
+    defer self.animation_data_offsets.remove(info.id);
+
+    self.stream.read(out)!;
 }
 
 fn void? read_conf(Reader *self, DirResult *res)
@@ -100,6 +117,35 @@ fn void? read_layers(Reader *self, DirResult *res)
         stream::@read(self.stream, layer.mask)!;
         stream::@read(self.stream, layer.image_id)!;
         stream::@read(self.stream, layer.animation_id)!;
+    }
+}
+
+fn void? read_images(Reader *self, DirResult *res)
+{
+    foreach (&image : res.value.images) {
+        stream::@read(self.stream, image.type)!;
+        if (image.type >= LIMIT) return IMAGE_TYPE_MISMATCH?;
+
+        stream::@read(self.stream, image.id)!;
+        stream::@read(self.stream, image.uncompressed_size)!;
+        stream::@read(self.stream, image.size)!;
+        stream::@read(self.stream, image.offset)!;
+    }
+}
+
+fn void? read_animations(Reader *self, DirResult *res)
+{
+    foreach (&anim : res.value.animations) {
+        stream::@read(self.stream, anim.type)!;
+        if (anim.type >= LIMIT) return ANIMATION_TYPE_MISMATCH?;
+
+        stream::@read(self.stream, anim.id)!;
+        stream::@read(self.stream, anim.easing)!;
+        stream::@read(self.stream, anim.mask)!;
+        stream::@read(self.stream, anim.data_size)!;
+
+        self.animation_data_offsets[anim.id] = self.stream.offset()!;
+        self.stream.skip(anim.data_size)!;
     }
 }
 
@@ -178,4 +224,5 @@ fn void? init_reader(Reader *self, ReaderConfig cfg)
 
     self.next_dir = self.stream.offset()!;
     self.dir_count = 0;
+    self.animation_data_offsets.init(self.alloc);
 }

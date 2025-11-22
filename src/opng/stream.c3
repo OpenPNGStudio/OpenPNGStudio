@@ -44,7 +44,7 @@ fn void? MemoryStream.read(&self, char[] data) @dynamic
 
 fn void? MemoryStream.skip(&self, usz nbytes) @dynamic
 {
-    if (self.cursor + nbytes >= self.allocated) return OUT_OF_BOUNDS?;
+    if (self.cursor + nbytes > self.allocated) return OUT_OF_BOUNDS?;
     self.cursor += nbytes;
 }
 

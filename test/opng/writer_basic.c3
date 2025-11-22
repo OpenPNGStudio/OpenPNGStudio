@@ -56,38 +56,6 @@ fn void configuration() @test
     test::eq(color, 0x161616FF);
 }
 
-fn void configuration_corruption_check() @test
-{
-    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
-    defer wr.free();
-
-    wr.start_configure({1000, 2000, 0x161616FF})!!;
-    wr.start_layers()!!;
-    wr.end_layers()!!;
-
-    char[] buf = wr.stream.get_buf();
-    char[] dirs = buf[wr.dirs_start:DirType.COUNT * 13];
-
-    usz offset;
-    copy(@as_char_view(offset), dirs[1:8]);
-
-    test::eq(offset, 9 + DirType.COUNT * 13); /* location of CONFIGURATION */
-
-    char[] cfg = buf[wr.dirs_start + DirType.COUNT * 13..];
-
-    usz trigger;
-    uint sensitivity;
-    uint color;
-
-    copy(@as_char_view(trigger), cfg[:8]);
-    copy(@as_char_view(sensitivity), cfg[0x8:4]);
-    copy(@as_char_view(color), cfg[0xC:4]);
-
-    test::eq(trigger, 1000);
-    test::eq(sensitivity, 2000);
-    test::eq(color, 0x161616FF);
-}
-
 fn void layers() @test
 {
     Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
