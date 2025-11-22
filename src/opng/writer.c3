@@ -39,15 +39,17 @@ fn void? Writer.start_configure(&self, Configuration cfg)
     find_dir(self, CONFIGURATION)!;
     DirType t = CONFIGURATION;
 
-    stream::@write(self.stream, t)!;
-    stream::@write(self.stream, offset)!;
-    stream::@write(self.stream, nentries)!;
+    self.stream.@write(t)!;
+
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    self.stream.@write(nentries)!;
 
     self.stream.offset(true, offset)!;
 
-    stream::@write(self.stream, cfg.microphone_trigger)!;
-    stream::@write(self.stream, cfg.microphone_sensitivity)!;
-    stream::@write(self.stream, cfg.background_color)!;
+    self.stream.@write(cfg.microphone_trigger)!;
+    self.stream.@write(cfg.microphone_sensitivity)!;
+    self.stream.@write(cfg.background_color)!;
 }
 
 <*
@@ -62,9 +64,9 @@ fn void? Writer.start_layers(&self)
     find_dir(self, LAYER_INFO)!;
     DirType t = LAYER_INFO;
 
-    stream::@write(self.stream, t)!;
-    stream::@write(self.stream, offset)!;
-    stream::@write(self.stream, self.nlayers)!;
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    self.stream.@write(self.nlayers)!;
 
     self.stream.offset(true, offset)!;
 }
@@ -81,9 +83,9 @@ fn void? Writer.start_image_info(&self)
     find_dir(self, IMAGES)!;
     DirType t = IMAGES;
 
-    stream::@write(self.stream, t)!;
-    stream::@write(self.stream, offset)!;
-    stream::@write(self.stream, self.nimages)!;
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    self.stream.@write(self.nimages)!;
 
     self.stream.offset(true, offset)!;
 }
@@ -109,9 +111,9 @@ fn void? Writer.start_animations(&self)
     find_dir(self, ANIMATIONS)!;
     DirType t = ANIMATIONS;
 
-    stream::@write(self.stream, t)!;
-    stream::@write(self.stream, offset)!;
-    stream::@write(self.stream, self.nanims)!;
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    self.stream.@write(self.nanims)!;
 
     self.stream.offset(true, offset)!;
 }
@@ -134,7 +136,7 @@ fn void? Writer.end_image_info(&self)
     find_dir(self, IMAGES)!;
 
     self.stream.skip(0x9)!;
-    stream::@write(self.stream, self.nimages)!;
+    self.stream.@write(self.nimages)!;
 
     self.stream.offset(true, offset)!;
 
@@ -151,7 +153,7 @@ fn void? Writer.end_layers(&self)
     find_dir(self, LAYER_INFO)!;
 
     self.stream.skip(0x9)!;
-    stream::@write(self.stream, self.nlayers)!;
+    self.stream.@write(self.nlayers)!;
 
     self.stream.offset(true, offset)!;
 
@@ -168,7 +170,7 @@ fn void? Writer.end_animations(&self)
     find_dir(self, ANIMATIONS)!;
 
     self.stream.skip(0x9)!;
-    stream::@write(self.stream, self.nanims)!;
+    self.stream.@write(self.nanims)!;
 
     self.stream.offset(true, offset)!;
 
@@ -184,13 +186,14 @@ fn IdPair? Writer.add_layer(&self, LayerInfo info, bool is_animated)
     pair.image_id = self.image_ids++;
     if (is_animated) pair.animation_id = self.animation_ids++;
 
-    stream::@write(self.stream, info.x)!;
-    stream::@write(self.stream, info.y)!;
-    stream::@write(self.stream, info.timeout)!;
-    stream::@write(self.stream, info.toggle_mode)!;
-    stream::@write(self.stream, info.mask)!;
-    stream::@write(self.stream, pair.image_id)!;
-    stream::@write(self.stream, pair.animation_id)!;
+    self.stream.@write(info.x)!;
+    self.stream.@write(info.y)!;
+    self.stream.@write(info.rotation)!;
+    self.stream.@write(info.timeout)!;
+    self.stream.@write(info.toggle_mode)!;
+    self.stream.@write(info.mask)!;
+    self.stream.@write(pair.image_id)!;
+    self.stream.@write(pair.animation_id)!;
     self.nlayers++;
 
     return pair;
@@ -203,11 +206,11 @@ fn void? Writer.add_image_info(&self, Image info)
 {
     usz offset = self.stream.offset()!;
 
-    stream::@write(self.stream, info.type)!;
-    stream::@write(self.stream, info.id)!;
-    stream::@write(self.stream, info.uncompressed_size)!;
-    stream::@write(self.stream, info.size)!;
-    stream::@write(self.stream, info.offset)!;
+    self.stream.@write(info.type)!;
+    self.stream.@write(info.id)!;
+    self.stream.@write(info.uncompressed_size)!;
+    self.stream.@write(info.size)!;
+    self.stream.@write(info.offset)!;
     self.nimages++;
 
     self.images_to_update[info.id] = offset;
@@ -228,9 +231,9 @@ fn void? Writer.add_image(&self, uint id, char[] buffer)
 
     usz len = buffer.len;
 
-    stream::@write(self.stream, len)!;
-    stream::@write(self.stream, len)!;
-    stream::@write(self.stream, offset)!;
+    self.stream.@write(len)!;
+    self.stream.@write(len)!;
+    self.stream.@write(offset)!;
 
     self.stream.offset(true, offset)!;
     self.stream.write(buffer)!;
@@ -241,11 +244,11 @@ fn void? Writer.add_image(&self, uint id, char[] buffer)
 *>
 fn void? Writer.add_animation(&self, Animation info)
 {
-    stream::@write(self.stream, info.type)!;
-    stream::@write(self.stream, info.id)!;
-    stream::@write(self.stream, info.easing)!;
-    stream::@write(self.stream, info.mask)!;
-    stream::@write(self.stream, info.data_size)!;
+    self.stream.@write(info.type)!;
+    self.stream.@write(info.id)!;
+    self.stream.@write(info.easing)!;
+    self.stream.@write(info.mask)!;
+    self.stream.@write(info.data_size)!;
     self.nanims++;
 }
 
@@ -317,10 +320,10 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
     self.images_to_update.init(alloc);
 
     self.stream.write("OPNG")!;
-    stream::@write(self.stream, cfg.version)!;
-    stream::@write(self.stream, cfg.compression)!;
-    stream::@write(self.stream, cfg.kdf)!;
-    stream::@write(self.stream, cfg.encryption)!;
+    self.stream.@write(cfg.version)!;
+    self.stream.@write(cfg.compression)!;
+    self.stream.@write(cfg.kdf)!;
+    self.stream.@write(cfg.encryption)!;
 
     self.dirs_start = self.stream.offset()!;
 

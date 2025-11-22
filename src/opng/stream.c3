@@ -107,6 +107,7 @@ fn usz? FileStream.offset(&self, bool set = false, usz off = 0) @dynamic
 fn void FileStream.free(&self) @dynamic
 {
     self.file.close()!!;
+    free(self);
 }
 
 fn char[] FileStream.get_buf(&self) @dynamic
@@ -114,12 +115,5 @@ fn char[] FileStream.get_buf(&self) @dynamic
     return {};
 }
 
-<*
-@require $defined(Stream s = #stream)
-*>
-macro @write(#stream, #val) => #stream.write(@as_char_view(#val));
-
-<*
-@require $defined(Stream s = #stream)
-*>
-macro @read(#stream, #val) => #stream.read(@as_char_view(#val));
+macro Stream.@write(#self, #val) => #self.write(@as_char_view(#val));
+macro Stream.@read(#self, #val) => #self.read(@as_char_view(#val));

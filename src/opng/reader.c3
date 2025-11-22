@@ -46,13 +46,13 @@ fn DirResult? Reader.read_dir(&self)
     usz offset;
     uint nentries;
 
-    stream::@read(self.stream, res.type)!;
+    self.stream.@read(res.type)!;
     if (res.type >= COUNT) return DIR_TYPE_MISMATCH?;
 
-    stream::@read(self.stream, offset)!;
+    self.stream.@read(offset)!;
     if (offset == 0) return NO_MORE_DIRS?;
 
-    stream::@read(self.stream, nentries)!;
+    self.stream.@read(nentries)!;
 
     self.stream.offset(true, offset)!;
 
@@ -102,47 +102,48 @@ fn void? Reader.read_animation_data(&self, Animation info, char[] out)
 
 fn void? read_conf(Reader *self, DirResult *res)
 {
-    stream::@read(self.stream, res.value.cfg.microphone_trigger)!;
-    stream::@read(self.stream, res.value.cfg.microphone_sensitivity)!;
-    stream::@read(self.stream, res.value.cfg.background_color)!;
+    self.stream.@read(res.value.cfg.microphone_trigger)!;
+    self.stream.@read(res.value.cfg.microphone_sensitivity)!;
+    self.stream.@read(res.value.cfg.background_color)!;
 }
 
 fn void? read_layers(Reader *self, DirResult *res)
 {
     foreach (&layer : res.value.layers) {
-        stream::@read(self.stream, layer.x)!;
-        stream::@read(self.stream, layer.y)!;
-        stream::@read(self.stream, layer.timeout)!;
-        stream::@read(self.stream, layer.toggle_mode)!;
-        stream::@read(self.stream, layer.mask)!;
-        stream::@read(self.stream, layer.image_id)!;
-        stream::@read(self.stream, layer.animation_id)!;
+        self.stream.@read(layer.x)!;
+        self.stream.@read(layer.y)!;
+        self.stream.@read(layer.rotation)!;
+        self.stream.@read(layer.timeout)!;
+        self.stream.@read(layer.toggle_mode)!;
+        self.stream.@read(layer.mask)!;
+        self.stream.@read(layer.image_id)!;
+        self.stream.@read(layer.animation_id)!;
     }
 }
 
 fn void? read_images(Reader *self, DirResult *res)
 {
     foreach (&image : res.value.images) {
-        stream::@read(self.stream, image.type)!;
+        self.stream.@read(image.type)!;
         if (image.type >= LIMIT) return IMAGE_TYPE_MISMATCH?;
 
-        stream::@read(self.stream, image.id)!;
-        stream::@read(self.stream, image.uncompressed_size)!;
-        stream::@read(self.stream, image.size)!;
-        stream::@read(self.stream, image.offset)!;
+        self.stream.@read(image.id)!;
+        self.stream.@read(image.uncompressed_size)!;
+        self.stream.@read(image.size)!;
+        self.stream.@read(image.offset)!;
     }
 }
 
 fn void? read_animations(Reader *self, DirResult *res)
 {
     foreach (&anim : res.value.animations) {
-        stream::@read(self.stream, anim.type)!;
+        self.stream.@read(anim.type)!;
         if (anim.type >= LIMIT) return ANIMATION_TYPE_MISMATCH?;
 
-        stream::@read(self.stream, anim.id)!;
-        stream::@read(self.stream, anim.easing)!;
-        stream::@read(self.stream, anim.mask)!;
-        stream::@read(self.stream, anim.data_size)!;
+        self.stream.@read(anim.id)!;
+        self.stream.@read(anim.easing)!;
+        self.stream.@read(anim.mask)!;
+        self.stream.@read(anim.data_size)!;
 
         self.animation_data_offsets[anim.id] = self.stream.offset()!;
         self.stream.skip(anim.data_size)!;
@@ -191,11 +192,11 @@ fn Reader? read_file(Allocator alloc, String path, ReaderConfig cfg)
 
 fn void? init_reader(Reader *self, ReaderConfig cfg)
 {
-    stream::@read(self.stream, self.header.magic)!;
+    self.stream.@read(self.header.magic)!;
 
     if (&self.header.magic != "OPNG") return reader::NOT_OPNG_FILE?;
 
-    stream::@read(self.stream, self.header.version)!;
+    self.stream.@read(self.header.version)!;
 
     ushort header_major = self.header.version & 0xFF00;
     header_major >>= char.sizeof * 8;
@@ -210,15 +211,15 @@ fn void? init_reader(Reader *self, ReaderConfig cfg)
     if (header_major == cfg_major && header_minor > cfg_minor) return
         reader::MINOR_VERSION_MISMATCH?;
 
-    stream::@read(self.stream, self.header.compression_method)!;
+    self.stream.@read(self.header.compression_method)!;
     if (self.header.compression_method >= LIMIT) return
         reader::COMPRESSION_METHOD_MISMATCH?;
 
-    stream::@read(self.stream, self.header.password_encryption_method)!;
+    self.stream.@read(self.header.password_encryption_method)!;
     if (self.header.password_encryption_method >= LIMIT) return
         reader::KDF_METHOD_MISMATCH?;
 
-    stream::@read(self.stream, self.header.encryption_method)!;
+    self.stream.@read(self.header.encryption_method)!;
     if (self.header.encryption_method >= LIMIT) return
         reader::ENCRYPTION_METHOD_MISMATCH?;
 

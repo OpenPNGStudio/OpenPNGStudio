@@ -57,6 +57,7 @@ struct Configuration {
 
 struct LayerInfo {
     int x, y;
+    float rotation;
     uint timeout;
     bool toggle_mode;
     ulong mask;

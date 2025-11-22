@@ -3,7 +3,7 @@ module opng @if($feature(OPNG_STANDALONE));
 
 import std::io, std::os, std::core::env;
 
-import opng::list, opng::pack;
+import opng::info, opng::pack;
 
 alias OpngCmdFn = fn int(int argc, ZString *argv);
 alias OpngCmdUsageFn = fn void();
@@ -18,7 +18,7 @@ extern int optind @builtin;
 extern fn int getopt(int argc, char** argv, char *optstring) @builtin;
 
 OpngCmd[] cmds @local = {
-    {"list", &list::_main },
+    {"info", &info::_main },
     {"pack", &pack::_main }
 };
 

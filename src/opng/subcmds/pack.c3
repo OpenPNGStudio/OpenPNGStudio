@@ -17,6 +17,7 @@ struct ParsedAnim {
 
 struct ParsedLayer {
     int x, y;
+    float rotation;
     uint timeout;
     bool toggle_mode;
     ulong mask;
@@ -78,8 +79,9 @@ fn int _main(int argc, ZString *argv)
 
     model.layers.@each(; String key, ParsedLayer layer) {
         if (verbose) io::printfn("Writing layer info for '%s'", key);
-        IdPair id = w.add_layer({ layer.x, layer.y, layer.timeout,
-            layer.toggle_mode, layer.mask, 0, 0 }, layer.has_anim)!!;
+        IdPair id = w.add_layer({ layer.x, layer.y, layer.rotation,
+            layer.timeout, layer.toggle_mode, layer.mask, 0, 0 },
+            layer.has_anim)!!;
 
         ids[key] = id;
     };
@@ -254,6 +256,7 @@ fn HashMap{String, ParsedLayer}? parse_layers(Path layers_dir) @local
                 Object *root = json::tparse(&f)!;
                 layer.x = root.get_int("x")!;
                 layer.y = root.get_int("y")!;
+                layer.rotation = (float) root.get_float("rotation")!;
                 layer.timeout = root.get_uint("timeout")!;
                 layer.toggle_mode = root.get_bool("toggle_mode")!;
                 layer.mask = root.get_ulong("mask")!;

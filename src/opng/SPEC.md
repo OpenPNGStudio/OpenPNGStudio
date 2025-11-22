@@ -50,6 +50,7 @@ Directory info header:
 | ------ | ---- | ----------------- |
 | 0x0    | 0x4  | X Position offset |
 | 0x4    | 0x4  | Y Position offset |
+| 0x8    | 0x4  | Rotation          |
 | 0x8    | 0x4  | Timeout           |
 | 0xC    | 0x1  | Toggle mode*      |
 | 0xD    | 0x8  | Mask*             |
