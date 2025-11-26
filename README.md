@@ -7,6 +7,12 @@
 
 ![Main Screen](./assets/screenshots/main.png)
 
+![GitHub License](https://img.shields.io/github/license/OpenPNGStudio/OpenPNGStudio?style=for-the-badge&color=e90000)
+![GitHub Release](https://img.shields.io/github/v/release/OpenPNGStudio/OpenPNGStudio?display_name=tag&style=for-the-badge&color=%2317a086)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenPNGStudio/OpenPNGStudio/total?style=for-the-badge&color=ffc200)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OpenPNGStudio/OpenPNGStudio/canary.yml?style=for-the-badge&color=0278ff)
+
+
 ## Overview
 OpenPNGStudio is a free (free as in freedom) software for creating and streaming PNGTuber models, offering a rich set of features. The project was created as a free alternative to other PNG tubing software, while also enabling the addition of new features - not found in existing alternatives.
 
