@@ -17,6 +17,13 @@ enum icon_type {
     CHECK_ICON,
     MINIMIZE_ICON,
 
+    OPEN_ICON,
+    SAVE_ICON,
+    SAVE_AS_ICON,
+    LAYERS_ICON,
+    SHORTCUTS_ICON,
+    HELP_ICON,
+
     /* Image Icons */
     DIR_ICON,
     FILE_ICON,

@@ -140,7 +140,6 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
 
     /* cleanup */
     ctx->image_work_queue = req->next;
-    ctx->loading_state = NOTHING;
     munmap(req->buffer, req->size);
     close(req->fd);
     free(req);

@@ -29,14 +29,6 @@ enum program_mode {
     STREAM_MODE,
 };
 
-enum fileload_state {
-    NOTHING,
-    SELECTING_IMAGE,
-    SELECTING_SCRIPT,
-    WRITING_MODEL,
-    LOADING_MODEL,
-};
-
 enum file_extension {
     F_PNG,
     F_BMP,
@@ -72,7 +64,6 @@ struct script_load_req {
 
 struct context {
     /* STATE */
-    enum fileload_state loading_state;
     struct image_load_req *image_work_queue;
 #if 0
     lua_State *L;
@@ -93,6 +84,7 @@ struct context {
 
     struct editor editor;
     struct microphone_data mic;
+    struct panel *panel;
 
     /* separate components */
     struct window about_win;
@@ -101,6 +93,8 @@ struct context {
 
     enum program_mode mode;
     bool hide_ui;
+
+    void *c3_ctx;
 };
 
 un_loop *get_loop();

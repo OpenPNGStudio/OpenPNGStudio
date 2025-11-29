@@ -60,6 +60,14 @@ struct FileDialog {
     FileDialogJournal history;
 }
 
+fn void FileDialog.init(&self, Allocator alloc)
+{
+    self.last_selected = -1;
+    self.path = path::home_directory(alloc)!!;
+    self.history.journal.init(alloc);
+
+}
+
 fn FileDialog *new_filedialog() @export("fdialog_init")
 {
     FileDialog *fd = calloc(FileDialog.sizeof);

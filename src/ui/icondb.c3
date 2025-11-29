@@ -16,6 +16,13 @@ enum Type : inline int {
     CHECK,
     MINIMIZE,
 
+    OPEN,
+    SAVE,
+    SAVE_AS,
+    LAYERS,
+    SHORTCUTS,
+    HELP,
+
     DIR,
     FILE,
     DRIVE,

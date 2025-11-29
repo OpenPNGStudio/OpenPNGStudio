@@ -331,7 +331,7 @@ alias PluginCopy = fn void(
   CChar*, 
   CInt len);
 
-struct Allocator {
+struct NkAllocator {
   Handle userdata;
   PluginAlloc alloc;
   PluginFree free;
@@ -366,7 +366,7 @@ fn Bool init_fixed(
 
 fn Bool init(
   Context*, 
-  Allocator*, 
+  NkAllocator*, 
   UserFont*)
 @extern("nk_init");
 
@@ -3022,7 +3022,7 @@ struct Memory {
 
 struct Buffer {
   BufferMarker[2] marker;
-  Allocator pool;
+  NkAllocator pool;
   AllocationType type;
   Memory memory;
   float grow_factor;
@@ -3034,7 +3034,7 @@ struct Buffer {
 
 fn void buffer_init(
   Buffer*, 
-  Allocator*, 
+  NkAllocator*, 
   Size size)
 @extern("nk_buffer_init");
 
@@ -3094,7 +3094,7 @@ struct Str {
 
 fn void str_init(
   Str*, 
-  Allocator*, 
+  NkAllocator*, 
   Size size)
 @extern("nk_str_init");
 
@@ -3352,7 +3352,7 @@ fn Bool filter_binary(
 
 fn void textedit_init(
   TextEdit*, 
-  Allocator*, 
+  NkAllocator*, 
   Size size)
 @extern("nk_textedit_init");
 
@@ -4602,7 +4602,7 @@ struct Page {
 }
 
 struct Pool {
-  Allocator alloc;
+  NkAllocator alloc;
   AllocationType type;
   CUInt page_count;
   Page* pages;

@@ -60,8 +60,9 @@ static char image_filter[] = "png;bmp;jpg;jpeg;gif;";
 static char script_filter[] = "lua;";
 static char model_filter[] = "opng;";
 struct context ctx = {0};
+void *c_ctx = &ctx;
 
-static enum un_action update(un_idle *task);
+static enum un_action c_update(un_idle *task);
 static enum un_action draw(un_idle *task);
 static void draw_menubar(bool *ui_focused);
 
@@ -70,6 +71,8 @@ static void write_model();
 static void load_model();
 
 static void load_script();
+
+static void action(void *ctx);
 
 /* to be replaced */
 static void load_layer_file(uv_work_t *req);
@@ -113,7 +116,10 @@ static void draw_grid(int line_width, int spacing, Color color)
 
 void opng_style_apply(struct nk_context *ctx);
 
-int c_main()
+void update(void *c3_ctx, bool ui_on);
+void c3_nk(void *c3_ctx, struct nk_context *nk_ctx);
+
+int c_main(void *c3_ctx)
 {
     char cpubuff[4] = {0};
     snprintf(cpubuff, 3, "%d", uv_available_parallelism());
@@ -124,9 +130,6 @@ int c_main()
 #endif
     /* CFG */
     ctx.loop = un_loop_new();
-    ctx.fdialog = fdialog_init();
-    fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
-    fdialog_populate(ctx.fdialog);
 
     console_init();
 
@@ -138,6 +141,7 @@ int c_main()
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
     ctx.mask |= QUIET;
+    ctx.c3_ctx = c3_ctx;
 
     /* scheduler */
     ctx.sched.loop = ctx.loop;
@@ -187,6 +191,18 @@ int c_main()
         LoadNuklearImage(PATH_START "assets/icons/check.png"));
     register_icon(MINIMIZE_ICON,
         LoadNuklearImage(PATH_START "assets/icons/minimize.png"));
+    register_icon(OPEN_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/open.png"));
+    register_icon(SAVE_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/save.png"));
+    register_icon(SAVE_AS_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/save-as.png"));
+    register_icon(LAYERS_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/layers.png"));
+    register_icon(SHORTCUTS_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/shortcuts.png"));
+    register_icon(HELP_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/help.png"));
 
     register_icon(DIR_ICON,
         LoadNuklearImage(PATH_START "assets/images/dir.png"));
@@ -198,6 +214,8 @@ int c_main()
     ctx.ctx = InitNuklearEx(font, 18);
     set_nk_font(font);
     opng_style_apply(ctx.ctx);
+
+    c3_nk(c3_ctx, ctx.ctx);
 
     /* MINIAUDIO */
     ctx.mic.multiplier = DEFAULT_MULTIPLIER;
@@ -253,14 +271,13 @@ int c_main()
 
     /* event loop */
     un_run_idle(ctx.loop, draw);
-    un_run_idle(ctx.loop, update);
+    un_run_idle(ctx.loop, c_update);
 
     un_loop_run(ctx.loop);
     un_loop_del(ctx.loop);
 
     cleanup_icons();
     ma_device_uninit(&ctx.mic.device);
-    fdialog_free(ctx.fdialog);
     console_deinit();
     UnloadNuklear(ctx.ctx);
     CloseWindow();
@@ -302,7 +319,7 @@ static enum un_action draw(un_idle *task)
 
 void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused);
 
-static enum un_action update(un_idle *task)
+static enum un_action c_update(un_idle *task)
 {
     mask_t mask = get_current_mask();
     handle_key_mask(&mask);
@@ -326,11 +343,6 @@ static enum un_action update(un_idle *task)
     set_key_mask(&mask);
     set_current_mask(mask);
 
-    if (!ctx.hide_ui)
-        draw_menubar(&ui_focused);
-
-    fdialog_run(ctx.fdialog, nk_ctx, &ui_focused);
-
     if (!ctx.hide_ui) {
         if (ctx.mode == EDIT_MODE)
             editor_draw(&ctx.editor, nk_ctx, &ui_focused);
@@ -345,6 +357,8 @@ static enum un_action update(un_idle *task)
         //         nk_ctx);
     }
 
+    update(ctx.c3_ctx, ctx.hide_ui);
+
     editor_apply_mask(&ctx.editor);
 
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
@@ -358,21 +372,21 @@ static enum un_action update(un_idle *task)
 
     context_welcome(&ctx, nk_ctx);
 
-    enum filedialog2_state fdialog_state = fdialog_get_state(ctx.fdialog);
-
-    if (fdialog_state == READ_READY ||
-        fdialog_state == WRITE_READY) {
-        if (ctx.loading_state == SELECTING_IMAGE) {
-            load_layer();
-        } else if (ctx.loading_state == WRITING_MODEL) {
-            write_model();
-        } else if (ctx.loading_state == LOADING_MODEL) {
-            load_model();
-        } else if (ctx.loading_state == SELECTING_SCRIPT) {
-            // load_script();
-        }
-        fdialog_reset(ctx.fdialog);
-    }
+    // enum filedialog2_state fdialog_state = fdialog_get_state(ctx.fdialog);
+    //
+    // if (fdialog_state == READ_READY ||
+    //     fdialog_state == WRITE_READY) {
+    //     if (ctx.loading_state == SELECTING_IMAGE) {
+    //         load_layer();
+    //     } else if (ctx.loading_state == WRITING_MODEL) {
+    //         write_model();
+    //     } else if (ctx.loading_state == LOADING_MODEL) {
+    //         load_model();
+    //     } else if (ctx.loading_state == SELECTING_SCRIPT) {
+    //         // load_script();
+    //     }
+    //     fdialog_reset(ctx.fdialog);
+    // }
 
     if (!ui_focused) {
         if (IsKeyPressed(KEY_SPACE)) {
@@ -448,99 +462,99 @@ static enum un_action update(un_idle *task)
     return REARM;
 }
 
-static void draw_menubar(bool *ui_focused)
-{
-    struct nk_context *nk_ctx = ctx.ctx;
-
-    if (nk_begin(nk_ctx, "Menu", nk_rect(0, 0, ctx.width, 25),
-            NK_WINDOW_NO_SCROLLBAR)) {
-        if (nk_input_is_mouse_hovering_rect(&nk_ctx->input, nk_window_get_bounds(nk_ctx)))
-            *ui_focused = true;
-
-        nk_menubar_begin(nk_ctx);
-
-        nk_layout_row_static(nk_ctx, 20, 40, 2);
-
-        if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
-            nk_layout_row_dynamic(nk_ctx, 25, 1);
-            if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT)) {
-                fdialog_open_file(ctx.fdialog);
-                fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
-                fdialog_populate(ctx.fdialog);
-                fdialog_set_title(ctx.fdialog, "Load Model");
-                fdialog_show(ctx.fdialog);
-
-                ctx.loading_state = LOADING_MODEL;
-            }
-
-            if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
-                LOG_W("I don't do anything yet", 0);
-
-            if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
-                fdialog_write_file(ctx.fdialog);
-                fdialog_set_filter(ctx.fdialog, NULL);
-                fdialog_populate(ctx.fdialog);
-                fdialog_set_title(ctx.fdialog, "Save Model As");
-                fdialog_show(ctx.fdialog);
-
-                ctx.loading_state = WRITING_MODEL;
-            }
-
-            if (ctx.mode == EDIT_MODE) {
-                nk_layout_row_dynamic(nk_ctx, 2, 1);
-                nk_rule_horizontal(nk_ctx, nk_ctx->style.window.border_color,
-                    false);
-                nk_layout_row_dynamic(nk_ctx, 25, 1);
-
-                if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
-                    fdialog_open_files(ctx.fdialog);
-                    fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
-                    fdialog_populate(ctx.fdialog);
-                    fdialog_set_title(ctx.fdialog, "Open Image File");
-                    fdialog_show(ctx.fdialog);
-                    
-                    ctx.loading_state = SELECTING_IMAGE;
-                }
-#if 0
-                if (nk_menu_item_label(nk_ctx, "Load Script", NK_TEXT_LEFT)) {
-                    if (ctx.editor.script_manager.to_import == NULL) {
-                        ctx.dialog.open_for_write = false;
-                        ctx.dialog.filter = script_filter;
-                        filedialog_refresh(&ctx.dialog);
-                        ctx.dialog.win.title = "Open Script";
-                        filedialog_show(&ctx.dialog);
-                        
-                        ctx.loading_state = SELECTING_SCRIPT;
-                    } else {
-                        LOG_W("Script is being loaded!", 0);
-                    }
-                }
-#endif
-
-                if (nk_menu_item_label(nk_ctx, "Quit", NK_TEXT_LEFT)) {
-                    uv_stop((void*) ctx.loop);
-                }
-            }
-
-            nk_menu_end(nk_ctx);
-        }
-
-        if (nk_menu_begin_label(nk_ctx, "Help", NK_TEXT_LEFT, nk_vec2(200, 200))) {
-            nk_layout_row_dynamic(nk_ctx, 25, 1);
-            if (nk_menu_item_label(nk_ctx, "Keybindings", NK_TEXT_LEFT))
-                ctx.keybindings_win.show = true;
-
-            if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT))
-                ctx.about_win.show = true;
-
-            nk_menu_end(nk_ctx);
-        }
-
-        nk_menubar_end(nk_ctx);
-    }
-
-    nk_end(nk_ctx);
-}
+// static void draw_menubar(bool *ui_focused)
+// {
+//     struct nk_context *nk_ctx = ctx.ctx;
+//
+//     if (nk_begin(nk_ctx, "Menu", nk_rect(0, 0, ctx.width, 25),
+//             NK_WINDOW_NO_SCROLLBAR)) {
+//         if (nk_input_is_mouse_hovering_rect(&nk_ctx->input, nk_window_get_bounds(nk_ctx)))
+//             *ui_focused = true;
+//
+//         nk_menubar_begin(nk_ctx);
+//
+//         nk_layout_row_static(nk_ctx, 20, 40, 2);
+//
+//         if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
+//             nk_layout_row_dynamic(nk_ctx, 25, 1);
+//             if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT)) {
+//                 fdialog_open_file(ctx.fdialog);
+//                 fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
+//                 fdialog_populate(ctx.fdialog);
+//                 fdialog_set_title(ctx.fdialog, "Load Model");
+//                 fdialog_show(ctx.fdialog);
+//
+//                 ctx.loading_state = LOADING_MODEL;
+//             }
+//
+//             if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
+//                 LOG_W("I don't do anything yet", 0);
+//
+//             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
+//                 fdialog_write_file(ctx.fdialog);
+//                 fdialog_set_filter(ctx.fdialog, NULL);
+//                 fdialog_populate(ctx.fdialog);
+//                 fdialog_set_title(ctx.fdialog, "Save Model As");
+//                 fdialog_show(ctx.fdialog);
+//
+//                 ctx.loading_state = WRITING_MODEL;
+//             }
+//
+//             if (ctx.mode == EDIT_MODE) {
+//                 nk_layout_row_dynamic(nk_ctx, 2, 1);
+//                 nk_rule_horizontal(nk_ctx, nk_ctx->style.window.border_color,
+//                     false);
+//                 nk_layout_row_dynamic(nk_ctx, 25, 1);
+//
+//                 if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
+//                     fdialog_open_files(ctx.fdialog);
+//                     fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
+//                     fdialog_populate(ctx.fdialog);
+//                     fdialog_set_title(ctx.fdialog, "Open Image File");
+//                     fdialog_show(ctx.fdialog);
+//
+//                     ctx.loading_state = SELECTING_IMAGE;
+//                 }
+// #if 0
+//                 if (nk_menu_item_label(nk_ctx, "Load Script", NK_TEXT_LEFT)) {
+//                     if (ctx.editor.script_manager.to_import == NULL) {
+//                         ctx.dialog.open_for_write = false;
+//                         ctx.dialog.filter = script_filter;
+//                         filedialog_refresh(&ctx.dialog);
+//                         ctx.dialog.win.title = "Open Script";
+//                         filedialog_show(&ctx.dialog);
+//
+//                         ctx.loading_state = SELECTING_SCRIPT;
+//                     } else {
+//                         LOG_W("Script is being loaded!", 0);
+//                     }
+//                 }
+// #endif
+//
+//                 if (nk_menu_item_label(nk_ctx, "Quit", NK_TEXT_LEFT)) {
+//                     uv_stop((void*) ctx.loop);
+//                 }
+//             }
+//
+//             nk_menu_end(nk_ctx);
+//         }
+//
+//         if (nk_menu_begin_label(nk_ctx, "Help", NK_TEXT_LEFT, nk_vec2(200, 200))) {
+//             nk_layout_row_dynamic(nk_ctx, 25, 1);
+//             if (nk_menu_item_label(nk_ctx, "Keybindings", NK_TEXT_LEFT))
+//                 ctx.keybindings_win.show = true;
+//
+//             if (nk_menu_item_label(nk_ctx, "About", NK_TEXT_LEFT))
+//                 ctx.about_win.show = true;
+//
+//             nk_menu_end(nk_ctx);
+//         }
+//
+//         nk_menubar_end(nk_ctx);
+//     }
+//
+//     nk_end(nk_ctx);
+// }
 
 static void load_layer()
 {
