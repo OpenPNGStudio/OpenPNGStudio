@@ -109,18 +109,27 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     hdr.close_button.active = hdr.close_button.normal;
     hdr.close_button.border = 0.0f;
 
-    // hdr.minimize_button.normal = {
-    //     .type = nk::STYLE_ITEM_IMAGE,
-    //     .data = {
-    //         .image = icons::get(MINIMIZE),
-    //     },
-    // };
-    //
-    // hdr.minimize_symbol = nk::SYMBOL_UNDERSCORE;
-    // hdr.maximize_symbol = nk::SYMBOL_NONE;
-    //
-    // hdr.minimize_button.hover = hdr.minimize_button.normal;
-    // hdr.minimize_button.active = hdr.minimize_button.normal;
+    hdr.minimize_button.normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(MINIMIZE),
+        },
+    };
+
+    hdr.maximize_button.normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(MAXIMIZE),
+        },
+    };
+
+    hdr.minimize_symbol = nk::SYMBOL_NONE;
+    hdr.maximize_symbol = nk::SYMBOL_NONE;
+
+    hdr.minimize_button.hover = hdr.minimize_button.normal;
+    hdr.minimize_button.active = hdr.minimize_button.normal;
+    hdr.maximize_button.hover = hdr.maximize_button.normal;
+    hdr.maximize_button.active = hdr.maximize_button.normal;
 
     chk.cursor_normal = {
         .type = nk::STYLE_ITEM_IMAGE,

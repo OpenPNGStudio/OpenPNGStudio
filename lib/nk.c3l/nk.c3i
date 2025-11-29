@@ -4225,6 +4225,7 @@ struct StyleWindowHeader {
   StyleItem active;
   StyleButton close_button;
   StyleButton minimize_button;
+  StyleButton maximize_button;
   SymbolType close_symbol;
   SymbolType minimize_symbol;
   SymbolType maximize_symbol;

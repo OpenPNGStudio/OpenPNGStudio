@@ -15,6 +15,7 @@ enum Type : inline int {
     CANCEL,
     CHECK,
     MINIMIZE,
+    MAXIMIZE,
 
     OPEN,
     SAVE,

@@ -191,6 +191,8 @@ int c_main(void *c3_ctx)
         LoadNuklearImage(PATH_START "assets/icons/check.png"));
     register_icon(MINIMIZE_ICON,
         LoadNuklearImage(PATH_START "assets/icons/minimize.png"));
+    register_icon(MAXIMIZE_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/maximize.png"));
     register_icon(OPEN_ICON,
         LoadNuklearImage(PATH_START "assets/icons/open.png"));
     register_icon(SAVE_ICON,

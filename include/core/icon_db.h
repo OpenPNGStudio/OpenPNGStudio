@@ -16,6 +16,7 @@ enum icon_type {
     CANCEL_ICON,
     CHECK_ICON,
     MINIMIZE_ICON,
+    MAXIMIZE_ICON,
 
     OPEN_ICON,
     SAVE_ICON,
