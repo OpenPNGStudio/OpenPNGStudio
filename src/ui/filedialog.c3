@@ -68,7 +68,7 @@ fn void FileDialog.init(&self, Allocator alloc)
 
 }
 
-fn FileDialog *new_filedialog() @export("fdialog_init")
+fn FileDialog *new_filedialog()
 {
     FileDialog *fd = calloc(FileDialog.sizeof);
     fd.last_selected = -1;
@@ -78,7 +78,7 @@ fn FileDialog *new_filedialog() @export("fdialog_init")
     return fd;
 }
 
-fn void FileDialog.populate(&self) @export("fdialog_populate")
+fn void FileDialog.populate(&self)
 {
     self.content.free();
     @pool() {
@@ -142,7 +142,7 @@ fn bool matches(FileDialog *self, String file) @local
     return false;
 }
 
-fn void FileDialog.run(&self, nk::Context *ctx, bool *focused) @export("fdialog_run")
+fn void FileDialog.run(&self, nk::Context *ctx, bool *focused)
 {
     if (self.win.ctx == null) window::window_init(&self.win, ctx, null);
     if (self.state != BROWSING) return;
@@ -412,7 +412,6 @@ fn void handle_write(FileDialog *self) @local
         Path full_path = self.path.tappend(s)!!;
         self.selected.push(full_path.str_view().zstr_copy(mem));
     };
-    self.selected.push(null);
 }
 
 fn void handle_open(FileDialog *self) @local
@@ -428,7 +427,6 @@ fn void handle_open(FileDialog *self) @local
             }
         };
     }
-    self.selected.push(null);
 }
 
 fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent) @local
@@ -469,33 +467,33 @@ fn void? FileDialog.enter(&self, String name)
     self.history.register(ENTER, name);
 }
 
-fn void? FileDialog.free(&self) @export("fdialog_free")
+fn void? FileDialog.free(&self)
 {
     self.filter.free();
     self.selected.free();
 }
 
-fn void FileDialog.show(&self) @export("fdialog_show")
+fn void FileDialog.show(&self)
 {
     self.win.show = true;
     self.state = BROWSING;
 }
 
-fn void FileDialog.open_file(&self) @export("fdialog_open_file")
+fn void FileDialog.open_file(&self)
 {
     self.open_for_reading = true;
     self.single_file_mode = true;
     self.state = CLOSED;
 }
 
-fn void FileDialog.open_files(&self) @export("fdialog_open_files")
+fn void FileDialog.open_files(&self)
 {
     self.open_for_reading = true;
     self.single_file_mode = false;
     self.state = CLOSED;
 }
 
-fn void FileDialog.write_file(&self) @export("fdialog_write_file")
+fn void FileDialog.write_file(&self)
 {
     self.open_for_reading = false;
     self.single_file_mode = true;
@@ -504,17 +502,17 @@ fn void FileDialog.write_file(&self) @export("fdialog_write_file")
     line_edit::line_edit_cleanup(&self.write_file_name);
 }
 
-fn ZString* FileDialog.get_selection(&self) @export("fdialog_get_selection")
+fn List{ZString} FileDialog.get_selection(&self)
 {
-    return self.selected.entries;
+    return self.selected;
 }
 
-fn void FileDialog.set_title(&self, ZString title) @export("fdialog_set_title")
+fn void FileDialog.set_title(&self, ZString title)
 {
     self.win.title = title;
 }
 
-fn void FileDialog.set_filter(&self, ZString filter) @export("fdialog_set_filter")
+fn void FileDialog.set_filter(&self, ZString filter)
 { 
     self.filter.free();
     self.filter.init(mem);
@@ -529,12 +527,12 @@ fn void FileDialog.set_filter(&self, ZString filter) @export("fdialog_set_filter
     }
 }
 
-fn FileDialogState FileDialog.get_state(&self) @export("fdialog_get_state")
+fn FileDialogState FileDialog.get_state(&self)
 {
     return self.state;
 }
 
-fn void FileDialog.reset(&self) @export("fdialog_reset")
+fn void FileDialog.reset(&self)
 {
     self.state = CLOSED;
 }

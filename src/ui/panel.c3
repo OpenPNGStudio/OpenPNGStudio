@@ -38,7 +38,7 @@ fn void Panel.add_entry(&self, PanelAction action, icons::Type icon, void *ctx)
     });
 }
 
-fn void Panel.ui(&self, nk::Context *ctx) @export("panel_ui")
+fn void Panel.ui(&self, nk::Context *ctx)
 {
     nk::style_push_float(ctx, &ctx.style.window.rounding, 5.0f);
     defer nk::style_pop_float(ctx);

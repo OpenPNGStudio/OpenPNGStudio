@@ -372,22 +372,6 @@ static enum un_action c_update(un_idle *task)
 
     context_welcome(&ctx, nk_ctx);
 
-    // enum filedialog2_state fdialog_state = fdialog_get_state(ctx.fdialog);
-    //
-    // if (fdialog_state == READ_READY ||
-    //     fdialog_state == WRITE_READY) {
-    //     if (ctx.loading_state == SELECTING_IMAGE) {
-    //         load_layer();
-    //     } else if (ctx.loading_state == WRITING_MODEL) {
-    //         write_model();
-    //     } else if (ctx.loading_state == LOADING_MODEL) {
-    //         load_model();
-    //     } else if (ctx.loading_state == SELECTING_SCRIPT) {
-    //         // load_script();
-    //     }
-    //     fdialog_reset(ctx.fdialog);
-    // }
-
     if (!ui_focused) {
         if (IsKeyPressed(KEY_SPACE)) {
             ctx.hide_ui = !ctx.hide_ui;
@@ -475,62 +459,6 @@ static enum un_action c_update(un_idle *task)
 //
 //         nk_layout_row_static(nk_ctx, 20, 40, 2);
 //
-//         if (nk_menu_begin_label(nk_ctx, "File", NK_TEXT_LEFT, nk_vec2(200, 200))) {
-//             nk_layout_row_dynamic(nk_ctx, 25, 1);
-//             if (nk_menu_item_label(nk_ctx, "Open", NK_TEXT_LEFT)) {
-//                 fdialog_open_file(ctx.fdialog);
-//                 fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
-//                 fdialog_populate(ctx.fdialog);
-//                 fdialog_set_title(ctx.fdialog, "Load Model");
-//                 fdialog_show(ctx.fdialog);
-//
-//                 ctx.loading_state = LOADING_MODEL;
-//             }
-//
-//             if (nk_menu_item_label(nk_ctx, "Save", NK_TEXT_LEFT))
-//                 LOG_W("I don't do anything yet", 0);
-//
-//             if (nk_menu_item_label(nk_ctx, "Save As", NK_TEXT_LEFT)) {
-//                 fdialog_write_file(ctx.fdialog);
-//                 fdialog_set_filter(ctx.fdialog, NULL);
-//                 fdialog_populate(ctx.fdialog);
-//                 fdialog_set_title(ctx.fdialog, "Save Model As");
-//                 fdialog_show(ctx.fdialog);
-//
-//                 ctx.loading_state = WRITING_MODEL;
-//             }
-//
-//             if (ctx.mode == EDIT_MODE) {
-//                 nk_layout_row_dynamic(nk_ctx, 2, 1);
-//                 nk_rule_horizontal(nk_ctx, nk_ctx->style.window.border_color,
-//                     false);
-//                 nk_layout_row_dynamic(nk_ctx, 25, 1);
-//
-//                 if (nk_menu_item_label(nk_ctx, "Load Image", NK_TEXT_LEFT)) {
-//                     fdialog_open_files(ctx.fdialog);
-//                     fdialog_set_filter(ctx.fdialog, fdialog_open_filter);
-//                     fdialog_populate(ctx.fdialog);
-//                     fdialog_set_title(ctx.fdialog, "Open Image File");
-//                     fdialog_show(ctx.fdialog);
-//
-//                     ctx.loading_state = SELECTING_IMAGE;
-//                 }
-// #if 0
-//                 if (nk_menu_item_label(nk_ctx, "Load Script", NK_TEXT_LEFT)) {
-//                     if (ctx.editor.script_manager.to_import == NULL) {
-//                         ctx.dialog.open_for_write = false;
-//                         ctx.dialog.filter = script_filter;
-//                         filedialog_refresh(&ctx.dialog);
-//                         ctx.dialog.win.title = "Open Script";
-//                         filedialog_show(&ctx.dialog);
-//
-//                         ctx.loading_state = SELECTING_SCRIPT;
-//                     } else {
-//                         LOG_W("Script is being loaded!", 0);
-//                     }
-//                 }
-// #endif
-//
 //                 if (nk_menu_item_label(nk_ctx, "Quit", NK_TEXT_LEFT)) {
 //                     uv_stop((void*) ctx.loop);
 //                 }
@@ -556,63 +484,50 @@ static enum un_action c_update(un_idle *task)
 //     nk_end(nk_ctx);
 // }
 
-static void load_layer()
+void c_load_layer(char *path)
 {
     /* submit to queue */
     struct stat s;
 
-    char **selection = fdialog_get_selection(ctx.fdialog);
-
-    char **iter = selection;
-    for (;*iter != NULL;iter++) {
-        char *buffer = *iter;
-
-        if (stat(buffer, &s) == -1) {
-            perror("stat");
-            abort();
-        }
-
-        int fd = open(buffer, O_RDONLY);
-
-        LOG_I("Preparing layer to be loaded", NULL);
-
-        context_load_image(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
-            s.st_size, load_layer_file, after_layer_loaded);
-    }
-}
-
-static void load_model()
-{
-    char **selection = fdialog_get_selection(ctx.fdialog);
-    char *buffer = selection[0];
-
-    model_load(ctx.loop, &ctx.model, buffer);
-}
-
-static void write_model()
-{
-    LOG_I("%s", fdialog_get_selection(ctx.fdialog)[0]);
-    LOG_E("Save as not yet implemented!", 0);
-}
-
-static void load_script()
-{
-    /* submit to queue */
-    struct stat s;
-    char **selection = fdialog_get_selection(ctx.fdialog);
-    char *buffer = selection[0];
-
-    if (stat(buffer, &s) == -1) {
+    if (stat(path, &s) == -1) {
         perror("stat");
         abort();
     }
 
-    int fd = open(buffer, O_RDONLY);
+    int fd = open(path, O_RDONLY);
 
-    LOG_I("Preparing script of size %ld to be loaded", s.st_size);
+    LOG_I("Preparing layer to be loaded", NULL);
 
-    context_load_script(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
-        s.st_size, load_script_file, after_script_loaded);
+    context_load_image(&ctx, strrchr(path, PATH_SEPARATOR) + 1, fd,
+        s.st_size, load_layer_file, after_layer_loaded);
+}
+
+static void load_model()
+{
+    // char **selection = fdialog_get_selection(ctx.fdialog);
+    // char *buffer = selection[0];
+    //
+    // model_load(ctx.loop, &ctx.model, buffer);
+}
+
+static void load_script()
+{
+    // /* submit to queue */
+    // struct stat s;
+    // char **selection = fdialog_get_selection(ctx.fdialog);
+    // char *buffer = selection[0];
+    //
+    // if (stat(buffer, &s) == -1) {
+    //     perror("stat");
+    //     abort();
+    // }
+    //
+    // int fd = open(buffer, O_RDONLY);
+    //
+    // LOG_I("Preparing script of size %ld to be loaded", s.st_size);
+    //
+    // context_load_script(&ctx, strrchr(buffer, PATH_SEPARATOR) + 1, fd,
+    //     s.st_size, load_script_file, after_script_loaded);
 }
 
 static void load_layer_file(uv_work_t *req)

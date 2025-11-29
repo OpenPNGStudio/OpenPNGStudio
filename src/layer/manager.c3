@@ -89,11 +89,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
         line_edit::line_edit_draw(&layer_props.name, ctx);
 
         if (nk::button_image(ctx, icons::get(CFG))) {
-            if (self.selected_layer == -1) {
-                self.selected_layer = i;
-            } else {
-                self.selected_layer = -1;
-            }
+            self.selected_layer = i;
         }
 
         if (nk::button_image(ctx, icons::get(TRASH))) {
@@ -181,12 +177,14 @@ fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("d
         nk::WINDOW_MINIMIZABLE | nk::WINDOW_SCALABLE)) {
         *ui_focused = self.config_win.focus;
 
-        nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
-        defer nk::style_pop_vec2(ctx);
+        if (self.selected_layer != -1) {
+            nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
+            defer nk::style_pop_vec2(ctx);
 
-        Layer layer = self.layers[self.selected_layer];
-        layer.configure(ctx);
-        self.animation_manager.animation_selector(layer, ctx);
+            Layer layer = self.layers[self.selected_layer];
+            layer.configure(ctx);
+            self.animation_manager.animation_selector(layer, ctx);
+        }
     } else {
         self.selected_layer = -1;
     }

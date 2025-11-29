@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio;
-import std::io;
+import std::io, std::collections::list;
 
 import nk;
 
@@ -9,6 +9,7 @@ import novacrash::options;
 
 import openpngstudio::ui;
 import openpngstudio::ui::icons;
+import openpngstudio::core::model;
 
 extern fn int c_main(void *c3_ctx);
 
@@ -28,11 +29,12 @@ fn int main() @winmain {
 
     ctx.panel.add_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        ctx.file_dialog.open_file();
+        ctx.file_dialog.open_files();
         ctx.file_dialog.set_filter(filter);
         ctx.file_dialog.populate();
         ctx.file_dialog.set_title("Open File");
         ctx.file_dialog.show();
+        ctx.loading_state = SELECTING_IMAGE;
     }, OPEN, &ctx);
 
     ctx.panel.add_entry(fn void(void *ctx) {
@@ -102,7 +104,7 @@ fn void update(Context *app_ctx, bool hide_ui) @export("update")
         case NOTHING:
             break;
         case SELECTING_IMAGE:
-            load_layer();
+            load_file(app_ctx);
             break;
         case SELECTING_SCRIPT:
         case WRITING_MODEL:
@@ -137,13 +139,30 @@ fn void save(void *_ctx, bool save_as) @local
     ctx.loading_state = WRITING_MODEL;
 }
 
-fn void load_layer() @local
+extern fn void c_load_layer(ZString s);
+
+fn void load_file(Context *ctx) @local
 {
+    List{ZString} selection = ctx.file_dialog.get_selection();
+
+    if (selection.len() == 1) {
+        String path = selection[0].str_view();
+
+        if (path.ends_with(".opng")) {
+            io::printf("%s\n", path);
+            return;
+        }
+    }
+
+    foreach (path : selection) {
+        if (path.str_view().ends_with(".opng")) continue;
+        c_load_layer(path);
+    }
 }
 
 fn void write_model(Context *ctx) @local
 {
-    ZString* selection = ctx.file_dialog.get_selection();
+    List{ZString} selection = ctx.file_dialog.get_selection();
 
     if (ctx.model_output == null) ctx.model_output = selection[0];
     ctx.override_save = false;
