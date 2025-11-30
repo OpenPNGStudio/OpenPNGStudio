@@ -10,6 +10,7 @@ import novacrash::options;
 import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
+import raylib5::rl;
 
 extern fn int c_main(void *c3_ctx);
 
@@ -26,6 +27,9 @@ fn int main() @winmain {
 
     ctx.panel.init(mem);
     defer ctx.panel.free();
+
+    ctx.wm.init(mem);
+    defer ctx.wm.free();
 
     ctx.panel.add_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -90,12 +94,16 @@ fn int main() @winmain {
 
 fn void update(Context *app_ctx, bool hide_ui) @export("update")
 {
+    app_ctx.width = rl::getScreenWidth();
+    app_ctx.height = rl::getScreenHeight();
     nk::Context *ctx = app_ctx.nk_ctx;
     if (!hide_ui) app_ctx.panel.ui(ctx);
 
     bool focused = false;
 
     app_ctx.file_dialog.run(ctx, &focused);
+    app_ctx.wm.update(app_ctx.width, app_ctx.height);
+    app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
 
     FileDialogState state = app_ctx.file_dialog.get_state();
 
