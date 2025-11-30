@@ -13,6 +13,7 @@ import openpngstudio::core::model;
 import raylib5::rl;
 
 extern fn int c_main(void *c3_ctx);
+extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
 
@@ -20,49 +21,55 @@ ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 
 fn int main() @winmain {
     Context ctx;
-    ctx.file_dialog.init(mem);
+    ctx.panel.init(mem);
+    defer ctx.panel.free();
+
+    ctx.wm.init(&ctx.panel, mem);
+    defer ctx.wm.free();
+
+    ctx.file_dialog.init(ctx.wm.next_id(), mem);
     ctx.file_dialog.set_filter(filter);
     ctx.file_dialog.populate();
     defer ctx.file_dialog.free()!!;
 
-    ctx.panel.init(mem);
-    defer ctx.panel.free();
+    ctx.wm.register("File Dialog", &ctx.file_dialog);
 
-    ctx.wm.init(mem);
-    defer ctx.wm.free();
-
-    ctx.panel.add_entry(fn void(void *_ctx) {
+    ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         ctx.file_dialog.open_files();
         ctx.file_dialog.set_filter(filter);
         ctx.file_dialog.populate();
-        ctx.file_dialog.set_title("Open File");
-        ctx.file_dialog.show();
+        ctx.file_dialog.set_title(&ctx.wm, "Open File");
+        ctx.file_dialog.show(&ctx.wm);
         ctx.loading_state = SELECTING_IMAGE;
     }, OPEN, &ctx);
 
-    ctx.panel.add_entry(fn void(void *ctx) {
+    ctx.panel.add_left_entry(fn void(void *ctx) {
         save(ctx, false);
     }, SAVE, &ctx);
 
-    ctx.panel.add_entry(fn void(void *ctx) {
+    ctx.panel.add_left_entry(fn void(void *ctx) {
         save(ctx, true);
     }, SAVE_AS, &ctx);
 
-    ctx.panel.add_entry(fn void(void *_ctx) {
+    ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, LAYERS, &ctx);
 
-    ctx.panel.add_entry(fn void(void *_ctx) {
+    ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, SHORTCUTS, &ctx);
 
-    ctx.panel.add_entry(fn void(void *_ctx) {
+    ctx.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, HELP, &ctx);
+
+    ctx.panel.add_right_entry(fn void(void *_ctx) {
+        quit_openpngstudio();
+    }, QUIT, &ctx);
 
     novacrash::uses_raylib = true;
     options::cfg.app_name = "OpenPNGStudio";
@@ -101,7 +108,6 @@ fn void update(Context *app_ctx, bool hide_ui) @export("update")
 
     bool focused = false;
 
-    app_ctx.file_dialog.run(ctx, &focused);
     app_ctx.wm.update(app_ctx.width, app_ctx.height);
     app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
 
@@ -141,8 +147,8 @@ fn void save(void *_ctx, bool save_as) @local
     ctx.file_dialog.write_file();
     ctx.file_dialog.set_filter(null);
     ctx.file_dialog.populate();
-    ctx.file_dialog.set_title("Save Model As");
-    ctx.file_dialog.show();
+    ctx.file_dialog.set_title(&ctx.wm, "Save Model As");
+    ctx.file_dialog.show(&ctx.wm);
 
     ctx.loading_state = WRITING_MODEL;
 }

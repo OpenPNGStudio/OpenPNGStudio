@@ -28,14 +28,16 @@ struct ManagedWindow {
 
 struct WindowManager {
     List{ManagedWindow} windows;
+    ui::Panel *panel;
     bool show_bring_back;
     int id;
 }
 
-fn void WindowManager.init(&self, Allocator alloc)
+fn void WindowManager.init(&self, ui::Panel *panel, Allocator alloc)
 {
     self.show_bring_back = false;
     self.id = 0;
+    self.panel = panel;
     self.windows.init(alloc);
 }
 
@@ -66,6 +68,16 @@ fn void WindowManager.show(&self, Window win)
     }
 }
 
+fn void WindowManager.set_title(&self, Window win, ZString title)
+{
+    foreach (&managed : self.windows) {
+        if (managed.win.get_id() == win.get_id()) {
+            managed.title = title;
+            break;
+        }
+    }
+}
+
 enum Corner @local {
     UPPER_LEFT,
     UPPER_RIGHT,
@@ -75,10 +87,11 @@ enum Corner @local {
 
 fn void WindowManager.update(&self, int width, int height)
 {
+    bool all_showing = true;
+
     foreach (&managed : self.windows) {
         /* check if header is not reachable */
-        if (!self.show_bring_back && managed.header_height != -1 &&
-            managed.show) {
+        if (all_showing && managed.header_height != -1 && managed.show) {
             Corner c;
 
             if (managed.geometry.x < width / 2.0f) {
@@ -96,30 +109,26 @@ fn void WindowManager.update(&self, int width, int height)
                 corner_x = managed.geometry.x + managed.geometry.w;
                 corner_y = managed.geometry.y + managed.header_height;
 
-                if (corner_x <= 0 || corner_y <= 0) self.show_bring_back = true;
+                if (corner_x <= 0 || corner_y <= 0) all_showing = false;
                 break;
             case UPPER_RIGHT:
                 corner_x = managed.geometry.x;
                 corner_y = managed.geometry.y + managed.header_height;
 
-                if (corner_x >= width || corner_y <= 0) {
-                    self.show_bring_back = true;
-                }
+                if (corner_x >= width || corner_y <= 0) all_showing = false;
                 break;
             case LOWER_LEFT:
                 corner_x = managed.geometry.x + managed.geometry.w;
                 corner_y = managed.geometry.y;
 
-                if (corner_x <= 0 || corner_y >= height) {
-                    self.show_bring_back = true;
-                }
+                if (corner_x <= 0 || corner_y >= height) all_showing = false;
                 break;
             case LOWER_RIGHT:
                 corner_x = managed.geometry.x;
                 corner_y = managed.geometry.y;
 
                 if (corner_x >= width || corner_y >= height) {
-                    self.show_bring_back = true;
+                    all_showing = false;
                 }
                 break;
             }
@@ -127,6 +136,8 @@ fn void WindowManager.update(&self, int width, int height)
 
         if (managed.state == SHOW) managed.win.update();
     }
+
+    self.show_bring_back = !all_showing;
 }
 
 fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
@@ -148,7 +159,7 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
             if (nk::begin(ctx, (CChar*) managed.title, managed.geometry,
                 nk::WINDOW_TITLE | nk::WINDOW_MOVABLE | nk::WINDOW_CLOSABLE | 
                 nk::WINDOW_BORDER | nk::WINDOW_MINIMIZABLE |
-                nk::WINDOW_SCALABLE/* | nk::WINDOW_SCROLL_AUTO_HIDE */)) {
+                nk::WINDOW_SCALABLE | nk::WINDOW_SCROLL_AUTO_HIDE)) {
                 nk::Vec2 pos = nk::window_get_position(ctx);
                 if (nk::input_is_mouse_hovering_rect(&ctx.input,
                     nk::window_get_bounds(ctx))) {
@@ -163,8 +174,6 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
                     }
                 }
 
-                managed.win.draw(ctx);
-            } else {
                 nk::Vec2 wprops = nk::window_get_position(ctx);
                 managed.geometry.x = wprops.x;
                 managed.geometry.y = wprops.y;
@@ -173,6 +182,8 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
                 managed.geometry.w = wprops.x;
                 managed.geometry.h = wprops.y;
 
+                managed.win.draw(ctx);
+            } else {
                 managed.focus = false;
                 if (managed.state == SHOW) managed.win.on_close();
 
@@ -202,7 +213,7 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
 // fn void DummyWindow.draw(&self, nk::Context *ctx) @dynamic
 // {
 //     nk::layout_row_dynamic(ctx, 30, 1);
-//     nk::label(ctx, "uwu", nk::TEXT_LEFT);
+//     nk::label(ctx, "Label", nk::TEXT_LEFT);
 // }
 //
 // fn void DummyWindow.on_close(&self) @dynamic

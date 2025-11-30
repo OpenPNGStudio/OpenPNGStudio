@@ -16,22 +16,36 @@ struct PanelEntry {
 }
 
 struct Panel {
-    List{PanelEntry} entries;
+    List{PanelEntry} left_entries;
+    List{PanelEntry} right_entries;
 }
 
 fn void Panel.init(&self, Allocator alloc)
 {
-    self.entries.init(alloc);
+    self.left_entries.init(alloc);
+    self.right_entries.init(alloc);
 }
 
 fn void Panel.free(&self)
 {
-    self.entries.free();
+    self.left_entries.free();
+    self.right_entries.free();
 }
 
-fn void Panel.add_entry(&self, PanelAction action, icons::Type icon, void *ctx)
+fn void Panel.add_left_entry(&self, PanelAction action, icons::Type icon,
+    void *ctx)
 {
-    self.entries.push({
+    self.left_entries.push({
+        .action = action,
+        .icon = icon,
+        .ctx = ctx
+    });
+}
+
+fn void Panel.add_right_entry(&self, PanelAction action, icons::Type icon,
+    void *ctx)
+{
+    self.right_entries.push({
         .action = action,
         .icon = icon,
         .ctx = ctx
@@ -50,7 +64,11 @@ fn void Panel.ui(&self, nk::Context *ctx)
         (float) rl::getScreenWidth() - 14, 32), nk::WINDOW_NO_SCROLLBAR)) {
 
         nk::layout_row_template_begin(ctx, 32);
-        for (int i = 0; i < self.entries.len(); i++) {
+        for (int i = 0; i < self.left_entries.len(); i++) {
+            nk::layout_row_template_push_static(ctx, 32);
+        }
+        nk::layout_row_template_push_dynamic(ctx);
+        for (int i = 0; i < self.right_entries.len(); i++) {
             nk::layout_row_template_push_static(ctx, 32);
         }
         nk::layout_row_template_end(ctx);
@@ -65,7 +83,13 @@ fn void Panel.ui(&self, nk::Context *ctx)
         btn.active = btn.normal;
         btn.hover = btn.normal;
 
-        foreach (&entry : self.entries) {
+        foreach (&entry : self.left_entries) {
+            if (nk::button_image_styled(ctx, &btn, icons::get(entry.icon))) {
+                entry.action(entry.ctx);
+            }
+        }
+        nk::spacer(ctx);
+        foreach (&entry : self.right_entries) {
             if (nk::button_image_styled(ctx, &btn, icons::get(entry.icon))) {
                 entry.action(entry.ctx);
             }

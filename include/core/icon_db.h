@@ -24,6 +24,7 @@ enum icon_type {
     LAYERS_ICON,
     SHORTCUTS_ICON,
     HELP_ICON,
+    QUIT_ICON,
 
     /* Image Icons */
     DIR_ICON,

@@ -23,6 +23,7 @@ enum Type : inline int {
     LAYERS,
     SHORTCUTS,
     HELP,
+    QUIT,
 
     DIR,
     FILE,

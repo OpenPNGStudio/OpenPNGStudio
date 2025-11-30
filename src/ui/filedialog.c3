@@ -2,7 +2,7 @@
 module openpngstudio::ui;
 
 import libc;
-import openpngstudio::ui::window;
+import openpngstudio::ui::window_v2;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::messagebox;
 import openpngstudio::ui::line_edit;
@@ -43,8 +43,7 @@ struct DirectoryEntry {
     nk::Bool selected;
 }
 
-struct FileDialog {
-    window::Window win;
+struct FileDialog (window_v2::Window) {
     Path path;
     List{DirectoryEntry} content;
     List{String} filter;
@@ -56,26 +55,17 @@ struct FileDialog {
     bool open_for_reading, single_file_mode, contextual_open;
     LineEdit search_filter, write_file_name;
     MessageBox msgbox;
+    int id;
 
     FileDialogJournal history;
 }
 
-fn void FileDialog.init(&self, Allocator alloc)
+fn void FileDialog.init(&self, int id, Allocator alloc)
 {
     self.last_selected = -1;
     self.path = path::home_directory(alloc)!!;
     self.history.journal.init(alloc);
-
-}
-
-fn FileDialog *new_filedialog()
-{
-    FileDialog *fd = calloc(FileDialog.sizeof);
-    fd.last_selected = -1;
-    fd.path = path::home_directory(mem)!!;
-    fd.history.journal.init(mem);
-
-    return fd;
+    self.id = id;
 }
 
 fn void FileDialog.populate(&self)
@@ -142,87 +132,83 @@ fn bool matches(FileDialog *self, String file) @local
     return false;
 }
 
-fn void FileDialog.run(&self, nk::Context *ctx, bool *focused)
+fn void FileDialog.update(&self) @dynamic {}
+
+fn void FileDialog.draw(&self, nk::Context *ctx) @dynamic
 {
-    if (self.win.ctx == null) window::window_init(&self.win, ctx, null);
-    if (self.state != BROWSING) return;
+    messagebox::run(&self.msgbox, ctx);
 
-    if (window::window_begin(&self.win, nk::WINDOW_TITLE | nk::WINDOW_CLOSABLE |
-        nk::WINDOW_MOVABLE | nk::WINDOW_SCALABLE | nk::WINDOW_BORDER |
-        nk::WINDOW_NO_SCROLLBAR)) {
-        if (self.win.focus) *focused = true;
+    draw_titlebar(self, ctx);
 
-        messagebox::run(&self.msgbox, ctx);
+    nk::Rect bounds = nk::window_get_content_region(ctx);
+    bounds.h -= 35 * 2;
+    bounds.h -= ctx.style.window.spacing.y * 2.5;
 
-        draw_titlebar(self, ctx);
+    usz selected = 0;
 
-        nk::Rect bounds = nk::window_get_content_region(ctx);
-        bounds.h -= 35 * 2;
-        bounds.h -= ctx.style.window.spacing.y * 2;
+    nk::layout_row_dynamic(ctx, bounds.h, 1);
+    bounds = nk::widget_bounds(ctx);
+    if (nk::group_begin(ctx, "Files", 0)) {
+        draw_contextual(self, ctx, bounds);
+        bool to_populate = false;
+        nk::layout_row_dynamic(ctx, 32, 1);
+        nk::style_push_vec2(ctx, &ctx.style.window.group_padding,
+            nk::vec2(0, 0));
 
-        usz selected = 0;
+        foreach (i, &ent : self.content) {
+            if (ent.is_hidden && !self.show_hidden) continue;
+            if (ent.is_system && !self.show_system) continue;
+            if LEN: (self.search_filter.buffer != null) {
+                String s = (String)
+                    self.search_filter.buffer[:self.search_filter.len];
 
-        nk::layout_row_dynamic(ctx, bounds.h, 1);
-        bounds = nk::widget_bounds(ctx);
-        if (nk::group_begin(ctx, "Files", 0)) {
-            draw_contextual(self, ctx, bounds);
-            bool to_populate = false;
-            nk::layout_row_dynamic(ctx, 32, 1);
-            nk::style_push_vec2(ctx, &ctx.style.window.group_padding,
-                nk::vec2(0, 0));
-
-            foreach (i, &ent : self.content) {
-                if (ent.is_hidden && !self.show_hidden) continue;
-                if (ent.is_system && !self.show_system) continue;
-                if LEN: (self.search_filter.buffer != null) {
-                    String s = (String)
-                        self.search_filter.buffer[:self.search_filter.len];
-
-                    if (s.len == 0) break LEN; 
-                    if (!ent.path.str_view().contains(s)) continue;
-                }
-
-                if (draw_entry(self, ctx, ent)) {
-                    if (!ent.is_file) {
-                        Time now = time::now();
-
-                        if (i == self.last_selected &&
-                            now < self.time_to_click) {
-                            self.enter(ent.path.str_view())!!;
-                            to_populate = true;
-                        } else {
-                            self.time_to_click = now + 350 * time::MS;
-                        }
-                    }
-
-                    if (self.single_file_mode && self.last_selected != -1) {
-                        DirectoryEntry *prev = self.content.get_ref(
-                            self.last_selected);
-                        prev.selected = false;
-                    }
-                    
-                    self.last_selected = ent.selected ? i : -1;
-                }
-
-                if (ent.selected) selected++;
+                if (s.len == 0) break LEN; 
+                if (!ent.path.str_view().contains(s)) continue;
             }
 
-            if (self.single_file_mode) selected = min(selected, 1);
+            if (draw_entry(self, ctx, ent)) {
+                if (!ent.is_file) {
+                    Time now = time::now();
 
-            if (to_populate) self.populate();
+                    if (i == self.last_selected &&
+                        now < self.time_to_click) {
+                        self.enter(ent.path.str_view())!!;
+                        to_populate = true;
+                    } else {
+                        self.time_to_click = now + 350 * time::MS;
+                    }
+                }
 
-            nk::style_pop_vec2(ctx);
-            nk::group_end(ctx);
+                if (self.single_file_mode && self.last_selected != -1) {
+                    DirectoryEntry *prev = self.content.get_ref(
+                        self.last_selected);
+                    prev.selected = false;
+                }
+                
+                self.last_selected = ent.selected ? i : -1;
+            }
+
+            if (ent.selected) selected++;
         }
 
-        draw_footerbar(self, ctx, selected);
-    } else {
-        self.last_selected = -1;
-        self.state = CLOSED;
+        if (self.single_file_mode) selected = min(selected, 1);
+
+        if (to_populate) self.populate();
+
+        nk::style_pop_vec2(ctx);
+        nk::group_end(ctx);
     }
 
-    if (self.win.state != HIDE) window::window_end(&self.win);
+    draw_footerbar(self, ctx, selected);
 }
+
+fn void FileDialog.on_close(&self) @dynamic
+{
+    self.last_selected = -1;
+    self.state = CLOSED;
+}
+
+fn int FileDialog.get_id(&self) @dynamic => self.id;
 
 fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
 {
@@ -473,9 +459,9 @@ fn void? FileDialog.free(&self)
     self.selected.free();
 }
 
-fn void FileDialog.show(&self)
+fn void FileDialog.show(&self, WindowManager *wm)
 {
-    self.win.show = true;
+    wm.show(self);
     self.state = BROWSING;
 }
 
@@ -507,9 +493,9 @@ fn List{ZString} FileDialog.get_selection(&self)
     return self.selected;
 }
 
-fn void FileDialog.set_title(&self, ZString title)
+fn void FileDialog.set_title(&self, WindowManager *wm, ZString title)
 {
-    self.win.title = title;
+    wm.set_title(self, title);
 }
 
 fn void FileDialog.set_filter(&self, ZString filter)

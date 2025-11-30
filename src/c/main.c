@@ -117,6 +117,7 @@ static void draw_grid(int line_width, int spacing, Color color)
 void opng_style_apply(struct nk_context *ctx);
 
 void update(void *c3_ctx, bool ui_on);
+void quit_openpngstudio();
 void c3_nk(void *c3_ctx, struct nk_context *nk_ctx);
 
 int c_main(void *c3_ctx)
@@ -205,6 +206,8 @@ int c_main(void *c3_ctx)
         LoadNuklearImage(PATH_START "assets/icons/shortcuts.png"));
     register_icon(HELP_ICON,
         LoadNuklearImage(PATH_START "assets/icons/help.png"));
+    register_icon(QUIT_ICON,
+        LoadNuklearImage(PATH_START "assets/icons/stop.png"));
 
     register_icon(DIR_ICON,
         LoadNuklearImage(PATH_START "assets/images/dir.png"));
@@ -285,6 +288,11 @@ int c_main(void *c3_ctx)
     CloseWindow();
 
     return 0;
+}
+
+void quit_openpngstudio()
+{
+    uv_stop((uv_loop_t*) ctx.loop);
 }
 
 static enum un_action draw(un_idle *task)
