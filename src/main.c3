@@ -127,8 +127,10 @@ fn void update(Context *app_ctx, bool hide_ui) @export("update")
             /* TODO */
             break;
         }
+
         app_ctx.loading_state = NOTHING;
         app_ctx.file_dialog.reset();
+        app_ctx.wm.hide(&app_ctx.file_dialog);
     }
 }
 

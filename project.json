@@ -33,7 +33,9 @@
         }
     },
     "cpu": "generic",
+    "fp-math": "fast",
     "opt": "O0",
+    "linker": "builtin",
     "features": [],
     "quiet": true
 }

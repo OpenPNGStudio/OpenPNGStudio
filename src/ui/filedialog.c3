@@ -132,7 +132,10 @@ fn bool matches(FileDialog *self, String file) @local
     return false;
 }
 
-fn void FileDialog.update(&self) @dynamic {}
+fn void FileDialog.update(&self) @dynamic
+{
+    self.state = BROWSING;
+}
 
 fn void FileDialog.draw(&self, nk::Context *ctx) @dynamic
 {
@@ -142,7 +145,7 @@ fn void FileDialog.draw(&self, nk::Context *ctx) @dynamic
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
     bounds.h -= 35 * 2;
-    bounds.h -= ctx.style.window.spacing.y * 2.5;
+    bounds.h -= ctx.style.window.spacing.y * 2.77;
 
     usz selected = 0;
 
@@ -462,7 +465,6 @@ fn void? FileDialog.free(&self)
 fn void FileDialog.show(&self, WindowManager *wm)
 {
     wm.show(self);
-    self.state = BROWSING;
 }
 
 fn void FileDialog.open_file(&self)

@@ -68,6 +68,18 @@ fn void WindowManager.show(&self, Window win)
     }
 }
 
+fn void WindowManager.hide(&self, Window win)
+{
+    foreach (&managed : self.windows) {
+        if (managed.win.get_id() == win.get_id()) {
+            managed.show = false;
+            managed.state = CLOSE;
+            managed.win.on_close();
+            break;
+        }
+    }
+}
+
 fn void WindowManager.set_title(&self, Window win, ZString title)
 {
     foreach (&managed : self.windows) {
