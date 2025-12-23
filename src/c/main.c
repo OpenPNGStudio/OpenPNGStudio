@@ -199,29 +199,27 @@ int c_main(void *c3_ctx)
     c3_nk(c3_ctx, ctx.ctx);
 
     /* LUA */
-#if 0
-    context_init_lua(&ctx);
-
-    lua_getglobal(ctx.L, "package");
-    lua_getfield(ctx.L, -1, "searchers");
-    const size_t length = lua_rawlen(ctx.L, -1);
-    lua_pushcfunction(ctx.L, lua_script_loader);
-    lua_rawseti(ctx.L, -2, length + 1);
-    lua_pop(ctx.L, 2);
-
-    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.lua");
-    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.so");
-    expand_import_path(ctx.L, ";" PATH_START "lua/?/init.dll");
-    bind_logger_functions(ctx.L);
-    lua_register(ctx.L, LUA_PRIV_PREFIX "script_load_req",
-        lua_script_load_req);
-
-    if (luaL_dofile(ctx.L, PATH_START "lua/rt.lua")) {
-        LOG_E("Lua error: %s", lua_tostring(ctx.L, -1));
-        lua_pop(ctx.L, 1);
-    } else
-        LOG_I("Lua runtime loaded successfuly!", 0);
-#endif
+    // context_init_lua(&ctx);
+    //
+    // lua_getglobal(ctx.L, "package");
+    // lua_getfield(ctx.L, -1, "searchers");
+    // const size_t length = lua_rawlen(ctx.L, -1);
+    // lua_pushcfunction(ctx.L, lua_script_loader);
+    // lua_rawseti(ctx.L, -2, length + 1);
+    // lua_pop(ctx.L, 2);
+    //
+    // expand_import_path(ctx.L, ";" PATH_START "lua/?/init.lua");
+    // expand_import_path(ctx.L, ";" PATH_START "lua/?/init.so");
+    // expand_import_path(ctx.L, ";" PATH_START "lua/?/init.dll");
+    // bind_logger_functions(ctx.L);
+    // lua_register(ctx.L, LUA_PRIV_PREFIX "script_load_req",
+    //     lua_script_load_req);
+    //
+    // if (luaL_dofile(ctx.L, PATH_START "lua/rt.lua")) {
+    //     LOG_E("Lua error: %s", lua_tostring(ctx.L, -1));
+    //     lua_pop(ctx.L, 1);
+    // } else
+    //     LOG_I("Lua runtime loaded successfuly!", 0);
 
     SetTargetFPS(60);
 
@@ -332,44 +330,41 @@ static enum un_action c_update(un_idle *task)
     work_scheduler_run(&ctx.sched);
 
     /* execute lua once */
-#if 0
-    lua_getglobal(ctx.L, LUA_PRIV_PREFIX "rt_spin_once");
-
-    if (lua_isfunction(ctx.L, -1)) {
-        if (lua_pcall(ctx.L, 0, 0, 0) != LUA_OK) {
-            LOG_E("Something went wrong: %s", lua_tostring(ctx.L, -1));
-            lua_pop(ctx.L, 1);
-        }
-    } else {
-        LOG_E("Something happened with %s! Abort!", LUA_PRIV_PREFIX "rt_spin_once");
-        abort();
-    }
-#endif
+    // lua_getglobal(ctx.L, LUA_PRIV_PREFIX "rt_spin_once");
+    //
+    // if (lua_isfunction(ctx.L, -1)) {
+    //     if (lua_pcall(ctx.L, 0, 0, 0) != LUA_OK) {
+    //         LOG_E("Something went wrong: %s", lua_tostring(ctx.L, -1));
+    //         lua_pop(ctx.L, 1);
+    //     }
+    // } else {
+    //     LOG_E("Something happened with %s! Abort!", LUA_PRIV_PREFIX "rt_spin_once");
+    //     abort();
+    // }
 
     /* check for pending work */
     if (ctx.image_work_queue != NULL && ctx.image_work_queue->ready)
         context_after_img_load(&ctx, ctx.image_work_queue);
-#if 0
-    if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
-        struct script_load_req *work = ctx.script_work_queue;
-        struct lua_script script = {0};
-        script.name.len = strlen(work->name);
-        script.name.cleanup = false;
-        script.name.buffer = work->name;
-        script.buffer_size = work->size;
-        script.buffer = (char*) work->buffer;
-        script.is_mmapped = work->is_mmapped;
-        LOG_I("Loaded script \"%s\"", work->name);
 
-        script_manager_add_script(&ctx.editor.script_manager, &script);
-
-        /* cleanup */
-        ctx.script_work_queue = work->next;
-        ctx.loading_state = NOTHING;
-        close(work->fd);
-        free(work);
-    }
-#endif
+    // if (ctx.script_work_queue != NULL && ctx.script_work_queue->ready) {
+    //     struct script_load_req *work = ctx.script_work_queue;
+    //     struct lua_script script = {0};
+    //     script.name.len = strlen(work->name);
+    //     script.name.cleanup = false;
+    //     script.name.buffer = work->name;
+    //     script.buffer_size = work->size;
+    //     script.buffer = (char*) work->buffer;
+    //     script.is_mmapped = work->is_mmapped;
+    //     LOG_I("Loaded script \"%s\"", work->name);
+    //
+    //     script_manager_add_script(&ctx.editor.script_manager, &script);
+    //
+    //     /* cleanup */
+    //     ctx.script_work_queue = work->next;
+    //     ctx.loading_state = NOTHING;
+    //     close(work->fd);
+    //     free(work);
+    // }
 
     if (WindowShouldClose())
         uv_stop((uv_loop_t*) ctx.loop);
