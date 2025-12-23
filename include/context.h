@@ -13,7 +13,6 @@
 #include <miniaudio.h>
 #include <uv.h>
 #include <unuv.h>
-#include <editor.h>
 #include <stdatomic.h>
 #include <raylib.h>
 #include <core/microphone.h>
@@ -81,8 +80,6 @@ struct context {
 
     Camera2D camera;
 
-    struct editor editor;
-    struct microphone_data mic;
     struct panel *panel;
 
     /* separate components */

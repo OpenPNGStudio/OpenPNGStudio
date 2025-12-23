@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio;
 
+import openpngstudio::core;
 import openpngstudio::ui;
 import openpngstudio::ui::window_v2;
 import nk;
@@ -25,6 +26,7 @@ struct Context {
     /* State */
     FileLoadState loading_state;
     int width, height;
+    Microphone microphone;
 
     ZString model_output;
     bool override_save;

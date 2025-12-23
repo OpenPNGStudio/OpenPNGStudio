@@ -11,6 +11,7 @@ import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
 import raylib5::rl;
+import unuv;
 
 extern fn int c_main(void *c3_ctx);
 extern fn void quit_openpngstudio();
@@ -99,15 +100,20 @@ fn int main() @winmain {
         .title_size = 32,
     };
 
+    ctx.microphone.init();
+    defer ctx.microphone.free();
+
     return c_main(&ctx);
 }
 
-fn void update(Context *app_ctx, bool hide_ui) @export("update")
+fn void update(Context *app_ctx, bool hide_ui, unuv::UnLoop *loop) @export("update")
 {
     app_ctx.width = rl::getScreenWidth();
     app_ctx.height = rl::getScreenHeight();
     nk::Context *ctx = app_ctx.nk_ctx;
     if (!hide_ui) app_ctx.panel.ui(ctx);
+
+    app_ctx.microphone.update(loop);
 
     bool focused = false;
 

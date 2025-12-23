@@ -4,7 +4,6 @@
 #include <raylib_win32.h>
 #endif
 #include "console.h"
-#include "editor.h"
 #include <fcntl.h>
 #include <sys/types.h>
 #include <raylib.h>
@@ -78,18 +77,6 @@ static void after_layer_loaded(uv_work_t *req, int status);
 static void load_script_file(uv_work_t *req);
 static void after_script_loaded(uv_work_t *req, int status);
 
-static void onAudioData(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
-    struct microphone_data* data = device->pUserData;
-    float* inputData = (float*)input;
-
-    float sum = 0.0f;
-    for (ma_uint32 i = 0; i < frameCount; i++) {
-        sum += inputData[i] * inputData[i];
-    }
-
-    atomic_store(&data->volume, sqrtf(sum / frameCount) * atomic_load(&data->multiplier));
-}
-
 static void draw_grid(int line_width, int spacing, Color color)
 {
     float width = GetScreenWidth();
@@ -114,7 +101,7 @@ static void draw_grid(int line_width, int spacing, Color color)
 
 void opng_style_apply(struct nk_context *ctx);
 
-void update(void *c3_ctx, bool ui_on);
+void update(void *c3_ctx, bool ui_on, void *loop);
 void quit_openpngstudio();
 void c3_nk(void *c3_ctx, struct nk_context *nk_ctx);
 
@@ -135,9 +122,6 @@ int c_main(void *c3_ctx)
     LOG_I("Using %d threads", uv_available_parallelism());
 
     ctx.camera.zoom = 1.0f;
-    ctx.editor.mic = &ctx.mic;
-    ctx.editor.microphone_trigger = 40;
-    ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
     ctx.mask |= QUIET;
     ctx.c3_ctx = c3_ctx;
 
@@ -216,30 +200,6 @@ int c_main(void *c3_ctx)
 
     c3_nk(c3_ctx, ctx.ctx);
 
-    /* MINIAUDIO */
-    ctx.mic.multiplier = DEFAULT_MULTIPLIER;
-    atomic_store(&ctx.mic.multiplier, DEFAULT_MULTIPLIER);
-    ma_result result;
-    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
-    deviceConfig.capture.format = ma_format_f32;
-    deviceConfig.capture.channels = 1; // Use 1 channel for microphone
-    deviceConfig.sampleRate = 44100;
-    deviceConfig.dataCallback = onAudioData;
-
-    result = ma_device_init(NULL, &deviceConfig, &ctx.mic.device);
-    if (result != MA_SUCCESS) {
-        LOG_E("Failed to initialize device.\n", 0);
-        return -1;
-    }
-
-    ctx.mic.device.pUserData = &ctx.mic;
-
-    result = ma_device_start(&ctx.mic.device);
-    if (result != MA_SUCCESS) {
-        LOG_E("Failed to start device.\n", 0);
-        return -1;
-    }
-
     /* LUA */
 #if 0
     context_init_lua(&ctx);
@@ -264,7 +224,6 @@ int c_main(void *c3_ctx)
     } else
         LOG_I("Lua runtime loaded successfuly!", 0);
 #endif
-    ctx.editor.background_color = (Color) { 0x88, 0x88, 0x88, 0xFF };
 
     SetTargetFPS(60);
 
@@ -276,7 +235,6 @@ int c_main(void *c3_ctx)
     un_loop_del(ctx.loop);
 
     cleanup_icons();
-    ma_device_uninit(&ctx.mic.device);
     console_deinit();
     UnloadNuklear(ctx.ctx);
     CloseWindow();
@@ -299,11 +257,12 @@ static enum un_action draw(un_idle *task)
     BeginDrawing();
 
     Color inverted = {255, 255, 255, 255};
-    inverted.r -= ctx.editor.background_color.r;
-    inverted.g -= ctx.editor.background_color.g;
-    inverted.b -= ctx.editor.background_color.b;
+    Color bg = (Color) { 0x88, 0x88, 0x88, 0xFF };
+    inverted.r -= bg.r;
+    inverted.g -= bg.g;
+    inverted.b -= bg.b;
 
-    ClearBackground(ctx.editor.background_color);
+    ClearBackground(bg);
 
     if (ctx.mode == EDIT_MODE)
         draw_grid(1, 60, inverted);
@@ -347,20 +306,18 @@ static enum un_action c_update(un_idle *task)
     set_key_mask(&mask);
     set_current_mask(mask);
 
-    if (!ctx.hide_ui) {
-        if (ctx.mode == EDIT_MODE)
-            editor_draw(&ctx.editor, nk_ctx, &ui_focused);
-        else
-            editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+    // if (!ctx.hide_ui) {
+    //     if (ctx.mode == EDIT_MODE)
+    //         editor_draw(&ctx.editor, nk_ctx, &ui_focused);
+    //     else
+    //         editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
+    //
+    //     // if (ctx.editor.layer_manager->anims != NULL)
+    //     //     animation_manager_global_anim(ctx.editor.layer_manager->anims,
+    //     //         nk_ctx);
+    // }
 
-        // if (ctx.editor.layer_manager->anims != NULL)
-        //     animation_manager_global_anim(ctx.editor.layer_manager->anims,
-        //         nk_ctx);
-    }
-
-    update(ctx.c3_ctx, ctx.hide_ui);
-
-    editor_apply_mask(&ctx.editor);
+    update(ctx.c3_ctx, ctx.hide_ui, ctx.loop);
 
     if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
       console_show();

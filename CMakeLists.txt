@@ -53,7 +53,7 @@ foreach(url IN LISTS VENDOR_HEADERS)
     fetch_file(${url} ${VENDOR_INCLUDE_DIR})
 endforeach()
 
-file(GLOB_RECURSE SRCS src/c/*.c)
+file(GLOB_RECURSE SRCS src/*.c)
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PUBLIC
