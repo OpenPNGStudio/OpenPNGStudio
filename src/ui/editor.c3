@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::ui;
 
-import openpngstudio::layer::manager;
+import openpngstudio::layer;
 import openpngstudio::ui::window;
 
 import raylib5::rl;
@@ -15,7 +15,7 @@ enum EditorTabId : const int {
 }
 
 struct Editor {
-	Manager *layer_manager;
+	layer::Manager *layer_manager;
 	EditorTabId current_tab;
 	window::Window win;
 

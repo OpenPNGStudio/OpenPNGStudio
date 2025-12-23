@@ -4,7 +4,6 @@
 
 #include <core/microphone.h>
 #include "ui/window.h"
-#include <layer/manager.h>
 #if 0
 #include <lua_ctx.h>
 #endif

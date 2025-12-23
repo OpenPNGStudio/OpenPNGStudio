@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-module openpngstudio::layer::manager;
+module openpngstudio::layer;
 
 import std::io;
 import std::core::mem;
 import std::collections::list;
-import openpngstudio::layer;
 import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
 import openpngstudio::animation::manager;
 import openpngstudio::ui::window;
+import openpngstudio::ui::window_v2;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::line_edit;
 import nk;
@@ -16,23 +16,24 @@ import raylib5::rl;
 
 alias animation = module openpngstudio::animation::manager;
 
-struct Manager {
+struct Manager (window_v2::Window) {
     List{Layer} layers;
     animation::Manager *animation_manager;
-    window::Window config_win;
     isz selected_layer;
+    window::Window config_win;
+
+    int id;
 }
 
-fn Manager *new_manager() @export("layer_manager_init")
+fn void Manager.init(&self, int id, Allocator mem)
 {
-    Manager *m = calloc(Manager.sizeof);
-    m.layers.init(mem);
-    m.selected_layer = -1;
-    m.animation_manager = animation::new_manager();
-    return m;
+    self.layers.init(mem);
+    self.animation_manager = animation::new_manager();
+    self.selected_layer = -1;
+    self.id = id;
 }
 
-fn void Manager.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
+fn void Manager.add_layer(&self, StaticLayer *layer)
 {
     Layer l;
     if (layer.props.is_animated) {
@@ -44,12 +45,13 @@ fn void Manager.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_
     self.layers.push(l);
 }
 
-fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
+fn int Manager.get_id(&self) @dynamic => self.id;
+
+fn void Manager.draw(&self, nk::Context *ctx) @dynamic
 {
     if (self.config_win.ctx == null) {
         window::window_init(&self.config_win, ctx, "Layer Configuration");
     }
-
     // float win_width = nk::window_get_width(ctx);
     // float min_width = max(win_width * 0.49f, 250.0f);
     //
@@ -158,7 +160,7 @@ fn void Manager.ui(&self, nk::Context *ctx) @export("layer_manager_ui")
     }
 }
 
-fn void Manager.draw(&self, void *loop) @export("layer_manager_render")
+fn void Manager.render(&self, void *loop)
 {
     Vector2 anchor = {rl::getScreenWidth() / 2.0f,
         rl::getScreenHeight() / 2.0f};
@@ -170,7 +172,9 @@ fn void Manager.draw(&self, void *loop) @export("layer_manager_render")
     self.animation_manager.tick();
 }
 
-fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused) @export("draw_props")
+fn void Manager.on_close(&self) @dynamic => self.selected_layer = -1;
+
+fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused)
 {
     if (window::window_begin(&self.config_win, nk::WINDOW_TITLE |
         nk::WINDOW_MOVABLE | nk::WINDOW_CLOSABLE | nk::WINDOW_BORDER |

@@ -61,15 +61,15 @@ fn void Panel.ui(&self, nk::Context *ctx)
     defer nk::style_pop_vec2(ctx);
     
     if (nk::begin(ctx, "Panel", nk::rect(7, 7,
-        (float) rl::getScreenWidth() - 14, 32), nk::WINDOW_NO_SCROLLBAR)) {
+        (float) rl::getScreenWidth() - 14, 34), nk::WINDOW_NO_SCROLLBAR)) {
 
-        nk::layout_row_template_begin(ctx, 32);
+        nk::layout_row_template_begin(ctx, 34);
         for (int i = 0; i < self.left_entries.len(); i++) {
-            nk::layout_row_template_push_static(ctx, 32);
+            nk::layout_row_template_push_static(ctx, 34);
         }
         nk::layout_row_template_push_dynamic(ctx);
         for (int i = 0; i < self.right_entries.len(); i++) {
-            nk::layout_row_template_push_static(ctx, 32);
+            nk::layout_row_template_push_static(ctx, 34);
         }
         nk::layout_row_template_end(ctx);
 

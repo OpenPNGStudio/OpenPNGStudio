@@ -12,9 +12,9 @@ enum State @local {
 
 interface Window {
     fn int get_id();
-    fn void update();
+    fn void update() @optional;
     fn void draw(nk::Context *ctx);
-    fn void on_close();
+    fn void on_close() @optional;
 }
 
 struct ManagedWindow {
@@ -74,7 +74,7 @@ fn void WindowManager.hide(&self, Window win)
         if (managed.win.get_id() == win.get_id()) {
             managed.show = false;
             managed.state = CLOSE;
-            managed.win.on_close();
+            if (&managed.win.on_close) managed.win.on_close();
             break;
         }
     }
@@ -146,7 +146,9 @@ fn void WindowManager.update(&self, int width, int height)
             }
         }
 
-        if (managed.state == SHOW) managed.win.update();
+        if (managed.state == SHOW) {
+            if (&managed.win.update) managed.win.update();
+        }
     }
 
     self.show_bring_back = !all_showing;
@@ -197,7 +199,9 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
                 managed.win.draw(ctx);
             } else {
                 managed.focus = false;
-                if (managed.state == SHOW) managed.win.on_close();
+                if (managed.state == SHOW) {
+                    if (&managed.win.on_close) managed.win.on_close();
+                }
 
                 managed.state = CLOSE;
                 managed.show = nk::window_is_active(ctx, (CChar*) managed.title);

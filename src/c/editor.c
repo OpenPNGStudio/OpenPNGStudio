@@ -2,7 +2,6 @@
 
 #include <console.h>
 #include <context.h>
-#include <layer/manager.h>
 #include <core/mask.h>
 #include <raymath.h>
 #include <ui/window.h>
@@ -82,7 +81,6 @@ void editor_draw(struct editor *editor, struct nk_context *ctx, bool *ui_focused
                 nk_label(ctx, "Model Information: ", NK_TEXT_LEFT);
                 break;
             case LAYERS:
-                layer_manager_ui(editor->layer_manager, ctx);
                 break;
             case SCRIPTS:
                 nk_layout_row_dynamic(ctx, 30, 1);

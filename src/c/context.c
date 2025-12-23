@@ -28,6 +28,8 @@
 #include <lauxlib.h>
 #endif
 
+#include <layer/layer.h>
+
 void context_load_image(struct context *ctx, const char *name,
     int fd, size_t size, uv_work_cb work, uv_after_work_cb after)
 {
@@ -117,6 +119,8 @@ void context_submit_work(struct context *ctx, ...)
     assert(0 && "Not implemented yet!");
 }
 
+void layer_manager_add_layer(void *c3_ctx, struct layer *layer);
+
 void context_after_img_load(struct context *ctx, struct image_load_req *req)
 {
     struct layer *layer = NULL;
@@ -131,7 +135,7 @@ void context_after_img_load(struct context *ctx, struct image_load_req *req)
     LOG_I("Loaded layer \"%s\"", req->name);
     layer_override_name(layer, req->name);
 
-    layer_manager_add_layer(ctx->editor.layer_manager, layer);
+    layer_manager_add_layer(ctx->c3_ctx, layer);
 
     if (layer->properties.is_animated) {
         anim_layer = layer_get_animated(layer);

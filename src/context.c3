@@ -17,6 +17,7 @@ enum FileLoadState {
 struct Context {
     FileDialog file_dialog;
     WindowManager wm;
+    Model model;
 
     ui::Panel panel;
     nk::Context *nk_ctx;
@@ -32,4 +33,14 @@ struct Context {
 fn void set_nk_context(Context *ctx, nk::Context *nk_ctx) @export("c3_nk")
 {
     ctx.nk_ctx = nk_ctx;
+}
+
+fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
+{
+    self.model.mgr.add_layer(layer);
+}
+
+fn void Context.render(&self, void *loop) @export("layer_manager_render")
+{
+    self.model.mgr.render(loop);
 }

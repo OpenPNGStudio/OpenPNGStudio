@@ -7,10 +7,10 @@
 
 ![Main Screen](./assets/screenshots/main.png)
 
-![GitHub License](https://img.shields.io/github/license/OpenPNGStudio/OpenPNGStudio?style=for-the-badge&color=e90000)
-![GitHub Release](https://img.shields.io/github/v/release/OpenPNGStudio/OpenPNGStudio?display_name=tag&style=for-the-badge&color=%2317a086)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenPNGStudio/OpenPNGStudio/total?style=for-the-badge&color=ffc200)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OpenPNGStudio/OpenPNGStudio/canary.yml?style=for-the-badge&color=0278ff)
+![GitHub License](https://img.shields.io/github/license/OpenPNGStudio/OpenPNGStudio?style=for-the-badge&labelColor=191919&color=e90000)
+![GitHub Release](https://img.shields.io/github/v/release/OpenPNGStudio/OpenPNGStudio?display_name=tag&style=for-the-badge&labelColor=191919&color=%2317a086)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenPNGStudio/OpenPNGStudio/total?style=for-the-badge&labelColor=191919&color=ffc200)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OpenPNGStudio/OpenPNGStudio/canary.yml?style=for-the-badge&labelColor=191919&color=0278ff)
 
 
 ## Overview

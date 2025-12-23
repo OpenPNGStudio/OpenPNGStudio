@@ -5,7 +5,6 @@
 #endif
 #include "console.h"
 #include "editor.h"
-#include <layer/manager.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <raylib.h>
@@ -25,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <model/model.h>
 #ifndef _WIN32
 #include <unistd.h>
 #include <sys/mman.h>
@@ -137,7 +135,6 @@ int c_main(void *c3_ctx)
     LOG_I("Using %d threads", uv_available_parallelism());
 
     ctx.camera.zoom = 1.0f;
-    ctx.editor.layer_manager = layer_manager_init();
     ctx.editor.mic = &ctx.mic;
     ctx.editor.microphone_trigger = 40;
     ctx.editor.timer_ttl = DEFAULT_TIMER_TTL;
@@ -146,9 +143,6 @@ int c_main(void *c3_ctx)
 
     /* scheduler */
     ctx.sched.loop = ctx.loop;
-    ctx.model.scheduler = &ctx.sched;
-    ctx.model.editor = &ctx.editor;
-    ctx.model.mic = &ctx.mic;
 
     int flags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT;
 
@@ -294,6 +288,8 @@ void quit_openpngstudio()
 {
     uv_stop((uv_loop_t*) ctx.loop);
 }
+    
+void layer_manager_render(void *c3_ctx, un_loop *loop);
 
 static enum un_action draw(un_idle *task)
 {
@@ -313,9 +309,7 @@ static enum un_action draw(un_idle *task)
         draw_grid(1, 60, inverted);
 
     BeginMode2D(ctx.camera);
-
-    layer_manager_render(ctx.editor.layer_manager, ctx.loop);
-
+    if (ctx.c3_ctx != NULL) layer_manager_render(ctx.c3_ctx, ctx.loop);
     EndMode2D();
 
     DrawNuklear(ctx.ctx);
@@ -358,9 +352,6 @@ static enum un_action c_update(un_idle *task)
             editor_draw(&ctx.editor, nk_ctx, &ui_focused);
         else
             editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
-
-        if (ctx.editor.layer_manager->selected_layer != -1)
-            draw_props(ctx.editor.layer_manager, nk_ctx, &ui_focused);
 
         // if (ctx.editor.layer_manager->anims != NULL)
         //     animation_manager_global_anim(ctx.editor.layer_manager->anims,

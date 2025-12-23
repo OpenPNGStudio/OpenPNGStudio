@@ -32,7 +32,10 @@ fn int main() @winmain {
     ctx.file_dialog.populate();
     defer ctx.file_dialog.free()!!;
 
+    ctx.model.mgr.init(ctx.wm.next_id(), mem);
+
     ctx.wm.register("File Dialog", &ctx.file_dialog);
+    ctx.wm.register("Layer Manager", &ctx.model.mgr);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -54,7 +57,7 @@ fn int main() @winmain {
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        io::printn("hello, world");
+        ctx.wm.show(&ctx.model.mgr);
     }, LAYERS, &ctx);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
@@ -110,6 +113,10 @@ fn void update(Context *app_ctx, bool hide_ui) @export("update")
 
     app_ctx.wm.update(app_ctx.width, app_ctx.height);
     app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
+
+    if (app_ctx.model.mgr.selected_layer != -1) {
+        app_ctx.model.mgr.show_props(ctx, &focused);
+    }
 
     FileDialogState state = app_ctx.file_dialog.get_state();
 

@@ -71,7 +71,6 @@ struct context {
     struct script_load_req *script_work_queue;
 
     struct work_scheduler sched;
-    struct model model;
 
     un_loop *loop;
     struct nk_context *ctx;
