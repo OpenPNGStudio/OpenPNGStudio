@@ -3,8 +3,6 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
-
-#include "ui/window.h"
 #include <work/scheduler.h>
 #include <stdint.h>
 #ifdef _WIN32
@@ -81,11 +79,6 @@ struct context {
     Camera2D camera;
 
     struct panel *panel;
-
-    /* separate components */
-    struct window about_win;
-    struct window welcome_win;
-    struct window keybindings_win;
 
     enum program_mode mode;
     bool hide_ui;

@@ -277,8 +277,6 @@ static enum un_action draw(un_idle *task)
     return REARM;
 }
 
-void draw_props(struct layer_manager *mgr, struct nk_context *ctx, bool *ui_focused);
-
 static enum un_action c_update(un_idle *task)
 {
     mask_t mask = get_current_mask();
@@ -304,13 +302,6 @@ static enum un_action c_update(un_idle *task)
     set_current_mask(mask);
 
     update(ctx.c3_ctx, ctx.hide_ui, ctx.loop);
-
-    if (!ctx.hide_ui) {
-        context_about(&ctx, nk_ctx);
-        context_keybindings(&ctx, nk_ctx);
-    }
-
-    context_welcome(&ctx, nk_ctx);
 
     if (!ui_focused) {
         if (IsKeyPressed(KEY_SPACE)) {
