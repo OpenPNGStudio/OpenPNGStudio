@@ -13,7 +13,7 @@ enum State @local {
 interface Window {
     fn int get_id();
     fn void update() @optional;
-    fn void draw(nk::Context *ctx);
+    fn void draw(WindowManager *wm, nk::Context *ctx);
     fn void on_close() @optional;
 }
 
@@ -196,7 +196,7 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
                 managed.geometry.w = wprops.x;
                 managed.geometry.h = wprops.y;
 
-                managed.win.draw(ctx);
+                managed.win.draw(self, ctx);
             } else {
                 managed.focus = false;
                 if (managed.state == SHOW) {
@@ -226,7 +226,7 @@ fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
 //     io::printfn("update %d", self.awawawa);
 // }
 //
-// fn void DummyWindow.draw(&self, nk::Context *ctx) @dynamic
+// fn void DummyWindow.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 // {
 //     nk::layout_row_dynamic(ctx, 30, 1);
 //     nk::label(ctx, "Label", nk::TEXT_LEFT);

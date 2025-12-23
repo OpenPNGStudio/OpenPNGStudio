@@ -33,10 +33,9 @@ fn int main() @winmain {
     ctx.file_dialog.populate();
     defer ctx.file_dialog.free()!!;
 
-    ctx.model.mgr.init(ctx.wm.next_id(), mem);
+    ctx.model.mgr.init(&ctx.wm, mem);
 
     ctx.wm.register("File Dialog", &ctx.file_dialog);
-    ctx.wm.register("Layer Manager", &ctx.model.mgr);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;

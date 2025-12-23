@@ -6,7 +6,7 @@ import std::core::mem;
 import std::collections::list;
 import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
-import openpngstudio::animation::manager;
+import openpngstudio::animation;
 import openpngstudio::ui::window;
 import openpngstudio::ui::window_v2;
 import openpngstudio::ui::icons;
@@ -14,23 +14,24 @@ import openpngstudio::ui::line_edit;
 import nk;
 import raylib5::rl;
 
-alias animation = module openpngstudio::animation::manager;
-
 struct Manager (window_v2::Window) {
     List{Layer} layers;
-    animation::Manager *animation_manager;
+    animation::Manager animation_manager;
     isz selected_layer;
     window::Window config_win;
 
     int id;
 }
 
-fn void Manager.init(&self, int id, Allocator mem)
+fn void Manager.init(&self, WindowManager *wm, Allocator alloc)
 {
-    self.layers.init(mem);
-    self.animation_manager = animation::new_manager();
+    self.layers.init(alloc);
+    self.id = wm.next_id();
+    self.animation_manager.init(wm.next_id(), alloc);
     self.selected_layer = -1;
-    self.id = id;
+
+    wm.register("Layer Manager", self);
+    wm.register("Global Animation Configuration", &self.animation_manager);
 }
 
 fn void Manager.add_layer(&self, StaticLayer *layer)
@@ -47,30 +48,31 @@ fn void Manager.add_layer(&self, StaticLayer *layer)
 
 fn int Manager.get_id(&self) @dynamic => self.id;
 
-fn void Manager.draw(&self, nk::Context *ctx) @dynamic
+fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
     if (self.config_win.ctx == null) {
         window::window_init(&self.config_win, ctx, "Layer Configuration");
     }
-    // float win_width = nk::window_get_width(ctx);
-    // float min_width = max(win_width * 0.49f, 250.0f);
-    //
-    // nk::layout_row_template_begin(ctx, 35);
-    // nk::layout_row_template_push_dynamic(ctx);
-    // nk::layout_row_template_push_variable(ctx, min_width);
-    // nk::layout_row_template_end(ctx);
-    //
-    // nk::label(ctx, "Global Animations: ", nk::TEXT_LEFT);
-    // if (nk::group_begin(ctx, "Global Animations", nk::WINDOW_NO_SCROLLBAR)) {
-    //     nk::layout_row_dynamic(ctx, 30, 1);
-    //     if (nk::button_label(ctx, "Configure")) {
-    //         self.animation_manager.show();
-    //     }
-    //     nk::group_end(ctx);
-    // }
+
+    float win_width = nk::window_get_width(ctx);
+    float min_width = max(win_width * 0.49f, 250.0f);
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
+
+    nk::label(ctx, "Global Animations: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Global Animations", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        if (nk::button_label(ctx, "Configure")) {
+            wm.show(&self.animation_manager);
+        }
+        nk::group_end(ctx);
+    }
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
-    bounds.h -= 45;
+    bounds.h -= 45 * 2;
     nk::layout_row_dynamic(ctx, bounds.h, 1);
     bool res = nk::group_begin(ctx, "Layers", 0);
 

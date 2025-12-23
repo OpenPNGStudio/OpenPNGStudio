@@ -137,7 +137,7 @@ fn void FileDialog.update(&self) @dynamic
     self.state = BROWSING;
 }
 
-fn void FileDialog.draw(&self, nk::Context *ctx) @dynamic
+fn void FileDialog.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
     messagebox::run(&self.msgbox, ctx);
 
