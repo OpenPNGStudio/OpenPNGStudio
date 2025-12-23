@@ -10,10 +10,10 @@ import openpngstudio::animation::spinner;
 import openpngstudio::animation::shake;
 import openpngstudio::animation::fade;
 import openpngstudio::animation::easings;
-import openpngstudio::ui::window_v2;
+import openpngstudio::ui::wm;
 import nk;
 
-struct Manager (window_v2::Window) {
+struct Manager (wm::Window) {
     List{Animation} animations;
     Animation global_animation;
     Mask global_anim_mask;

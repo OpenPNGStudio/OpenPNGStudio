@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-module openpngstudio::ui::window_v2;
+module openpngstudio::ui::wm;
 
 import nk;
 import std::core::mem, std::collections::list;

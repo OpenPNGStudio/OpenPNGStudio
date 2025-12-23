@@ -3,7 +3,7 @@ module openpngstudio;
 
 import openpngstudio::core;
 import openpngstudio::ui;
-import openpngstudio::ui::window_v2;
+import openpngstudio::ui::wm;
 import nk;
 
 enum FileLoadState {

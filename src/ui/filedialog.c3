@@ -2,7 +2,7 @@
 module openpngstudio::ui;
 
 import libc;
-import openpngstudio::ui::window_v2;
+import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::messagebox;
 import openpngstudio::ui::line_edit;
@@ -43,7 +43,7 @@ struct DirectoryEntry {
     nk::Bool selected;
 }
 
-struct FileDialog (window_v2::Window) {
+struct FileDialog (wm::Window) {
     Path path;
     List{DirectoryEntry} content;
     List{String} filter;

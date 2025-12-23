@@ -7,18 +7,17 @@ import std::collections::list;
 import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
 import openpngstudio::animation;
-import openpngstudio::ui::window;
-import openpngstudio::ui::window_v2;
+import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::line_edit;
 import nk;
 import raylib5::rl;
 
-struct Manager (window_v2::Window) {
+struct Manager (wm::Window) {
     List{Layer} layers;
     animation::Manager animation_manager;
     isz selected_layer;
-    window::Window config_win;
+    Config conf;
 
     int id;
 }
@@ -29,9 +28,11 @@ fn void Manager.init(&self, WindowManager *wm, Allocator alloc)
     self.id = wm.next_id();
     self.animation_manager.init(wm.next_id(), alloc);
     self.selected_layer = -1;
+    self.conf.init(wm.next_id(), &self.animation_manager);
 
     wm.register("Layer Manager", self);
     wm.register("Global Animation Configuration", &self.animation_manager);
+    wm.register("Layer Configuration", &self.conf);
 }
 
 fn void Manager.add_layer(&self, StaticLayer *layer)
@@ -50,10 +51,6 @@ fn int Manager.get_id(&self) @dynamic => self.id;
 
 fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
-    if (self.config_win.ctx == null) {
-        window::window_init(&self.config_win, ctx, "Layer Configuration");
-    }
-
     float win_width = nk::window_get_width(ctx);
     float min_width = max(win_width * 0.49f, 250.0f);
 
@@ -145,7 +142,10 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     if (i == self.layers.len() - 1) nk::widget_disable_end(ctx);
     if (i == -1) nk::widget_disable_end(ctx);
 
-    if (self.selected_layer != -1) self.config_win.show = true;
+    if (self.selected_layer != -1) {
+        wm.show(&self.conf);
+        self.conf.selected = self.layers[self.selected_layer];
+    }
 
     for (i = 0; i < self.layers.len();) {
         layer = self.layers[i];
@@ -175,25 +175,3 @@ fn void Manager.render(&self, void *loop)
 }
 
 fn void Manager.on_close(&self) @dynamic => self.selected_layer = -1;
-
-fn void Manager.show_props(&self, nk::Context *ctx, bool *ui_focused)
-{
-    if (window::window_begin(&self.config_win, nk::WINDOW_TITLE |
-        nk::WINDOW_MOVABLE | nk::WINDOW_CLOSABLE | nk::WINDOW_BORDER |
-        nk::WINDOW_MINIMIZABLE | nk::WINDOW_SCALABLE)) {
-        *ui_focused = self.config_win.focus;
-
-        if (self.selected_layer != -1) {
-            nk::style_push_vec2(ctx, &ctx.style.window.spacing, nk::vec2(0, 0));
-            defer nk::style_pop_vec2(ctx);
-
-            Layer layer = self.layers[self.selected_layer];
-            layer.configure(ctx);
-            self.animation_manager.animation_selector(layer, ctx);
-        }
-    } else {
-        self.selected_layer = -1;
-    }
-
-    if (self.config_win.state != HIDE) window::window_end(&self.config_win);
-}

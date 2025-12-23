@@ -119,10 +119,6 @@ fn void update(Context *app_ctx, bool hide_ui, unuv::UnLoop *loop) @export("upda
     app_ctx.wm.update(app_ctx.width, app_ctx.height);
     app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
 
-    if (app_ctx.model.mgr.selected_layer != -1) {
-        app_ctx.model.mgr.show_props(ctx, &focused);
-    }
-
     FileDialogState state = app_ctx.file_dialog.get_state();
 
     if (state == READ_READY || state == WRITE_READY || app_ctx.override_save) {
