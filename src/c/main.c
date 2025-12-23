@@ -117,8 +117,6 @@ int c_main(void *c3_ctx)
     /* CFG */
     ctx.loop = un_loop_new();
 
-    console_init();
-
     LOG_I("Using %d threads", uv_available_parallelism());
 
     ctx.camera.zoom = 1.0f;
@@ -235,7 +233,6 @@ int c_main(void *c3_ctx)
     un_loop_del(ctx.loop);
 
     cleanup_icons();
-    console_deinit();
     UnloadNuklear(ctx.ctx);
     CloseWindow();
 
@@ -306,24 +303,9 @@ static enum un_action c_update(un_idle *task)
     set_key_mask(&mask);
     set_current_mask(mask);
 
-    // if (!ctx.hide_ui) {
-    //     if (ctx.mode == EDIT_MODE)
-    //         editor_draw(&ctx.editor, nk_ctx, &ui_focused);
-    //     else
-    //         editor_draw_stream(&ctx.editor, nk_ctx, &ui_focused);
-    //
-    //     // if (ctx.editor.layer_manager->anims != NULL)
-    //     //     animation_manager_global_anim(ctx.editor.layer_manager->anims,
-    //     //         nk_ctx);
-    // }
-
     update(ctx.c3_ctx, ctx.hide_ui, ctx.loop);
 
-    if (IsKeyPressed(KEY_GRAVE) && IsKeyDown(KEY_LEFT_SHIFT))
-      console_show();
-
     if (!ctx.hide_ui) {
-        console_draw(nk_ctx, &ui_focused);
         context_about(&ctx, nk_ctx);
         context_keybindings(&ctx, nk_ctx);
     }

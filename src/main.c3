@@ -7,6 +7,7 @@ import nk;
 import novacrash;
 import novacrash::options;
 
+import openpngstudio::console;
 import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
@@ -34,6 +35,7 @@ fn int main() @winmain {
     defer ctx.file_dialog.free()!!;
 
     ctx.model.mgr.init(&ctx.wm, mem);
+    console::init(&ctx.wm, mem);
 
     ctx.wm.register("File Dialog", &ctx.file_dialog);
 
@@ -115,6 +117,10 @@ fn void update(Context *app_ctx, bool hide_ui, unuv::UnLoop *loop) @export("upda
     app_ctx.microphone.update(loop);
 
     bool focused = false;
+
+    if (rl::isKeyPressed(rl::KEY_GRAVE) && rl::isKeyDown(rl::KEY_LEFT_SHIFT)) {
+        console::show(&app_ctx.wm);
+    }
 
     app_ctx.wm.update(app_ctx.width, app_ctx.height);
     app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);

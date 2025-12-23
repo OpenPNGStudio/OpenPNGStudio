@@ -9,18 +9,12 @@
 #include <stddef.h>
 #include <raylib-nuklear.h>
 
-void console_init();
-void console_deinit();
-
-void console_show();
-void console_draw(struct nk_context *ctx, bool *ui_focused);
-
 void console_debug(const char *fn, size_t line, const char *fmt, ...);
 void console_info(const char *fn, size_t line, const char *fmt, ...);
 void console_warn(const char *fn, size_t line, const char *fmt, ...);
 void console_error(const char *fn, size_t line, const char *fmt, ...);
 
-#ifndef NDEFBUG
+#ifndef NDEBUG
 #define LOG(fmt, ...) console_debug(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #else
 #define LOG(fmt, ...) 
