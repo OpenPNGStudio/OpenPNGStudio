@@ -5,6 +5,7 @@ import openpngstudio::core;
 import openpngstudio::ui;
 import openpngstudio::ui::wm;
 import nk;
+import raylib5::rl;
 
 enum FileLoadState {
     NOTHING,
@@ -18,7 +19,7 @@ enum FileLoadState {
 struct Context {
     FileDialog file_dialog;
     WindowManager wm;
-    Model model;
+    model::Model model;
 
     ui::Panel panel;
     nk::Context *nk_ctx;
@@ -30,6 +31,8 @@ struct Context {
 
     ZString model_output;
     bool override_save;
+
+    rl::Color ambient;
 }
 
 fn void set_nk_context(Context *ctx, nk::Context *nk_ctx) @export("c3_nk")
@@ -44,5 +47,5 @@ fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_
 
 fn void Context.render(&self, void *loop) @export("layer_manager_render")
 {
-    self.model.mgr.render(loop);
+    self.model.mgr.render(loop, self);
 }

@@ -23,6 +23,7 @@ ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 
 fn int main() @winmain {
     Context ctx;
+    ctx.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
     ctx.panel.init(mem);
     defer ctx.panel.free();
 

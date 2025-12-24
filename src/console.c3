@@ -128,7 +128,7 @@ fn void _info(ZString fun, usz line, ZString fmt, args...)
     io::fprintf(io::stderr(), "%s:%d \e[46;1m\e[37;1m I \e[0m ", fun, line)!!;
 
     @pool() {
-        String tmp = string::tformat(fmt.str_view(), ...args);
+        String tmp = string::tformat(fmt.str_view(), args);
         io::fprintn(io::stderr(), tmp)!!;
         if (c.log.len() == NLOGS) c.log.pop_front()!!;
 
