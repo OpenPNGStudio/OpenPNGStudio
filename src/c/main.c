@@ -158,8 +158,6 @@ int c_main(void *c3_ctx)
         LoadNuklearImage(PATH_START "assets/icons/loop.png"));
     register_icon(TRASH_ICON,
         LoadNuklearImage(PATH_START "assets/icons/trash.png"));
-    register_icon(SELECT_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/select.png"));
     register_icon(CFG_ICON,
         LoadNuklearImage(PATH_START "assets/icons/cfg.png"));
     register_icon(CANCEL_ICON,
@@ -170,12 +168,14 @@ int c_main(void *c3_ctx)
         LoadNuklearImage(PATH_START "assets/icons/minimize.png"));
     register_icon(MAXIMIZE_ICON,
         LoadNuklearImage(PATH_START "assets/icons/maximize.png"));
+    register_icon(COMBO,
+        LoadNuklearImage(PATH_START "assets/icons/combo.png"));
+    register_icon(COMBO_OPEN,
+        LoadNuklearImage(PATH_START "assets/icons/combo-open.png"));
     register_icon(OPEN_ICON,
         LoadNuklearImage(PATH_START "assets/icons/open.png"));
     register_icon(SAVE_ICON,
         LoadNuklearImage(PATH_START "assets/icons/save.png"));
-    register_icon(SAVE_AS_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/save-as.png"));
     register_icon(LAYERS_ICON,
         LoadNuklearImage(PATH_START "assets/icons/layers.png"));
     register_icon(SHORTCUTS_ICON,

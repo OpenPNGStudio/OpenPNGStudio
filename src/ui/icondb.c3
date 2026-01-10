@@ -16,6 +16,8 @@ enum Type : inline int {
     CHECK,
     MINIMIZE,
     MAXIMIZE,
+    COMBO,
+    COMBO_OPEN,
 
     OPEN,
     SAVE,

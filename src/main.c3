@@ -51,12 +51,8 @@ fn int main() @winmain {
     }, OPEN, &ctx);
 
     ctx.panel.add_left_entry(fn void(void *ctx) {
-        save(ctx, false);
-    }, SAVE, &ctx);
-
-    ctx.panel.add_left_entry(fn void(void *ctx) {
         save(ctx, true);
-    }, SAVE_AS, &ctx);
+    }, SAVE, &ctx);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -75,7 +71,7 @@ fn int main() @winmain {
 
     ctx.panel.add_right_entry(fn void(void *_ctx) {
         quit_openpngstudio();
-    }, QUIT, &ctx);
+    }, CANCEL, &ctx);
 
     novacrash::uses_raylib = true;
     options::cfg.app_name = "OpenPNGStudio";
@@ -98,7 +94,7 @@ fn int main() @winmain {
 
     options::cfg.header = {
         .catch_phrases = phrases,
-        .crash_icon = $embed("../assets/images/crash.png"),
+        .crash_icon = $embed("../assets/logo.png"),
         .title_size = 32,
     };
 
@@ -127,6 +123,8 @@ fn void update(Context *app_ctx, bool hide_ui, unuv::UnLoop *loop) @export("upda
     app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
 
     FileDialogState state = app_ctx.file_dialog.get_state();
+
+    if (state == CLOSED) app_ctx.wm.hide(&app_ctx.file_dialog);
 
     if (state == READ_READY || state == WRITE_READY || app_ctx.override_save) {
         switch (app_ctx.loading_state) {

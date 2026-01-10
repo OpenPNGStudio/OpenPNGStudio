@@ -47,17 +47,17 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     nk::StyleButton *btn = &ctx.style.button;
     btn.border = 0.0f;
     btn.rounding = 5.0f;
-    btn.padding = nk::vec2(0.25f, 0.25f);
+    btn.padding = nk::vec2(0f, 0f); 
 
     nk::StyleButton *btn2 = &ctx.style.contextual_button;
     btn2.border = 0.0f;
     btn2.rounding = 5.0f;
-    btn2.padding = nk::vec2(0.25f, 0.25f);
+    btn2.padding = nk::vec2(0f, 0f);
 
     nk::StyleButton *btn3 = &ctx.style.menu_button;
     btn3.border = 0.0f;
     btn3.rounding = 5.0f;
-    btn3.padding = nk::vec2(0.25f, 0.25f);
+    btn3.padding = nk::vec2(0f, 0f);
 
     nk::StyleToggle *chk = &ctx.style.checkbox;
     chk.rounding = 5.0f;
@@ -90,6 +90,9 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     nk::StyleCombo *cmb = &ctx.style.combo;
     cmb.border = 0.0f;
     cmb.rounding = 5.0f;
+    cmb.sym_normal = nk::SYMBOL_NONE;
+    cmb.sym_hover = nk::SYMBOL_NONE;
+    cmb.sym_active = nk::SYMBOL_NONE;
 
     nk::StyleWindow *win = &ctx.style.window;
     win.menu_border = 0.0f;

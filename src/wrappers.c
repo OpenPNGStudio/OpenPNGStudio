@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 /* just to improve compilation times */
-
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include <raylib-nuklear.h>
 
@@ -16,3 +15,8 @@ Font get_nk_font()
 {
     return nk_font;
 }
+
+#define MINIAUDIO_IMPLEMENTATION
+#include <miniaudio.h>
+#define RAYGUI_IMPLEMENTATION
+#include <raygui.h>

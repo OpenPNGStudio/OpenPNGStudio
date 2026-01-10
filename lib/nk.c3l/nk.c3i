@@ -2026,14 +2026,14 @@ fn Bool combo_begin_symbol_text(
 
 fn Bool combo_begin_image(
   Context*, 
-  Image img, 
+  Image[2]* img, 
   Vec2 size)
 @extern("nk_combo_begin_image");
 
 fn Bool combo_begin_image_label(
   Context*, 
   CChar* selected, 
-  Image, 
+  Image[2]* img, 
   Vec2 size)
 @extern("nk_combo_begin_image_label");
 
@@ -2041,7 +2041,7 @@ fn Bool combo_begin_image_text(
   Context*, 
   CChar* selected, 
   CInt, 
-  Image, 
+  Image[2]* img, 
   Vec2 size)
 @extern("nk_combo_begin_image_text");
 

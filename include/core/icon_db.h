@@ -17,6 +17,8 @@ enum icon_type {
     CHECK_ICON,
     MINIMIZE_ICON,
     MAXIMIZE_ICON,
+    COMBO,
+    COMBO_OPEN,
 
     OPEN_ICON,
     SAVE_ICON,
