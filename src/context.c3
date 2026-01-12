@@ -6,6 +6,7 @@ import openpngstudio::ui;
 import openpngstudio::ui::wm;
 import nk;
 import raylib5::rl;
+import std::io::path;
 
 enum FileLoadState {
     NOTHING,
@@ -33,6 +34,7 @@ struct Context {
     bool override_save;
 
     rl::Color ambient;
+    Path exe_path;
 }
 
 fn void set_nk_context(Context *ctx, nk::Context *nk_ctx) @export("c3_nk")

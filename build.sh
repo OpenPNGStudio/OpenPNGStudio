@@ -16,5 +16,10 @@ cd build
 ninja
 mkdir -p miniroot
 DESTDIR=./miniroot/ ninja install
+LIBUV_PATH=$(find miniroot -name "libuv.a")
+LIBUV_FIXED=$(echo "$LIBUV_PATH" | sed "s/libuv.a/libuvstatic.a/") 
+
+# force linker to link with static libuv
+cp "$LIBUV_PATH" "$LIBUV_FIXED"
 c3c build OpenPNGStudio-linux-x64
 c3c build opng

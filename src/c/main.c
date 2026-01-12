@@ -10,7 +10,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <core/nk.h>
-#include <core/icon_db.h>
 
 #include <raylib-nuklear.h>
 #include <ui/line_edit.h>
@@ -40,11 +39,6 @@
 #include <lauxlib.h>
 #endif
 
-#ifndef NDEBUG
-#define PATH_START "../"
-#else
-#define PATH_START "./"
-#endif
 #define DEFAULT_MULTIPLIER 2500
 #define DEFAULT_TIMER_TTL 2000
 #define DEFAULT_MASK (QUIET | TALK | PAUSE)
@@ -105,6 +99,9 @@ void update(void *c3_ctx, bool ui_on, void *loop);
 void quit_openpngstudio();
 void c3_nk(void *c3_ctx, struct nk_context *nk_ctx);
 
+Font load_font(void *c3_ctx);
+void load_icons(void *c3_ctx);
+
 int c_main(void *c3_ctx)
 {
     char cpubuff[4] = {0};
@@ -144,53 +141,10 @@ int c_main(void *c3_ctx)
     InitWindow(1024, 640, "OpenPNGStudio");
 
     SetExitKey(KEY_NULL);
-    Font font = LoadFont(PATH_START "assets/fonts/VarelaRound-Regular.ttf");
+    Font font = load_font(c3_ctx);
     SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
 
-    register_icon(UP_ICON, LoadNuklearImage(PATH_START "assets/icons/up.png"));
-    register_icon(DOWN_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/down.png"));
-    register_icon(LEFT_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/back.png"));
-    register_icon(RIGHT_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/forward.png"));
-    register_icon(LOOP_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/loop.png"));
-    register_icon(TRASH_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/trash.png"));
-    register_icon(CFG_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/cfg.png"));
-    register_icon(CANCEL_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/cancel.png"));
-    register_icon(CHECK_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/check.png"));
-    register_icon(MINIMIZE_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/minimize.png"));
-    register_icon(MAXIMIZE_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/maximize.png"));
-    register_icon(COMBO,
-        LoadNuklearImage(PATH_START "assets/icons/combo.png"));
-    register_icon(COMBO_OPEN,
-        LoadNuklearImage(PATH_START "assets/icons/combo-open.png"));
-    register_icon(OPEN_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/open.png"));
-    register_icon(SAVE_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/save.png"));
-    register_icon(LAYERS_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/layers.png"));
-    register_icon(SHORTCUTS_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/shortcuts.png"));
-    register_icon(HELP_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/help.png"));
-    register_icon(QUIT_ICON,
-        LoadNuklearImage(PATH_START "assets/icons/stop.png"));
-
-    register_icon(DIR_ICON,
-        LoadNuklearImage(PATH_START "assets/images/dir.png"));
-    register_icon(FILE_ICON,
-        LoadNuklearImage(PATH_START "assets/images/file.png"));
-    register_icon(DRIVE_ICON,
-        LoadNuklearImage(PATH_START "assets/images/drive.png"));
+    load_icons(c3_ctx);
 
     ctx.ctx = InitNuklearEx(font, 18);
     set_nk_font(font);
@@ -230,7 +184,6 @@ int c_main(void *c3_ctx)
     un_loop_run(ctx.loop);
     un_loop_del(ctx.loop);
 
-    cleanup_icons();
     UnloadNuklear(ctx.ctx);
     CloseWindow();
 

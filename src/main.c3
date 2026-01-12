@@ -98,8 +98,12 @@ fn int main() @winmain {
         .title_size = 32,
     };
 
+    ctx.exe_path = core::whereami()!!;
+
     ctx.microphone.init();
     defer ctx.microphone.free();
+
+    defer icons::cleanup();
 
     return c_main(&ctx);
 }
@@ -197,4 +201,83 @@ fn void write_model(Context *ctx) @local
     ctx.override_save = false;
 
     io::printf("%s\n", ctx.model_output);
+}
+
+extern fn nk::Image load_nk_image(ZString path) @extern("LoadNuklearImage");
+
+struct TmpIcon @private {
+    icons::Type type;
+    String path;
+}
+
+fn rl::Font load_font(Context *ctx) @export("load_font")
+{
+    @pool() {
+        Path dir = ctx.exe_path.parent()!!;
+        if (dir.basename() == "build") {
+            dir = dir.parent()!!;
+            dir = dir.tappend("assets")!!;
+        } else {
+            dir = dir.parent()!!;
+            dir = dir.tappend("share")!!;
+            dir = dir.tappend("OpenPNGStudio")!!;
+        }
+        
+        Path tmp = dir.tappend("fonts/VarelaRound-Regular.ttf")!!;
+
+        return rl::loadFont(tmp.str_view().zstr_tcopy());
+    };
+}
+
+fn void load_icons(Context *ctx) @export("load_icons")
+{
+    load_icons2(ctx.exe_path)!!;
+}
+
+fn void? load_icons2(Path exe_path) @local
+{
+    @pool() {
+        Path dir = exe_path.parent()!;
+        if (dir.basename() == "build") {
+            dir = dir.parent()!;
+            dir = dir.tappend("assets")!;
+        } else {
+            dir = dir.parent()!;
+            dir = dir.tappend("share")!;
+            dir = dir.tappend("OpenPNGStudio")!;
+        }
+
+        var $icons = {
+            {icons::Type.LEFT, "icons/back.png"},
+            {icons::Type.RIGHT, "icons/forward.png"},
+            {icons::Type.UP, "icons/up.png"},
+            {icons::Type.DOWN, "icons/down.png"},
+            {icons::Type.LOOP, "icons/loop.png"},
+            {icons::Type.TRASH, "icons/trash.png"},
+            {icons::Type.CFG, "icons/cfg.png"},
+            {icons::Type.CANCEL, "icons/cancel.png"},
+            {icons::Type.CHECK, "icons/check.png"},
+            {icons::Type.MINIMIZE, "icons/minimize.png"},
+            {icons::Type.MAXIMIZE, "icons/maximize.png"},
+            {icons::Type.COMBO, "icons/combo.png"},
+            {icons::Type.COMBO_OPEN, "icons/combo-open.png"},
+            {icons::Type.OPEN, "icons/open.png"},
+            {icons::Type.SAVE, "icons/save.png"},
+            {icons::Type.LAYERS, "icons/layers.png"},
+            {icons::Type.SHORTCUTS, "icons/shortcuts.png"},
+            {icons::Type.HELP, "icons/help.png"},
+            {icons::Type.DIR, "images/dir.png"},
+            {icons::Type.FILE, "images/file.png"},
+            {icons::Type.DRIVE, "images/drive.png"},
+        };
+
+        $foreach $icon : $icons:
+            @pool() {
+                TmpIcon $i = (TmpIcon) $icon;
+
+                Path tmp = dir.tappend($i.path)!;
+                icons::set($i.type, load_nk_image(tmp.str_view().zstr_tcopy()));
+            };
+        $endforeach
+    };
 }

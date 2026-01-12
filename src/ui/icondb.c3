@@ -8,7 +8,6 @@ enum Type : inline int {
     RIGHT,
     UP,
     DOWN,
-    SELECT,
     LOOP,
     TRASH,
     CFG,
@@ -25,7 +24,6 @@ enum Type : inline int {
     LAYERS,
     SHORTCUTS,
     HELP,
-    QUIT,
 
     DIR,
     FILE,

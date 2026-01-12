@@ -11,7 +11,9 @@
 ![GitHub Release](https://img.shields.io/github/v/release/OpenPNGStudio/OpenPNGStudio?display_name=tag&style=for-the-badge&labelColor=191919&color=%2317a086)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenPNGStudio/OpenPNGStudio/total?style=for-the-badge&labelColor=191919&color=ffc200)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OpenPNGStudio/OpenPNGStudio/canary.yml?style=for-the-badge&labelColor=191919&color=0278ff)
+![Made in EU](https://img.shields.io/badge/Made_in-EU-blue?style=for-the-badge&labelColor=161616&color=%23003399)
 
+**Built and maintained in the European Union 🇪🇺**
 
 ## Overview
 OpenPNGStudio is a free (free as in freedom) software for creating and streaming PNGTuber models, offering a rich set of features. The project was created as a free alternative to other PNG tubing software, while also enabling the addition of new features - not found in existing alternatives.
@@ -79,7 +81,11 @@ Coming soon.
 We value a welcoming and respectful community.  
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
-## License
+## Licenses
 OpenPNGStudio is licensed under the **GNU General Public License v3.0 or later (GPL-3.0+)**
 
 ![GPLv3 Logo](https://www.gnu.org/graphics/gplv3-with-text-136x68.png)
+
+The specification for OpenPNGStudio's custom file format `OPNG` is licensed under **BSD Zero Clause License	(0BSD)**.<br>
+Oxy's files and artwork is licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.<br>
+Licenses of used dependencies by OpenPNGStudio can be found at `licenses/`.

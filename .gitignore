@@ -4,6 +4,8 @@ src/vendor/*
 include/vendor/*
 !include/vendor/.gitkeep
 build/
+repo/
+.flatpak-builder
 .build/
 build-mingw/
 subprojects/raylib/
