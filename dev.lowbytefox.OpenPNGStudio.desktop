@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=OpenPNGStudio
+Comment=Create & stream PNGTuber models.
+Exec=OpenPNGStudio
+Version=0.3.0
+Type=Application
+Icon=dev.lowbytefox.OpenPNGStudio
+Categories=Graphics;
+SingleMainWindow=true
