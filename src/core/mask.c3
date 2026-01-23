@@ -35,7 +35,7 @@ const Mask DEFAULT_LAYER_MASK = QUIET | TALK | PAUSE;
 
 Mask current @local = QUIET;
 
-fn void set(Mask mask) @export("set_current_mask")
+fn void set(Mask mask)
 {
     current = mask;
 }
@@ -45,7 +45,7 @@ fn Mask get() @export("get_current_mask")
     return current;
 }
 
-fn void update(Mask *mask) @export("set_key_mask")
+fn void update(Mask *mask)
 {
     int key = rl::getKeyPressed();
     if (key >= 'A' && key <= 'Z') {
@@ -65,7 +65,7 @@ fn void update(Mask *mask) @export("set_key_mask")
         rl::isKeyPressed(rl::KEY_RIGHT_ALT)) *mask |= META;
 }
 
-fn void handle(Mask *mask) @export("handle_key_mask")
+fn void handle(Mask *mask)
 {
     Mask m = *mask;
     Mask new_mask = 0;

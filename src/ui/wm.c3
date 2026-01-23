@@ -97,7 +97,7 @@ enum Corner @local {
     LOWER_RIGHT,
 }
 
-fn void WindowManager.update(&self, int width, int height)
+fn void WindowManager.update(&self, float width, float height)
 {
     bool all_showing = true;
 
@@ -154,7 +154,7 @@ fn void WindowManager.update(&self, int width, int height)
     self.show_bring_back = !all_showing;
 }
 
-fn void WindowManager.ui(&self, nk::Context *ctx, int width, int height)
+fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
 {
     foreach (&managed : self.windows) {
         managed.focus = false;

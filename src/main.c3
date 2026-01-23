@@ -13,32 +13,20 @@ import openpngstudio::ui::icons;
 import openpngstudio::core::model;
 import raylib5::rl;
 import unuv;
+import std::math @public;
+
+import ev;
 
 extern fn int c_main(void *c3_ctx);
 extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
 
-ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
-
 fn int main() @winmain {
     Context ctx;
-    ctx.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
-    ctx.panel.init(mem);
-    defer ctx.panel.free();
+    ctx.init(mem);
 
-    ctx.wm.init(&ctx.panel, mem);
-    defer ctx.wm.free();
-
-    ctx.file_dialog.init(ctx.wm.next_id(), mem);
-    ctx.file_dialog.set_filter(filter);
-    ctx.file_dialog.populate();
-    defer ctx.file_dialog.free()!!;
-
-    ctx.model.mgr.init(&ctx.wm, mem);
     console::init(&ctx.wm, mem);
-
-    ctx.wm.register("File Dialog", &ctx.file_dialog);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -98,57 +86,130 @@ fn int main() @winmain {
         .title_size = 32,
     };
 
-    ctx.exe_path = core::whereami()!!;
+    Idle{Context*} update_idle;
+    Idle{Context*} draw_idle;
 
-    ctx.microphone.init();
-    defer ctx.microphone.free();
+    update_idle.init(&ctx, &update);
+    draw_idle.init(&ctx, &draw);
+
+    ctx.loop.add(&update_idle);
+    ctx.loop.add(&draw_idle);
 
     defer icons::cleanup();
 
-    return c_main(&ctx);
+    ctx.loop.run(DEFAULT);
+    return 0;
 }
 
-fn void update(Context *app_ctx, bool hide_ui, unuv::UnLoop *loop) @export("update")
+extern fn void update_nuklear(nk::Context *ctx) @cname("UpdateNuklear");
+
+fn Action update(Idle{Context*} *idle)
 {
-    app_ctx.width = rl::getScreenWidth();
-    app_ctx.height = rl::getScreenHeight();
-    nk::Context *ctx = app_ctx.nk_ctx;
-    if (!hide_ui) app_ctx.panel.ui(ctx);
+    Context *ctx = idle.ctx;
+    Mask mask = mask::get();
+    mask::handle(&mask);
+    bool ui_focused = false;
 
-    app_ctx.microphone.update(loop);
+    if (rl::windowShouldClose()) unreachable("unimplemented");
 
-    bool focused = false;
+    update_nuklear(ctx.nk_ctx);
+    ctx.width = rl::getScreenWidth();
+    ctx.height = rl::getScreenHeight();
 
+    mask::update(&mask);
+    mask::set(mask);
+
+    ctx.panel.ui(ctx.nk_ctx);
+    // app_ctx.microphone.update(loop);
     if (rl::isKeyPressed(rl::KEY_GRAVE) && rl::isKeyDown(rl::KEY_LEFT_SHIFT)) {
-        console::show(&app_ctx.wm);
+        console::show(&ctx.wm);
     }
 
-    app_ctx.wm.update(app_ctx.width, app_ctx.height);
-    app_ctx.wm.ui(ctx, app_ctx.width, app_ctx.height);
+    ctx.wm.update(ctx.width, ctx.height);
+    ctx.wm.ui(ctx.nk_ctx, ctx.width, ctx.height);
 
-    FileDialogState state = app_ctx.file_dialog.get_state();
+    FileDialogState state = ctx.file_dialog.get_state();
 
-    if (state == CLOSED) app_ctx.wm.hide(&app_ctx.file_dialog);
+    if (state == CLOSED) ctx.wm.hide(&ctx.file_dialog);
 
-    if (state == READ_READY || state == WRITE_READY || app_ctx.override_save) {
-        switch (app_ctx.loading_state) {
+    if (state == READ_READY || state == WRITE_READY || ctx.override_save) {
+        switch (ctx.loading_state) {
         case NOTHING:
             break;
         case SELECTING_IMAGE:
-            load_file(app_ctx);
+            load_file(ctx);
             break;
         case SELECTING_SCRIPT:
         case WRITING_MODEL:
-            write_model(app_ctx);
+            write_model(ctx);
         case LOADING_MODEL:
             /* TODO */
             break;
         }
 
-        app_ctx.loading_state = NOTHING;
-        app_ctx.file_dialog.reset();
-        app_ctx.wm.hide(&app_ctx.file_dialog);
+        ctx.loading_state = NOTHING;
+        ctx.file_dialog.reset();
+        ctx.wm.hide(&ctx.file_dialog);
     }
+
+    if (!ui_focused) {
+        // if (rl::isKeyPressed(KEY_SPACE)) {
+        //     ctx.hide_ui = !ctx.hide_ui;
+        // }
+
+        if (rl::isMouseButtonDown(MIDDLE)) {
+            rl::Vector2 delta = rl::getMouseDelta();
+            delta = rl::vector2Scale(delta, -1.0f/ctx.camera.zoom);
+            ctx.camera.target = rl::vector2Add(ctx.camera.target, delta);
+        }
+
+        float wheel = rl::getMouseWheelMove();
+        static float target_zoom = 1.0;
+        if (wheel != 0) {
+            Vector2 mouseWorldPos = rl::getScreenToWorld2D(rl::getMousePosition(), ctx.camera);
+            ctx.camera.offset = rl::getMousePosition();
+            ctx.camera.target = mouseWorldPos;
+
+            float scaleFactor = 1.0f + (0.1f * math::abs(wheel));
+            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+            target_zoom = math::clamp(ctx.camera.zoom * scaleFactor, 0.125f, 4.0f);
+        }
+
+        ctx.camera.zoom = math::lerp(ctx.camera.zoom, target_zoom, 0.35f);
+    }
+
+    if (rl::windowShouldClose()) unreachable("unimplemented");
+
+    return REARM;
+}
+
+extern fn void draw_nuklear(nk::Context *ctx) @cname("DrawNuklear");
+
+fn Action draw(Idle{Context*} *idle)
+{
+    Context *ctx = idle.ctx;
+
+    if (rl::windowShouldClose()) unreachable("unimplemented");
+
+    rl::Color inverted = {255, 255, 255, 255};
+    rl::Color bg = { 0x88, 0x88, 0x88, 0xFF };
+    inverted.r -= bg.r;
+    inverted.g -= bg.g;
+    inverted.b -= bg.b;
+
+    rl::beginDrawing();
+    rl::clearBackground(bg);
+
+    rl::beginMode2D(ctx.camera);
+    // ctx.render(null);
+    rl::endMode2D();
+
+    draw_nuklear(ctx.nk_ctx);
+    rl::endDrawing();
+
+    if (rl::windowShouldClose()) unreachable("unimplemented");
+
+    return REARM;
 }
 
 fn void save(void *_ctx, bool save_as) @local
@@ -208,76 +269,4 @@ extern fn nk::Image load_nk_image(ZString path) @extern("LoadNuklearImage");
 struct TmpIcon @private {
     icons::Type type;
     String path;
-}
-
-fn rl::Font load_font(Context *ctx) @export("load_font")
-{
-    @pool() {
-        Path dir = ctx.exe_path.parent()!!;
-        if (dir.basename() == "build") {
-            dir = dir.parent()!!;
-            dir = dir.tappend("assets")!!;
-        } else {
-            dir = dir.parent()!!;
-            dir = dir.tappend("share")!!;
-            dir = dir.tappend("OpenPNGStudio")!!;
-        }
-        
-        Path tmp = dir.tappend("fonts/VarelaRound-Regular.ttf")!!;
-
-        return rl::loadFont(tmp.str_view().zstr_tcopy());
-    };
-}
-
-fn void load_icons(Context *ctx) @export("load_icons")
-{
-    load_icons2(ctx.exe_path)!!;
-}
-
-fn void? load_icons2(Path exe_path) @local
-{
-    @pool() {
-        Path dir = exe_path.parent()!;
-        if (dir.basename() == "build") {
-            dir = dir.parent()!;
-            dir = dir.tappend("assets")!;
-        } else {
-            dir = dir.parent()!;
-            dir = dir.tappend("share")!;
-            dir = dir.tappend("OpenPNGStudio")!;
-        }
-
-        var $icons = {
-            {icons::Type.LEFT, "icons/back.png"},
-            {icons::Type.RIGHT, "icons/forward.png"},
-            {icons::Type.UP, "icons/up.png"},
-            {icons::Type.DOWN, "icons/down.png"},
-            {icons::Type.LOOP, "icons/loop.png"},
-            {icons::Type.TRASH, "icons/trash.png"},
-            {icons::Type.CFG, "icons/cfg.png"},
-            {icons::Type.CANCEL, "icons/cancel.png"},
-            {icons::Type.CHECK, "icons/check.png"},
-            {icons::Type.MINIMIZE, "icons/minimize.png"},
-            {icons::Type.MAXIMIZE, "icons/maximize.png"},
-            {icons::Type.COMBO, "icons/combo.png"},
-            {icons::Type.COMBO_OPEN, "icons/combo-open.png"},
-            {icons::Type.OPEN, "icons/open.png"},
-            {icons::Type.SAVE, "icons/save.png"},
-            {icons::Type.LAYERS, "icons/layers.png"},
-            {icons::Type.SHORTCUTS, "icons/shortcuts.png"},
-            {icons::Type.HELP, "icons/help.png"},
-            {icons::Type.DIR, "images/dir.png"},
-            {icons::Type.FILE, "images/file.png"},
-            {icons::Type.DRIVE, "images/drive.png"},
-        };
-
-        $foreach $icon : $icons:
-            @pool() {
-                TmpIcon $i = (TmpIcon) $icon;
-
-                Path tmp = dir.tappend($i.path)!;
-                icons::set($i.type, load_nk_image(tmp.str_view().zstr_tcopy()));
-            };
-        $endforeach
-    };
 }
