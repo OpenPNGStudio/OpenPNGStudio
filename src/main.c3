@@ -58,7 +58,7 @@ fn int main() @winmain {
     }, HELP, &ctx);
 
     ctx.panel.add_right_entry(fn void(void *_ctx) {
-        quit_openpngstudio();
+        // quit_openpngstudio();
     }, CANCEL, &ctx);
 
     novacrash::uses_raylib = true;
@@ -111,6 +111,8 @@ fn Action update(Idle{Context*} *idle)
     bool ui_focused = false;
 
     if (rl::windowShouldClose()) unreachable("unimplemented");
+
+    if (rl::isKeyPressed(rl::KEY_TAB)) ctx.editing = !ctx.editing;
 
     update_nuklear(ctx.nk_ctx);
     ctx.width = rl::getScreenWidth();
@@ -200,6 +202,8 @@ fn Action draw(Idle{Context*} *idle)
     rl::beginDrawing();
     rl::clearBackground(bg);
 
+    if (ctx.editing) draw_grid(1, 60, inverted);
+
     rl::beginMode2D(ctx.camera);
     // ctx.render(null);
     rl::endMode2D();
@@ -250,7 +254,7 @@ fn void load_file(Context *ctx) @local
 
     foreach (path : selection) {
         if (path.str_view().ends_with(".opng")) continue;
-        c_load_layer(path);
+        // c_load_layer(path);
     }
 }
 
@@ -264,9 +268,24 @@ fn void write_model(Context *ctx) @local
     io::printf("%s\n", ctx.model_output);
 }
 
-extern fn nk::Image load_nk_image(ZString path) @extern("LoadNuklearImage");
+fn void draw_grid(int line_width, int spacing, rl::Color color)
+{
+    float width = rl::getScreenWidth();
+    float height = rl::getScreenHeight();
 
-struct TmpIcon @private {
-    icons::Type type;
-    String path;
+    float width_total = width / spacing;
+    float width_count = width / spacing;
+    float width_pad_half = (width_total - width_count) / 2;
+
+    for (int i = (int) width_pad_half * spacing; i < width; i += spacing) {
+        rl::drawLineEx({ i, 0 }, { i, height }, line_width, color);
+    }
+    
+    float height_total = height / spacing;
+    float height_count = height / spacing;
+    float height_pad_half = (height_total - height_count) / 2;
+
+    for (int i = (int) height_pad_half * spacing; i < height; i += spacing) {
+        rl::drawLineEx({ 0, i }, { width, i }, line_width, color);
+    }
 }

@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include "console.h"
 #include <core/microphone.h>
 #include <math.h>
 #include <miniaudio.h>
@@ -24,15 +23,15 @@ void mic_setup(struct microphone *self)
 
     result = ma_device_init(NULL, &config, &device);
     if (result != MA_SUCCESS) {
-        LOG_E("Failed to initialize device.\n", 0);
+        // LOG_E("Failed to initialize device.\n", 0);
         return;
     }
 
     device.pUserData = self;
     result = ma_device_start(&device);
 
-    if (result != MA_SUCCESS)
-        LOG_E("Failed to start device.\n", 0);
+    // if (result != MA_SUCCESS)
+    //     LOG_E("Failed to start device.\n", 0);
 }
 
 void mic_free()

@@ -37,7 +37,12 @@ struct Context {
     Microphone microphone;
 
     ZString model_output;
-    bool override_save;
+
+    bitstruct : char {
+        bool override_save;
+        bool editing;
+        bool hide_ui;
+    }
 
     rl::Color ambient;
     Path exe_path;
@@ -67,6 +72,10 @@ fn void Context.init(&self, Allocator alloc)
     self.loop.init(alloc);
     self.camera.zoom = 1.0f;
 
+    self.override_save = false;
+    self.editing = true;
+    self.hide_ui = false;
+
     initialize_raylib(self);
     instance = self;
 }
@@ -90,7 +99,7 @@ extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
 
 fn void initialize_raylib(Context *self) @local
 {
-    rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE | rl::FLAG_VSYNC_HINT);
+    rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE);
     rl::initWindow(1024, 640, "OpenPNGStudio");
     rl::setExitKey(rl::KEY_NULL);
 
@@ -102,6 +111,7 @@ fn void initialize_raylib(Context *self) @local
     self.nk_ctx = init_nuklear_ex(self.font, 18);
     set_nk_font(self.font);
 
+    rl::setTargetFPS(60);
     style::apply(self.nk_ctx);
 }
 
@@ -124,6 +134,13 @@ fn rl::Font load_font(Context *self)
 
         return rl::loadFont(tmp.str_view().zstr_tcopy());
     };
+}
+
+extern fn nk::Image load_nk_image(ZString path) @extern("LoadNuklearImage");
+
+struct TmpIcon @private {
+    icons::Type type;
+    String path;
 }
 
 fn void load_icons(Context *ctx) @local
@@ -184,9 +201,4 @@ fn Context *get_ctx() => instance;
 fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
 {
     self.model.mgr.add_layer(layer);
-}
-
-fn void Context.render(&self, void *loop) @export("layer_manager_render")
-{
-    self.model.mgr.render(loop, self);
 }

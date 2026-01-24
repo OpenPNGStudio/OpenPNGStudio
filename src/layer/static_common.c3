@@ -48,11 +48,11 @@ fn bool draw(StaticLayer *layer, rl::Vector2 anchor)
         if (!layer.props.has_toggle) {
             /* spawn live timeout */
             if (!layer.state.active && layer.state.time_to_live > 0) {
-                start_timeout(layer, get_loop());
+                // start_timeout(layer, get_loop());
             }
         } else {
             if (!layer.state.is_toggle_timer_ticking && mask_test) {
-                toggle(layer, get_loop());
+                // toggle(layer, get_loop());
             }
         }
         return true;
