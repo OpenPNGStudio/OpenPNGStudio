@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <raylib.h>
-#include <ui/line_edit.h>
 
 struct layer_properties {
     Image image;
@@ -12,8 +11,6 @@ struct layer_properties {
     Vector2 offset;
     float rotation;
     Color tint;
-
-    struct line_edit name;
 
     bool has_toggle;
     bool is_animated;

@@ -139,7 +139,7 @@ fn void FileDialog.update(&self) @dynamic
 
 fn void FileDialog.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
-    messagebox::run(&self.msgbox, ctx);
+    self.msgbox.run(ctx);
 
     draw_titlebar(self, ctx);
 
@@ -283,13 +283,13 @@ fn void draw_contextual(FileDialog *self, nk::Context *ctx, nk::Rect bounds)
 
 }
 
-fn int on_search(nk::Context *ctx, MessageBox *box) @local
+fn int on_search(MessageBox *box, nk::Context *ctx) @local
 {
     LineEdit *line = box.userdata;
 
     nk::layout_row_dynamic(ctx, 30, 1);
     nk::label(ctx, "Search Term: ", nk::TEXT_LEFT);
-    line_edit::line_edit_draw(line, ctx);
+    line.draw(ctx);
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
 
@@ -345,11 +345,11 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
                 (CInt*) &&selected.len, selected.len + 1, &nk::filter_default);
         } else {
             if (count == 1) {
-                self.write_file_name.buffer = selected.copy(mem);
+                self.write_file_name.buffer = selected.zstr_copy(mem);
                 self.write_file_name.len = selected.len;
                 self.write_file_name.cleanup = false;
             }
-            line_edit::line_edit_draw(&self.write_file_name, ctx);
+            self.write_file_name.draw(ctx);
         }
 
         if (self.filter.len() > 0) {
@@ -444,14 +444,14 @@ fn void? FileDialog.up(&self)
 
     self.path = self.path.parent()!;
     self.search_filter.cleanup = true;
-    line_edit::line_edit_cleanup(&self.search_filter);
+    self.search_filter.reinit();
 }
 
 fn void? FileDialog.enter(&self, String name)
 {
     self.path = self.path.append(mem, name)!;
     self.search_filter.cleanup = true;
-    line_edit::line_edit_cleanup(&self.search_filter);
+    self.search_filter.reinit();
 
     self.history.register(ENTER, name);
 }
@@ -487,7 +487,7 @@ fn void FileDialog.write_file(&self)
     self.single_file_mode = true;
     self.state = CLOSED;
     self.write_file_name.cleanup = true;
-    line_edit::line_edit_cleanup(&self.write_file_name);
+    self.write_file_name.reinit();
 }
 
 fn List{ZString} FileDialog.get_selection(&self)

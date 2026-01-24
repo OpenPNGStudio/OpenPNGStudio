@@ -12,7 +12,6 @@
 #include <core/nk.h>
 
 #include <raylib-nuklear.h>
-#include <ui/line_edit.h>
 #include <core/mask.h>
 #include <raymath.h>
 #include <rlgl.h>
@@ -31,7 +30,6 @@
 #include <sys/stat.h>
 #include <unuv.h>
 #include <uv.h>
-#include <ui/filedialog.h>
 
 struct context ctx = {0};
 void *c_ctx = &ctx;
@@ -111,8 +109,8 @@ void c_load_layer(char *path)
 
     LOG_I("Preparing layer to be loaded", NULL);
 
-    context_load_image(&ctx, strrchr(path, PATH_SEPARATOR) + 1, fd,
-        s.st_size, load_layer_file, after_layer_loaded);
+    // context_load_image(&ctx, strrchr(path, PATH_SEPARATOR) + 1, fd,
+    //     s.st_size, load_layer_file, after_layer_loaded);
 }
 
 static void load_layer_file(uv_work_t *req)

@@ -43,6 +43,8 @@ struct Context {
     Path exe_path;
 }
 
+Context *instance @local = null;
+
 ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 
 fn void Context.init(&self, Allocator alloc)
@@ -66,6 +68,7 @@ fn void Context.init(&self, Allocator alloc)
     self.camera.zoom = 1.0f;
 
     initialize_raylib(self);
+    instance = self;
 }
 
 fn void Context.free(&self)
@@ -175,6 +178,8 @@ fn void? load_icons2(Path exe_path) @local
         $endforeach
     };
 }
+
+fn Context *get_ctx() => instance;
 
 fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
 {

@@ -67,7 +67,7 @@ fn void override_name(StaticLayer *layer, ZString name)
 {
     layer.props.name.len = (int) name.len();
     layer.props.name.cleanup = false;
-    layer.props.name.buffer = (char*) name;
+    layer.props.name.buffer = name;
 }
 
 fn void configure(StaticLayer *layer, nk::Context *ctx)

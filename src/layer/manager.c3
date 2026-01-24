@@ -85,7 +85,7 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         nk::layout_row_template_push_static(ctx, 30);
         nk::layout_row_template_end(ctx);
 
-        line_edit::line_edit_draw(&layer_props.name, ctx);
+        layer_props.name.draw(ctx);
 
         if (nk::button_image(ctx, icons::get(CFG))) {
             self.selected_layer = i;
