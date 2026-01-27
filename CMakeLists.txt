@@ -21,9 +21,7 @@ include(FetchContent)
 add_subdirectory(deps)
 
 set(VENDOR_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include/vendor)
-set(VENDOR_SRC_DIR ${CMAKE_SOURCE_DIR}/src/c/vendor)
 file(MAKE_DIRECTORY ${VENDOR_INCLUDE_DIR})
-file(MAKE_DIRECTORY ${VENDOR_SRC_DIR})
 
 function(fetch_file url dest_dir)
     get_filename_component(filename ${url} NAME)

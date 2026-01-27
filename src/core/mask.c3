@@ -31,7 +31,7 @@ const Mask META = 1 << 6;
  */
 const Mask KEY_START = 7;
 
-const Mask DEFAULT_LAYER_MASK = QUIET | TALK | PAUSE;
+const Mask DEFAULT = QUIET | TALK | PAUSE;
 
 Mask current @local = QUIET;
 

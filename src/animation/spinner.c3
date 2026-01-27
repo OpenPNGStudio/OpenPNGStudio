@@ -37,7 +37,8 @@ fn void Spinner.tick(&self, Time delta) @dynamic
         self.done = true;
     }
 
-    self.rotation = easings::ease(self.easing_id, percentage, 0, self.end_rotation, 1.0);
+    self.rotation = easings::ease(self.easing_id, percentage, 0, 
+        self.end_rotation, 1.0);
 }
 
 fn bool Spinner.is_done(&self, StateBool toggle) @dynamic

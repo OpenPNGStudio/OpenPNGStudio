@@ -78,7 +78,7 @@ fn int main() @winmain {
         .font_size = 22,
     };
     
-    static ZString[] phrases = {"!!!", "XXX", "ERROR", "PANIC", "GUH", "WEH"};
+    static ZString[] phrases = {"!!!", "XXX", "ERROR", "PANIC", "GUH", "WEH", "ABWA"};
 
     options::cfg.header = {
         .catch_phrases = phrases,

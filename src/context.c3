@@ -175,6 +175,7 @@ fn void? load_icons2(Path exe_path) @local
             {icons::Type.MAXIMIZE, "icons/maximize.png"},
             {icons::Type.COMBO, "icons/combo.png"},
             {icons::Type.COMBO_OPEN, "icons/combo-open.png"},
+            {icons::Type.PICK, "icons/pick.png"},
             {icons::Type.OPEN, "icons/open.png"},
             {icons::Type.SAVE, "icons/save.png"},
             {icons::Type.LAYERS, "icons/layers.png"},

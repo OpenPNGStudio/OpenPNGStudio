@@ -2,30 +2,22 @@
 module openpngstudio::animation;
 
 import openpngstudio::layer;
-import std::time;
 import nk;
 
-ulong id @local = 0;
-
-enum StateBool : const char {
-    SET_FALSE = (StateBool) false,
-    SET_TRUE = (StateBool) true,
-    GET,
-}
-
 interface Animation {
-    fn ulong get_id();
-    fn void tick(Time delta);
-    fn bool is_done(StateBool toggle = GET);
-    fn bool can_play(StateBool toggle = GET);
-    fn void reset(Time now);
-    fn Properties animate(Properties *props);
-    fn void config(nk::Context *ctx);
-    fn int easing(bool set = false, int easing_id = 0);
+    fn void update(ulong now);
+    fn void animate(Origin *origin);
+    fn void start();
+    fn void stop();
 }
 
-fn ulong new_id()
+struct AnimationEntry {
+    Animation a;
+    char[2] input_buffer;
+    int input_length;
+}
+
+fn void AnimationEntry.config(&self, nk::Context *ctx)
 {
-    defer id++;
-    return id;
+    
 }
