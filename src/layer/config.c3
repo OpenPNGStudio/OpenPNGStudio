@@ -7,16 +7,12 @@ import nk;
 
 struct Config (wm::Window) {
     Layer selected;
-    int id;
 }
 
-fn void Config.init(&self, int id)
+fn void Config.init(&self)
 {
-    self.id = id;
     self.selected = null;
 }
-
-fn int Config.get_id(&self) @dynamic => self.id;
 
 fn void Config.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {

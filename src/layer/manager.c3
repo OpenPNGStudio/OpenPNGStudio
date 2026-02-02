@@ -18,8 +18,6 @@ struct Manager (wm::Window) {
     LayerGroup root;
     Config conf;
     layer::Command last_command;
-
-    int id;
 }
 
 const OUTLINE_WIDTH = 10.0f;
@@ -27,8 +25,7 @@ const OUTLINE_WIDTH = 10.0f;
 fn void Manager.init(&self, WindowManager *wm, Allocator alloc)
 {
     self.root.init(alloc);
-    self.id = wm.next_id();
-    self.conf.init(wm.next_id());
+    self.conf.init();
     self.last_command = { NONE, null, null };
 
     wm.register("Layer Manager", self);
@@ -36,8 +33,6 @@ fn void Manager.init(&self, WindowManager *wm, Allocator alloc)
 }
 
 fn void Manager.add(&self, Layer layer) => self.root.add(layer);
-
-fn int Manager.get_id(&self) @dynamic => self.id;
 
 fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
@@ -51,14 +46,20 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 
     nk::label(ctx, "Model Settings", nk::TEXT_LEFT);
     if (nk::button_image(ctx, icons::get(CFG))) {
-        io::printf("uwu\n");
+        self.conf.selected = &self.root;
+        wm.show(&self.conf);
     }
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
-    bounds.h -= 45;
+    bounds.h -= 45 * 2;
 
-    // nk::layout_row_dynamic(ctx, bounds.h, 1);
-    // bool res = nk::group_begin(ctx, "Layers", 0);
+    nk::layout_row_dynamic(ctx, bounds.h, 1);
+    bool res = nk::group_begin(ctx, "Layers", 0);
+
+    foreach (layer : self.root.layers) {
+        layer.layer_entry(ctx);
+    }
+
     //
     // foreach (i, layer : self.layers) {
     //     Properties *layer_props = layer.get_properties();
@@ -84,56 +85,28 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     //     }
     // }
     //
-    // if (res) nk::group_end(ctx);
-    //
-    // if (self.selected_layer == -1) nk::widget_disable_begin(ctx);
-    //
-    // nk::layout_row_template_begin(ctx, 30);
-    // nk::layout_row_template_push_dynamic(ctx);
-    // nk::layout_row_template_push_static(ctx, 30);
-    // nk::layout_row_template_push_static(ctx, 30);
-    // nk::layout_row_template_end(ctx);
-    //
-    // nk::spacer(ctx);
-    //
-    // isz i = self.selected_layer;
-    // Layer layer = i != -1 ? self.layers[i] : null;
-    //
-    // if (i == 0) nk::widget_disable_begin(ctx);
-    //
-    // if (nk::button_image(ctx, icons::get(UP))) {
-    //     Layer prev = self.layers[i - 1];
-    //     self.layers[i - 1] = layer;
-    //     self.layers[i] = prev;
-    //     self.selected_layer = -1;
-    // }
-    //
-    // if (i == 0) nk::widget_disable_end(ctx);
-    // if (i == self.layers.len() - 1) nk::widget_disable_begin(ctx);
-    //
-    // if (nk::button_image(ctx, icons::get(DOWN))) {
-    //     Layer next= self.layers[i + 1];
-    //     self.layers[i + 1] = layer;
-    //     self.layers[i] = next;
-    //     self.selected_layer = -1;
-    // }
-    //
-    // if (i == self.layers.len() - 1) nk::widget_disable_end(ctx);
-    // if (i == -1) nk::widget_disable_end(ctx);
-    //
-    // for (i = 0; i < self.layers.len();) {
-    //     layer = self.layers[i];
-    //     State *layer_state = layer.get_state();
-    //
-    //     if (layer_state.prepare_for_deletion) {
-    //         layer.free();
-    //         self.layers.remove_at(i);
-    //         continue;
-    //     }
-    //
-    //     /* if layer didn't get deleted */
-    //     i++;
-    // }
+    if (res) nk::group_end(ctx);
+
+    nk::layout_row_template_begin(ctx, 30);
+    nk::layout_row_template_push_static(ctx, 100);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 30);
+    nk::layout_row_template_push_static(ctx, 30);
+    nk::layout_row_template_end(ctx);
+
+    if (nk::button_label(ctx, "Add Group")) {
+        io::printf("add group\n");
+    }
+
+    nk::spacer(ctx);
+
+    if (nk::button_image(ctx, icons::get(UP))) {
+        io::printf("up\n");
+    }
+
+    if (nk::button_image(ctx, icons::get(DOWN))) {
+        io::printf("down\n");
+    }
 }
 
 fn void Manager.render(&self, void *loop, openpngstudio::Context *ctx)

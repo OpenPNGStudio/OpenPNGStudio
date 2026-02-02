@@ -34,7 +34,6 @@ Console c @local;
 
 fn void init(WindowManager *wm, Allocator alloc)
 {
-    c.id = wm.next_id();
     c.alloc = alloc;
     c.log.init(alloc);
     wm.register("Console", &c);
@@ -100,8 +99,6 @@ fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         nk::layout_row_end(ctx);
     }
 }
-
-fn int Console.get_id(&self) @dynamic => self.id;
 
 fn void _debug(ZString fun, usz line, ZString fmt, args...)
     @export("console_debug")

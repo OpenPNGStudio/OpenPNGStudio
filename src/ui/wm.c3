@@ -2,7 +2,7 @@
 module openpngstudio::ui::wm;
 
 import nk;
-import std::core::mem, std::collections::list;
+import std::core::mem, std::collections::list, std::io;
 
 enum State @local {
     HIDE,
@@ -11,7 +11,6 @@ enum State @local {
 }
 
 interface Window {
-    fn int get_id();
     fn void update() @optional;
     fn void draw(WindowManager *wm, nk::Context *ctx);
     fn void on_close() @optional;
@@ -30,19 +29,16 @@ struct WindowManager {
     List{ManagedWindow} windows;
     ui::Panel *panel;
     bool show_bring_back;
-    int id;
 }
 
 fn void WindowManager.init(&self, ui::Panel *panel, Allocator alloc)
 {
     self.show_bring_back = false;
-    self.id = 0;
     self.panel = panel;
     self.windows.init(alloc);
 }
 
 fn void WindowManager.free(&self) => self.windows.free();
-fn int WindowManager.next_id(&self) => self.id++;
 
 fn void WindowManager.register(&self, ZString title, Window win) =>
     self.windows.push({
@@ -58,7 +54,7 @@ fn void WindowManager.register(&self, ZString title, Window win) =>
 fn void WindowManager.show(&self, Window win)
 {
     foreach (&managed : self.windows) {
-        if (managed.win.get_id() == win.get_id()) {
+        if (managed.win == win) {
             if (managed.show) break;
 
             managed.show = true;
@@ -71,7 +67,7 @@ fn void WindowManager.show(&self, Window win)
 fn void WindowManager.hide(&self, Window win)
 {
     foreach (&managed : self.windows) {
-        if (managed.win.get_id() == win.get_id()) {
+        if (managed.win == win) {
             managed.show = false;
             managed.state = CLOSE;
             if (&managed.win.on_close) managed.win.on_close();
@@ -83,7 +79,7 @@ fn void WindowManager.hide(&self, Window win)
 fn void WindowManager.set_title(&self, Window win, ZString title)
 {
     foreach (&managed : self.windows) {
-        if (managed.win.get_id() == win.get_id()) {
+        if (managed.win == win) {
             managed.title = title;
             break;
         }
@@ -204,7 +200,8 @@ fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
                 }
 
                 managed.state = CLOSE;
-                managed.show = nk::window_is_active(ctx, (CChar*) managed.title);
+
+                managed.show = !nk::window_is_hidden(ctx, (CChar*) managed.title);
             }
 
             if (managed.state != HIDE) nk::end(ctx);
@@ -217,7 +214,6 @@ fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
 // import std::io;
 //
 // struct DummyWindow (Window) {
-//     int id;
 //     int awawawa;
 // }
 //
@@ -236,5 +232,3 @@ fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
 // {
 //     io::printfn("close %d", self.awawawa);
 // }
-//
-// fn int DummyWindow.get_id(&self) @dynamic => self.id;

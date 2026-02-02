@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio;
 
 import openpngstudio::core;
@@ -60,7 +59,7 @@ fn void Context.init(&self, Allocator alloc)
     self.panel.init(alloc);
     self.wm.init(&self.panel, alloc);
 
-    self.file_dialog.init(self.next_id(), alloc);
+    self.file_dialog.init(alloc);
     self.file_dialog.set_filter(filter);
     self.file_dialog.populate();
 
@@ -90,8 +89,6 @@ fn void Context.free(&self)
     self.wm.free();
     self.panel.free();
 }
-
-fn int Context.next_id(&self) => self.wm.next_id();
 
 extern fn nk::Context *init_nuklear_ex(rl::Font font, float size)
     @cname("InitNuklearEx");

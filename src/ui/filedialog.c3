@@ -55,17 +55,15 @@ struct FileDialog (wm::Window) {
     bool open_for_reading, single_file_mode, contextual_open;
     LineEdit search_filter, write_file_name;
     MessageBox msgbox;
-    int id;
 
     FileDialogJournal history;
 }
 
-fn void FileDialog.init(&self, int id, Allocator alloc)
+fn void FileDialog.init(&self, Allocator alloc)
 {
     self.last_selected = -1;
     self.path = path::home_directory(alloc)!!;
     self.history.journal.init(alloc);
-    self.id = id;
 }
 
 fn void FileDialog.populate(&self)
@@ -210,8 +208,6 @@ fn void FileDialog.on_close(&self) @dynamic
     self.last_selected = -1;
     self.state = CLOSED;
 }
-
-fn int FileDialog.get_id(&self) @dynamic => self.id;
 
 fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
 {
