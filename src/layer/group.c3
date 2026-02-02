@@ -11,12 +11,17 @@ struct LayerGroup (Layer) {
     StaticLayer base;
     List{Layer} layers;
     LayerGroup *parent;
+
+    /* nuklear state */
+
+    CollapseStates tree_state;
 }
 
 fn void LayerGroup.init(&self, Allocator alloc)
 {
     self.base.init(alloc, null);
     self.layers.init(alloc);
+    self.tree_state = nk::MAXIMIZED;
 }
 
 fn void LayerGroup.free(&self) @dynamic
@@ -78,14 +83,19 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
 /* TODO: make functional! */
 fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
 {
-    /* group this */
-    layer::Command res = static_layer::entry(&self.base, ctx);
+    if (nk::tree_state_push(ctx, nk::TREE_TAB, (CChar*) self.base.name.buffer,
+        &self.tree_state)) {
+        layer::Command res = static_layer::entry(&self.base, ctx);
 
-    foreach (layer : self.layers) {
-        layer.layer_entry(ctx);
+        foreach (layer : self.layers) {
+            layer.layer_entry(ctx);
+        }
+
+        nk::tree_state_pop(ctx);
+        return res;
     }
 
-    return res;
+    return { NONE, null, null };
 }
 
 fn void LayerGroup.config(&self, nk::Context *ctx) @dynamic =>

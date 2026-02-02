@@ -17,6 +17,7 @@ enum Type : inline int {
     MAXIMIZE,
     COMBO,
     COMBO_OPEN,
+    COMBO_OPEN2,
     PICK,
 
     OPEN,

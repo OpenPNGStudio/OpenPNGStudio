@@ -99,6 +99,31 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
     win.group_border = 0.0f;
     win.tooltip_padding = nk::vec2(5.0f, 5.0f);
 
+    nk::StyleTab *tab = &ctx.style.tab;
+    tab.background.data.color = theme[nk::COLOR_HEADER];
+    tab.border_color.a = 0;
+    tab.border = 0.0f;
+    tab.rounding = 5.0f;
+    tab.indent = 12.5f;
+    tab.padding = nk::vec2(5.0f, 5.0f);
+    tab.sym_minimize = nk::SYMBOL_NONE;
+    tab.sym_maximize = nk::SYMBOL_NONE;
+
+    tab.tab_minimize_button.normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(COMBO_OPEN2),
+        },
+    };
+
+    tab.tab_maximize_button.normal = {
+        .type = nk::STYLE_ITEM_IMAGE,
+        .data = {
+            .image = icons::get(COMBO),
+        },
+    };
+
+
     nk::StyleWindowHeader *hdr = &win.header;
 
     hdr.close_button.normal = {

@@ -51,14 +51,21 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     }
 
     nk::Rect bounds = nk::window_get_content_region(ctx);
-    bounds.h -= 45 * 2;
+    bounds.h -= 40 * 2;
 
     nk::layout_row_dynamic(ctx, bounds.h, 1);
     bool res = nk::group_begin(ctx, "Layers", 0);
 
+    nk::style_push_vec2(ctx, &ctx.style.window.padding, nk::vec2(0, 0));
+    Flags old = ctx.current.flags;
+    ctx.current.flags |= nk::WINDOW_NO_SCROLLBAR;
+
     foreach (layer : self.root.layers) {
         layer.layer_entry(ctx);
     }
+
+    ctx.current.flags = old;
+    nk::style_pop_vec2(ctx);
 
     //
     // foreach (i, layer : self.layers) {
