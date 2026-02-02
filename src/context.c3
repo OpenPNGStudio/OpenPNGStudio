@@ -199,7 +199,7 @@ fn void? load_icons2(Path exe_path) @local
 
 fn Context *get_ctx() => instance;
 
-fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
-{
-    self.model.mgr.add_layer(layer);
-}
+// fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
+// {
+//     self.model.mgr.add_layer(layer);
+// }

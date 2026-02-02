@@ -40,7 +40,7 @@ fn void set(Mask mask)
     current = mask;
 }
 
-fn Mask get() @export("get_current_mask")
+fn Mask get()
 {
     return current;
 }
@@ -94,7 +94,7 @@ fn void handle(Mask *mask)
     *mask &= new_mask;
 }
 
-fn bool cmp(Mask mask, Mask target) @export("test_masks")
+fn bool cmp(Mask mask, Mask target)
 {
     Mask[3] states = {QUIET, TALK, PAUSE};
     bool res = false;
@@ -172,7 +172,7 @@ fn nk::Bool filter(nk::TextEdit *box, nk::Rune unicode) @local
 }
 
 fn void configure(Mask *mask, char *input_buffer, int *input_size,
-    nk::Context *ctx, ZString activation) @export("configure_mask")
+    nk::Context *ctx, ZString activation)
 {
     float win_width = nk::window_get_width(ctx);
     float min_width = math::max(win_width * 0.49f, 250.0f);

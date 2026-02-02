@@ -7,6 +7,8 @@ import openpngstudio::layer;
 import openpngstudio::animation;
 import openpngstudio::core::mask;
 import openpngstudio::ui::line_edit;
+import openpngstudio::ui::icons;
+import std::math;
 import raylib5::rl;
 import nk;
 
@@ -64,9 +66,9 @@ fn bool draw(StaticLayer *self, Origin origin)
 {
     rl::Texture2D texture = self.image.texture;
 
-    bool mask_test = mask::cmp(mask::get(), layer.mask);
+    bool mask_test = mask::cmp(mask::get(), self.mask);
 
-    if ((layer.enabled || layer.is_toggled) || mask_test) {
+    if ((self.active || self.is_toggled) || mask_test) {
         origin.position.x += self.position.x;
         origin.position.y += -self.position.y;
 
@@ -78,7 +80,8 @@ fn bool draw(StaticLayer *self, Origin origin)
         origin.tint = self.tint;
 
         foreach (&a : self.animations) {
-            a.a.start();
+            BasicAnimation *b = a.a.get_base();
+            b.enable(true);
             a.a.animate(&origin);
         }
 
@@ -92,13 +95,13 @@ fn bool draw(StaticLayer *self, Origin origin)
             .x = texture.width / 2.0f, .y = texture.height / 2.0f,
         }, origin.rotation, origin.tint);
 
-        if (!layer.toggle) {
+        if (!self.toggle) {
             /* spawn live timeout */
-            if (!layer.active && layer.timeout > 0) {
+            if (!self.active && self.timeout > 0) {
                 // TODO: start timeout 
             }
         } else {
-            if (!layer.is_toggle_running && mask_test) {
+            if (!self.is_toggle_running && mask_test) {
                 // TODO: start toggle
             }
         }
@@ -107,8 +110,8 @@ fn bool draw(StaticLayer *self, Origin origin)
     }
 
     foreach (a : self.animations) {
-        a.stop();
-        a.animate(&origin);
+        BasicAnimation *b = a.a.get_base();
+        b.enable(false);
     }
 
     return false;
@@ -148,6 +151,12 @@ fn layer::Command entry(StaticLayer *self, nk::Context *ctx)
             null
         };
     }
+
+    return {
+        NONE,
+        null,
+        null,
+    };
 }
 
 fn void config(StaticLayer *self, nk::Context *ctx)
@@ -167,13 +176,13 @@ fn void config(StaticLayer *self, nk::Context *ctx)
         nk::layout_row_dynamic(ctx, 30, 2);
 
         if (holding_shift) {
-            layer.offset.x = math::round(layer.offset.x);
-            layer.offset.y = math::round(layer.offset.y);
+            self.position.x = math::round(self.position.x);
+            self.position.y = math::round(self.position.y);
         }
 
-        nk::property_float(ctx, "X:", float.min, &layer.offset.x,
+        nk::property_float(ctx, "X:", float.min, &self.position.x,
             float.max, off, off);
-        nk::property_float(ctx, "Y:", float.min, &layer.offset.y,
+        nk::property_float(ctx, "Y:", float.min, &self.position.y,
             float.max, off, off);
 
         nk::group_end(ctx);
@@ -184,11 +193,11 @@ fn void config(StaticLayer *self, nk::Context *ctx)
         nk::layout_row_dynamic(ctx, 30, 1);
 
         if (holding_shift) {
-            layer.rotation = math::round(layer.rotation);
+            self.rotation = math::round(self.rotation);
         }
 
         nk::property_float(ctx, "##Rotation Angle", float.min,
-            &layer.rotation, float.max, off, off);
+            &self.rotation, float.max, off, off);
 
         nk::group_end(ctx);
     }
@@ -212,11 +221,11 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     if (nk::group_begin(ctx, "Timeout Group", nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
 
-        if (layer.props.has_toggle) nk::widget_disable_begin(ctx);
+        if (self.toggle) nk::widget_disable_begin(ctx);
 
-        nk::property_int(ctx, "##Timeout", 0, &layer.timeout, int.max, 1, 1);
+        nk::property_int(ctx, "##Timeout", 0, (CInt*) &self.timeout, int.max, 1, 1);
 
-        if (layer.props.has_toggle) nk::widget_disable_end(ctx);
+        if (self.toggle) nk::widget_disable_end(ctx);
 
         nk::group_end(ctx);
     }
@@ -228,8 +237,8 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     nk::layout_row_dynamic(ctx, 4, 1);
     nk::spacer(ctx);
 
-    mask::configure(&layer.mask, &layer.input_buffer,
-        &layer.input_length, ctx, "Layer activation: ");
+    mask::configure(&self.mask, &self.input_buffer,
+        &self.input_length, ctx, "self activation: ");
 
     nk::layout_row_dynamic(ctx, 4, 1);
     nk::spacer(ctx);
