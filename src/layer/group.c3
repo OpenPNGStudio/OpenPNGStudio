@@ -4,7 +4,7 @@ module openpngstudio::layer::group;
 import openpngstudio::layer;
 import openpngstudio::core::mask;
 import openpngstudio::animation;
-import std::collections::list;
+import std::collections::list, std::io;
 import nk;
 
 struct LayerGroup (Layer) {
@@ -13,15 +13,14 @@ struct LayerGroup (Layer) {
     LayerGroup *parent;
 
     /* nuklear state */
-
     CollapseStates tree_state;
 }
 
-fn void LayerGroup.init(&self, Allocator alloc)
+fn void LayerGroup.init(&self, Allocator alloc, ZString name = null)
 {
-    self.base.init(alloc, null);
+    self.base.init(alloc, name, null);
     self.layers.init(alloc);
-    self.tree_state = nk::MAXIMIZED;
+    self.tree_state = nk::MINIMIZED;
 }
 
 fn void LayerGroup.free(&self) @dynamic
@@ -29,7 +28,8 @@ fn void LayerGroup.free(&self) @dynamic
     defer self.layers.free();
 
     foreach (layer : self.layers) {
-        layer.free();        
+        layer.free();
+        free(layer.ptr);
     }
 }
 
@@ -80,15 +80,26 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
     return false;
 }
 
-/* TODO: make functional! */
 fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
 {
     if (nk::tree_state_push(ctx, nk::TREE_TAB, (CChar*) self.base.name.buffer,
         &self.tree_state)) {
         layer::Command res = static_layer::entry(&self.base, ctx);
+        switch (res.type) {
+        case SELECT:
+        case CONFIG:
+        case DELETE:
+            res.parent = self.parent;
+            res.layer = self;
+        default:
+        }
 
         foreach (layer : self.layers) {
-            layer.layer_entry(ctx);
+            layer::Command out = layer.layer_entry(ctx);
+            if (res.type == NONE && out.type != NONE) {
+                if (out.parent == null) out.parent = self;
+                res = out;
+            }
         }
 
         nk::tree_state_pop(ctx);
@@ -101,5 +112,87 @@ fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
 fn void LayerGroup.config(&self, nk::Context *ctx) @dynamic =>
     static_layer::config(&self.base, ctx);
 
-fn void LayerGroup.add(&self, Layer layer) @dynamic @inline =>
+fn void LayerGroup.add(&self, Layer layer) @inline =>
     self.layers.push(layer);
+
+fn void LayerGroup.del(&self, Layer layer)
+{
+    self.layers.remove_item(layer);
+    layer.free();
+}
+
+fn void? LayerGroup.up(&self, layer::Command *sel) @maydiscard
+{
+    Layer layer = sel.layer;
+    usz index = self.layers.index_of(layer)!;
+
+    if (index == 0) {
+        if (self.parent == null) return;
+
+        usz parent_index = self.parent.layers.index_of(self)!;
+        self.layers.remove_at(0);
+        self.parent.layers.insert_at(parent_index, layer);
+        sel.parent = self.parent;
+
+        /* if I am group, reparent */
+        if (LayerGroup *layer_group = layer.ptr, layer.type == LayerGroup) {
+            layer_group.parent = self.parent;
+        }
+        return;
+    }
+
+    Layer prev = self.layers[index - 1];
+    if (LayerGroup *group = prev.ptr, prev.type == LayerGroup) {
+        if (group.tree_state == nk::MAXIMIZED) {
+            self.layers.remove_at(index);
+            group.add(layer);
+            sel.parent = group;
+
+            /* if I am group, reparent */
+            if (LayerGroup *layer_group = layer.ptr, layer.type == LayerGroup) {
+                layer_group.parent = group;
+            }
+            return;
+        }
+    }
+
+    self.layers.swap(index, index - 1);
+}
+
+fn void? LayerGroup.down(&self, layer::Command *sel) @maydiscard
+{
+    Layer layer = sel.layer;
+    usz index = self.layers.index_of(layer)!;
+
+    if (self.layers.len() - 1 == index) {
+        if (self.parent == null) return;
+
+        usz parent_index = self.parent.layers.index_of(self)!;
+        self.layers.remove_at(index);
+        self.parent.layers.insert_at(parent_index + 1, layer);
+        sel.parent = self.parent;
+
+        /* if I am group, reparent */
+        if (LayerGroup *layer_group = layer.ptr, layer.type == LayerGroup) {
+            layer_group.parent = self.parent;
+        }
+        return;
+    }
+
+    Layer next = self.layers[index + 1];
+    if (LayerGroup *group = next.ptr, next.type == LayerGroup) {
+        if (group.tree_state == nk::MAXIMIZED) {
+            self.layers.remove_at(index);
+            group.layers.insert_at(0, layer);
+            sel.parent = group;
+
+            /* if I am group, reparent */
+            if (LayerGroup *layer_group = layer.ptr, layer.type == LayerGroup) {
+                layer_group.parent = group;
+            }
+            return;
+        }
+    }
+
+    self.layers.swap(index, index + 1);
+}

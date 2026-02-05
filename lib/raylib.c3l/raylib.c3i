@@ -1210,7 +1210,7 @@ fn Image loadImageSvg(ZString fileNameOrString, int width, int height) @extern("
 // Load image sequence from file (frames appended to image.data)
 fn Image loadImageAnim(ZString fileName, int* frames) @extern("LoadImageAnim");
 // Load image sequence from memory buffer
-fn Image loadImageAnimFromMemory(ZString fileType, ZString fileData, int dataSize, int* frames) @extern("LoadImageAnimFromMemory");
+fn Image loadImageAnimFromMemory(ZString fileType, ZString fileData, int dataSize, int* frames, int** delays) @extern("LoadImageAnimFromMemory");
 // Load image from memory buffer, fileType refers to extension: i.e. '.png'
 fn Image loadImageFromMemory(ZString fileType, char* fileData, int dataSize) @extern("LoadImageFromMemory");
 // Load image from GPU texture data

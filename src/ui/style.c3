@@ -123,7 +123,6 @@ fn void apply(nk::Context *ctx) @export("opng_style_apply")
         },
     };
 
-
     nk::StyleWindowHeader *hdr = &win.header;
 
     hdr.close_button.normal = {

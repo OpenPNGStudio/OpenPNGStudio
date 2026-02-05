@@ -17,7 +17,7 @@ import std::math @public;
 struct Manager (wm::Window) {
     LayerGroup root;
     Config conf;
-    layer::Command last_command;
+    layer::Command selected;
 }
 
 const OUTLINE_WIDTH = 10.0f;
@@ -26,7 +26,7 @@ fn void Manager.init(&self, WindowManager *wm, Allocator alloc)
 {
     self.root.init(alloc);
     self.conf.init();
-    self.last_command = { NONE, null, null };
+    self.selected = { NONE, null, null };
 
     wm.register("Layer Manager", self);
     wm.register("Layer Configuration", &self.conf);
@@ -60,38 +60,41 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     Flags old = ctx.current.flags;
     ctx.current.flags |= nk::WINDOW_NO_SCROLLBAR;
 
+    layer::Command cmd;
+
     foreach (layer : self.root.layers) {
-        layer.layer_entry(ctx);
+        layer::Command out = layer.layer_entry(ctx);
+        if (cmd.type == NONE && out.type != NONE) {
+            if (out.parent == null) out.parent = &self.root;
+            cmd = out;
+        }
+    }
+
+    if (cmd.type != NONE) {
+        switch (cmd.type) {
+        case CONFIG:
+            self.conf.selected = cmd.layer;
+            wm.show(&self.conf);
+        case SELECT:
+            if (self.selected.layer == cmd.layer) {
+                self.selected = { NONE, null, null };
+                break;
+            }
+            self.selected = cmd;
+        case DELETE:
+            if (self.selected.layer == cmd.layer) {
+                self.selected = { NONE, null, null };
+            }
+
+            cmd.parent.del(cmd.layer);
+        default:
+            io::printn(cmd);
+        }
     }
 
     ctx.current.flags = old;
     nk::style_pop_vec2(ctx);
-
-    //
-    // foreach (i, layer : self.layers) {
-    //     Properties *layer_props = layer.get_properties();
-    //
-    //     nk::layout_row_template_begin(ctx, 30);
-    //     nk::layout_row_template_push_dynamic(ctx);
-    //     nk::layout_row_template_push_static(ctx, 30);
-    //     nk::layout_row_template_push_static(ctx, 30);
-    //     nk::layout_row_template_end(ctx);
-    //
-    //     layer_props.name.draw(ctx);
-    //
-    //     if (nk::button_image(ctx, icons::get(CFG))) {
-    //         self.selected_layer = i;
-    //         wm.show(&self.conf);
-    //         self.conf.selected = self.layers[self.selected_layer];
-    //     }
-    //
-    //     if (nk::button_image(ctx, icons::get(TRASH))) {
-    //         State *layer_state = layer.get_state();
-    //         layer_state.prepare_for_deletion = true;
-    //         self.selected_layer = -1;
-    //     }
-    // }
-    //
+    
     if (res) nk::group_end(ctx);
 
     nk::layout_row_template_begin(ctx, 30);
@@ -102,22 +105,42 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     nk::layout_row_template_end(ctx);
 
     if (nk::button_label(ctx, "Add Group")) {
-        io::printf("add group\n");
+        LayerGroup *group = malloc(LayerGroup.sizeof);
+
+        String name = "New Group";
+        group.init(mem, name.zstr_copy(mem));
+        group.parent = &self.root;
+
+        self.root.add(group);
     }
 
     nk::spacer(ctx);
 
-    if (nk::button_image(ctx, icons::get(UP))) {
-        io::printf("up\n");
+    if (nk::button_image(ctx, icons::get(UP)) && self.selected.type != NONE) {
+        self.selected.parent.up(&self.selected);
     }
 
-    if (nk::button_image(ctx, icons::get(DOWN))) {
-        io::printf("down\n");
+    if (nk::button_image(ctx, icons::get(DOWN)) && self.selected.type != NONE) {
+        self.selected.parent.down(&self.selected);
     }
 }
 
-fn void Manager.render(&self, void *loop, openpngstudio::Context *ctx)
+fn void Manager.render(&self)
 {
+    Origin origin = {
+        .position = {
+            rl::getScreenWidth() / 2.0f,
+            rl::getScreenHeight() / 2.0f
+        },
+        .scale = {1, 1},
+        .rotation = 0,
+        .tint = { 0xFF, 0xFF, 0xFF, 0xFF }
+    };
+
+    foreach (layer : self.root.layers) {
+        layer.draw(origin);
+    }
+
     // float start_x, start_y, end_x, end_y, rotation;
     //
     // Vector2 anchor = {rl::getScreenWidth() / 2.0f,

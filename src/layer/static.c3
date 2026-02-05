@@ -31,10 +31,18 @@ struct StaticLayer (Layer) {
     }
 }
 
-fn void StaticLayer.init(&self, Allocator alloc, image::Image *img)
+fn void StaticLayer.init(&self, Allocator alloc, ZString name,
+    image::Image *img)
 {
-    self.name.cleanup = true;
-    self.name.reinit();
+    if (name != null) {
+        self.name.buffer = name;
+        self.name.len = (int) name.len();
+        self.name.cleanup = false;
+    } else {
+        self.name.buffer = null;
+        self.name.cleanup = true;
+        self.name.reinit();
+    }
     self.position = {};
     self.scale = {};
     self.rotation = 0;
@@ -47,13 +55,14 @@ fn void StaticLayer.init(&self, Allocator alloc, image::Image *img)
     self.image = img;
     self.mask = mask::DEFAULT;
     self.animations.init(alloc);
+    self.input_length = 0;
 }
 
 fn void StaticLayer.free(&self) @dynamic
 {
     free(self.name.buffer);
+    self.image.free();
     self.animations.free();
-    // TODO: Image cleanup
 }
 
 fn bool StaticLayer.draw(&self, Origin origin) @dynamic => draw(self, origin);
@@ -126,8 +135,10 @@ fn layer::Command entry(StaticLayer *self, nk::Context *ctx)
     nk::layout_row_template_push_static(ctx, 30);
     nk::layout_row_template_end(ctx);
 
+    layer::Command res;
+
     if (nk::button_image(ctx, icons::get(PICK))) {
-        return {
+        res = {
             SELECT,
             self,
             null
@@ -137,7 +148,7 @@ fn layer::Command entry(StaticLayer *self, nk::Context *ctx)
     self.name.draw(ctx);
 
     if (nk::button_image(ctx, icons::get(CFG))) {
-        return {
+        res = {
             CONFIG,
             self,
             null
@@ -145,18 +156,14 @@ fn layer::Command entry(StaticLayer *self, nk::Context *ctx)
     }
 
     if (nk::button_image(ctx, icons::get(TRASH))) {
-        return {
+        res = {
             DELETE,
             self,
             null
         };
     }
 
-    return {
-        NONE,
-        null,
-        null,
-    };
+    return res;
 }
 
 fn void config(StaticLayer *self, nk::Context *ctx)

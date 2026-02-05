@@ -3,9 +3,14 @@ module openpngstudio;
 import openpngstudio::core;
 import openpngstudio::ui;
 import openpngstudio::ui::wm;
+import openpngstudio::image;
+import std::io::file;
 import nk;
 import raylib5::rl;
 import std::io::path;
+import std::hash::sha256;
+
+import std::collections::linkedlist;
 
 import ev;
 
@@ -27,6 +32,8 @@ struct Context {
     WindowManager wm;
     model::Model model;
 
+    image::Manager image_manager;
+
     ui::Panel panel;
     nk::Context *nk_ctx;
 
@@ -34,6 +41,8 @@ struct Context {
     FileLoadState loading_state;
     float width, height;
     Microphone microphone;
+
+    LinkedList{ImageReq} layer_queue;
 
     ZString model_output;
 
@@ -75,6 +84,9 @@ fn void Context.init(&self, Allocator alloc)
     self.editing = true;
     self.hide_ui = false;
 
+    self.layer_queue.init(alloc);
+    self.image_manager.init(alloc);
+
     initialize_raylib(self);
     instance = self;
 }
@@ -88,6 +100,68 @@ fn void Context.free(&self)
     self.file_dialog.free()!!;
     self.wm.free();
     self.panel.free();
+    self.layer_queue.free();
+    self.image_manager.free();
+}
+
+fn void Context.load_layer(&self, ZString path)
+{
+    self.layer_queue.push({});
+
+    ImageReq *ref = self.layer_queue.get_ref(self.layer_queue.len() - 1);
+    ref.path = path;
+    ref.ready = false;
+    ref.animated = false;
+    ref.work.init(ref, fn (self) {
+        /* work, separate thread */
+        String path = self.ctx.path.str_view();
+        image::Image *img = malloc(image::Image.sizeof);
+        img.file_content = file::load(mem, path)!!;
+        img.checksum = sha256::hash(img.file_content);
+
+        image::Image *res = instance.image_manager.get(img);
+
+        if (res.ref == 1) {
+            if (path.ends_with(".gif")) {
+                self.ctx.animated = true;
+                unreachable("unimplemented");
+            } else {
+                String ext = path[path.rindex_of_char('.')!!..];
+                ZString zext = ext.zstr_copy(mem);
+                res.image = rl::loadImageFromMemory(zext, 
+                    img.file_content.ptr, img.file_content.len);
+                free(zext);
+                free(res.file_content.ptr); /* stays only for GIFs */
+                res.file_content = {};
+            }
+        }
+
+        if (res != img) free(img);
+
+        Path pth = path.to_path(mem)!!;
+        defer pth.free();
+        String base = pth.basename();
+        String basename = base[0:base.rindex_of_char('.')!!];
+        self.ctx.name = basename.zstr_copy(mem);
+        
+        self.ctx.loaded = res;
+    }, fn (self) {
+        /* after work, main thread */
+        image::Image *img = self.ctx.loaded;
+
+        if (img.ref == 1) img.texture = rl::loadTextureFromImage(img.image);
+
+        self.ctx.ready = true;
+
+        if (!self.ctx.animated) {
+            StaticLayer *slay = malloc(StaticLayer.sizeof);
+            slay.init(mem, self.ctx.name, self.ctx.loaded);
+            instance.model.mgr.add(slay);
+        }
+        return DISARM;
+    });
+
+    self.loop.add(&ref.work);
 }
 
 extern fn nk::Context *init_nuklear_ex(rl::Font font, float size)
@@ -192,6 +266,14 @@ fn void? load_icons2(Path exe_path) @local
                 icons::set($i.type, load_nk_image(tmp.str_view().zstr_tcopy()));
             };
         $endforeach
+        
+        @pool() {
+            Path tmp = dir.tappend("logo.png")!;
+
+            rl::Image icon = rl::loadImage(tmp.str_view().zstr_tcopy());
+
+            rl::setWindowIcon(icon);
+        };
     };
 }
 

@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
+#include <stdio.h>
+
 /* just to improve compilation times */
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include <raylib-nuklear.h>

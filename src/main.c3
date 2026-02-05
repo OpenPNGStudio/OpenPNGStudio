@@ -205,7 +205,7 @@ fn Action draw(Idle{Context*} *idle)
     if (ctx.editing) draw_grid(1, 60, inverted);
 
     rl::beginMode2D(ctx.camera);
-    // ctx.render(null);
+    ctx.model.mgr.render();
     rl::endMode2D();
 
     draw_nuklear(ctx.nk_ctx);
@@ -237,8 +237,7 @@ fn void save(void *_ctx, bool save_as) @local
     ctx.loading_state = WRITING_MODEL;
 }
 
-extern fn void c_load_layer(ZString s);
-
+/* TODO: submit work */
 fn void load_file(Context *ctx) @local
 {
     List{ZString} selection = ctx.file_dialog.get_selection();
@@ -254,7 +253,7 @@ fn void load_file(Context *ctx) @local
 
     foreach (path : selection) {
         if (path.str_view().ends_with(".opng")) continue;
-        // c_load_layer(path);
+        ctx.load_layer(path.str_view().zstr_copy(mem));
     }
 }
 

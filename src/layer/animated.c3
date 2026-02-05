@@ -17,10 +17,10 @@ struct AnimatedLayer (Layer) {
     int[] delays;
 }
 
-fn void AnimatedLayer.init(&self, Allocator alloc, image::Image *img,
-    int[] delays)
+fn void AnimatedLayer.init(&self, Allocator alloc, ZString name,
+    image::Image *img, int[] delays)
 {
-    self.base.init(alloc, img);
+    self.base.init(alloc, name, img);
     self.delays = delays;
     self.frame_idx = 0;
     self.prev_idx = -1;

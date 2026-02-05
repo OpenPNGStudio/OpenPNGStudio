@@ -349,7 +349,9 @@ fn void draw_footerbar(FileDialog *self, nk::Context *ctx, usz count) @local
         }
 
         if (self.filter.len() > 0) {
-            if (nk::combo_begin_label(ctx, "Filters", nk::vec2(96, 64))) {
+            if (nk::combo_begin_image_label(ctx, "Filters", 
+                &&(nk::Image[2]){icons::get(COMBO_OPEN), icons::get(COMBO)},
+                    nk::vec2(96, 64))) {
                 nk::layout_row_dynamic(ctx, 30, 1);
                 @pool() {
                     foreach (fil : self.filter) {

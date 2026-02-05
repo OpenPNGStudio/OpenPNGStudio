@@ -20,7 +20,7 @@ enum CommandType : char {
 struct Command {
     CommandType type;
     Layer layer;
-    void *layer_group;
+    LayerGroup *parent;
 }
 
 interface Layer {
