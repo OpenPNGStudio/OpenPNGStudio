@@ -40,6 +40,7 @@ fn void Shake.update(&self, ulong now) @dynamic
     if (per > 1.0) {
         per = 1.0;
 
+        self.offset = self.gen_pos();
         self.base.running = false;
         self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }

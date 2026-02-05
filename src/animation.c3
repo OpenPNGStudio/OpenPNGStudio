@@ -130,9 +130,16 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
 
     openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
 
-    /* animation not set yet */
-    if (self.a == null) {
-        if (old == current) return;
+    if (old != current) {
+        if (self.a != null) {
+            app_ctx.model.engine.del(self.a);
+            self.a = null;
+        }
+
+        self.selected_easing = 0;
+        self.input_buffer = { 0, 0 };
+        self.input_length = 0;
+        self.custom_cfg_state = nk::MINIMIZED;
 
         switch (current) {
         case 0:
@@ -142,13 +149,49 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
             spin.init(360, 2500);
             self.a = spin;
             app_ctx.model.engine.add(spin);
+        case 2:
+            Shake *shake = malloc(Shake.sizeof);
+            shake.init(100);
+            self.a = shake;
+            app_ctx.model.engine.add(shake);
+        case 3:
+            Fade *fade = malloc(Fade.sizeof);
+            fade.init(250);
+            self.a = fade;
+            app_ctx.model.engine.add(fade);
         }
-    } else {
-        switch (current) {
-        case 0:
-            app_ctx.model.engine.del(self.a);
-            self.a = null;
-            return;
+    }
+
+    if (self.a == null) return;
+
+    BasicAnimation *base = self.a.get_base();
+
+    nk::label(ctx, "Animation Easing: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Animation Easing", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::Rect b = nk::widget_bounds(ctx);
+        old = self.selected_easing;
+
+        current = nk::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
+            30, nk::vec2(b.w, 200));
+
+        if (old != current) {
+            self.selected_easing = current;
+            base.easing = current;
         }
+        nk::group_end(ctx);
+    }
+
+    mask::configure(&base.mask, &self.input_buffer, &self.input_length, ctx,
+        "Animation Mask:");
+
+    if (nk::tree_state_push(ctx, nk::TREE_TAB, "Animation Options",
+        &self.custom_cfg_state)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::label_colored(ctx, "By updating values, you may reset the animation",
+            nk::TEXT_CENTERED, nk::rgb(0xFF,0xFF,0x33));
+
+        self.a.config(ctx);
+        nk::tree_state_pop(ctx);
     }
 }

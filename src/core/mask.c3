@@ -3,6 +3,7 @@ module openpngstudio::core::mask;
 
 import raylib5::rl;
 import std::io, std::ascii, std::math;
+import openpngstudio::ui;
 import nk;
 
 alias Mask = ulong;
@@ -187,7 +188,7 @@ fn void configure(Mask *mask, char *input_buffer, int *input_size,
     if (nk::group_begin(ctx, (CChar*) activation, nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
         nk::Rect b = nk::widget_bounds(ctx);
-        if (nk::combo_begin_label(ctx, "When", nk::vec2(min_width, 128))) {
+        if (ui::combo_begin(ctx, "When", nk::vec2(min_width, 128))) {
             nk::layout_row_dynamic(ctx, 32, 1);
             nk::checkbox_flags_label(ctx, "Quiet", (CUInt*) mask, QUIET);
             nk::checkbox_flags_label(ctx, "Talking", (CUInt*) mask, TALK);
@@ -203,7 +204,7 @@ fn void configure(Mask *mask, char *input_buffer, int *input_size,
     if (nk::group_begin(ctx, "Modifier Keys", nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
         nk::Rect b = nk::widget_bounds(ctx);
-        if (nk::combo_begin_label(ctx, "Keys", nk::vec2(b.w, 144))) {
+        if (ui::combo_begin(ctx, "Keys", nk::vec2(b.w, 144))) {
             nk::layout_row_dynamic(ctx, 32, 1);
             nk::checkbox_flags_label(ctx, "Shift", (CUInt*) mask, SHIFT);
             nk::checkbox_flags_label(ctx, "Control", (CUInt*) mask, CTRL);
