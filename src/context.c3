@@ -73,6 +73,7 @@ fn void Context.init(&self, Allocator alloc)
     self.file_dialog.populate();
 
     self.model.mgr.init(&self.wm, alloc);
+    self.model.engine.init(alloc);
 
     self.wm.register("File Dialog", &self.file_dialog);
     self.microphone.init();

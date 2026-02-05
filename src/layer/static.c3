@@ -89,6 +89,8 @@ fn bool draw(StaticLayer *self, Origin origin)
         origin.tint = self.tint;
 
         foreach (&a : self.animations) {
+            if (a.a == null) continue;
+
             BasicAnimation *b = a.a.get_base();
             b.enable(true);
             a.a.animate(&origin);
@@ -97,7 +99,7 @@ fn bool draw(StaticLayer *self, Origin origin)
         rl::drawTexturePro(texture, {
             .x = 0, .y = 0, .width = texture.width, .height = texture.height,
         }, {
-            .x = origin.position.x,
+.x = origin.position.x,
             .y = origin.position.y,
             .width = texture.width, .height = texture.height,
         }, {
@@ -119,6 +121,7 @@ fn bool draw(StaticLayer *self, Origin origin)
     }
 
     foreach (a : self.animations) {
+        if (a.a == null) continue;
         BasicAnimation *b = a.a.get_base();
         b.enable(false);
     }
@@ -257,4 +260,22 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     foreach (&a : self.animations) {
         a.config(ctx);
     }
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_static(ctx, 125);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_end(ctx);
+
+    if (nk::button_label(ctx, "Add Animation")) {
+        self.animations.push({
+            .a = null,
+            .input_buffer = (char[2]) {0, 0},
+            .input_length = 0,
+            .selected_animation = 0,
+            .selected_easing = 0,
+            .custom_cfg_state = nk::MINIMIZED,
+        });
+    }
+
+    nk::spacer(ctx);
 }

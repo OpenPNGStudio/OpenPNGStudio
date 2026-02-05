@@ -21,15 +21,21 @@ fn void Spinner.init(&self, float rotation, ulong length)
     self.length = length;
 }
 
+fn void Spinner.reset(&self) @dynamic => self.rotation = 0;
+
 fn void Spinner.update(&self, ulong now) @dynamic
 {
-    float per = ((float) now - self.base.start_time) / (float) self.length;
+    ulong old = now;
+    now -= self.base.start_time;
+
+    float per = (float) now / self.length;
     if (per > 1.0) {
         per = 1.0;
 
-        self.base.repeat ? self.base.start(now) : self.base.stop();
+        self.base.running = false;
+        self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
-
+    
     self.rotation = easings::ease(self.base.easing, per, 0.0,
         self.target_rotation, 1.0);
 }

@@ -29,13 +29,19 @@ fn void Shake.init(&self, ulong length)
     self.length = length;
 }
 
+fn void Shake.reset(&self) @dynamic => self.current = { 0, 0 };
+
 fn void Shake.update(&self, ulong now) @dynamic
 {
-    float per = ((float) now - self.base.start_time) / (float) self.length;
+    ulong old = now;
+    now -= self.base.start_time;
+
+    float per = (float) now / self.length;
     if (per > 1.0) {
         per = 1.0;
 
-        self.base.repeat ? self.base.start(now) : self.base.stop();
+        self.base.running = false;
+        self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
 
     if (per <= 0.5f) {

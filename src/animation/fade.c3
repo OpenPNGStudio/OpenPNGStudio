@@ -30,12 +30,24 @@ fn void Fade.init(&self, ulong length)
     self.finished = false;
 }
 
+fn void Fade.reset(&self) @dynamic
+{
+    self.opacity_change = 0;
+    self.finished = false;
+}
+
 fn void Fade.update(&self, ulong now) @dynamic
 {
-    float per = ((float) now - self.base.start_time) / (float) self.length;
+    ulong old = now;
+    now -= self.base.start_time;
+
+    float per = (float) now / self.length;
     if (per > 1.0) {
         per = 1.0;
+
         self.finished = true;
+        self.base.running = false;
+        self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
 
     if (self.finished) return;

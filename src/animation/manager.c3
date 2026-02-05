@@ -12,32 +12,14 @@ import openpngstudio::animation::fade;
 import openpngstudio::animation::easings;
 import nk;
 
-const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade"};
 
 // fn void Manager.animation_selector(&self, Layer layer, nk::Context *ctx)
 // {
-//     float win_width = nk::window_get_width(ctx);
-//     float min_width = max(win_width * 0.49f, 250.0f);
-//
-//     nk::layout_row_template_begin(ctx, 35);
-//     nk::layout_row_template_push_dynamic(ctx);
-//     nk::layout_row_template_push_variable(ctx, min_width);
-//     nk::layout_row_template_end(ctx);
 //
 //     State *layer_state = layer.get_state();
 //     int current, old;
 //
 //     nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
-//     if (nk::group_begin(ctx, "Animation", nk::WINDOW_NO_SCROLLBAR)) {
-//         nk::layout_row_dynamic(ctx, 30, 1);
-//         nk::Rect b = nk::widget_bounds(ctx);
-//
-//         old = layer_state.selected_animation;
-//         current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
-//             nk::vec2(b.w, 128));
-//         layer_state.selected_animation = current;
-//         nk::group_end(ctx);
-//     }
 //
 //     if (old != current) {
 //         if (layer_state.animation) {

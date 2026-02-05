@@ -49,6 +49,8 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
         origin.tint = self.base.tint;
 
         foreach (a : self.base.animations) {
+            if (a.a == null) continue;
+
             BasicAnimation *b = a.a.get_base();
             b.enable(true);
             a.a.animate(&origin);
@@ -73,6 +75,7 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
     }
 
     foreach (a : self.base.animations) {
+        if (a.a == null) continue;
         BasicAnimation *b = a.a.get_base();
         b.enable(false);
     }

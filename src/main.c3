@@ -154,6 +154,8 @@ fn Action update(Idle{Context*} *idle)
         ctx.wm.hide(&ctx.file_dialog);
     }
 
+    ctx.model.engine.tick(ctx.loop.now);
+
     if (!ui_focused) {
         // if (rl::isKeyPressed(KEY_SPACE)) {
         //     ctx.hide_ui = !ctx.hide_ui;
