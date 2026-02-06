@@ -22,7 +22,6 @@ enum Type : inline int {
 
     OPEN,
     SAVE,
-    SAVE_AS,
     LAYERS,
     SHORTCUTS,
     HELP,
@@ -36,13 +35,18 @@ enum Type : inline int {
 
 nk::Image[Type.DB_SIZE] db @local;
 
-fn void set(Type t, nk::Image img) @export("register_icon")
+fn void set(Type t, nk::Image img)
 {
     db[t] = img;
 }
 
-fn nk::Image get(Type t) @export("get_icon") => db[t];
+fn nk::Image get(Type t) => db[t];
 
-fn void cleanup() @export("cleanup_icons")
+extern fn void unload_nk_image(nk::Image) @cname("UnloadNuklearImage");
+
+import std::io;
+
+fn void cleanup()
 {
+    foreach (i, img : &db) unload_nk_image(img);
 }

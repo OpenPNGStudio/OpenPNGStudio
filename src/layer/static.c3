@@ -44,7 +44,7 @@ fn void StaticLayer.init(&self, Allocator alloc, ZString name,
         self.name.reinit();
     }
     self.position = {};
-    self.scale = {};
+    self.scale = { 1, 1 };
     self.rotation = 0;
     self.tint = rl::WHITE;
     self.toggle = false;
@@ -61,7 +61,7 @@ fn void StaticLayer.init(&self, Allocator alloc, ZString name,
 fn void StaticLayer.free(&self) @dynamic
 {
     free(self.name.buffer);
-    self.image.free();
+    if (self.image != null) self.image.free();
     self.animations.free();
 }
 
@@ -81,8 +81,8 @@ fn bool draw(StaticLayer *self, Origin origin)
         origin.position.x += self.position.x;
         origin.position.y += -self.position.y;
 
-        origin.scale.x += self.scale.x;
-        origin.scale.y += self.scale.y;
+        origin.scale.x += self.scale.x - 1;
+        origin.scale.y += self.scale.y - 1;
 
         origin.rotation += self.rotation;
 
@@ -96,14 +96,18 @@ fn bool draw(StaticLayer *self, Origin origin)
             a.a.animate(&origin);
         }
 
+        float scaled_width = texture.width * origin.scale.x;
+        float scaled_height = texture.height * origin.scale.y;
+
         rl::drawTexturePro(texture, {
             .x = 0, .y = 0, .width = texture.width, .height = texture.height,
         }, {
-.x = origin.position.x,
+            .x = origin.position.x,
             .y = origin.position.y,
-            .width = texture.width, .height = texture.height,
+            .width = scaled_width,
+            .height = scaled_height,
         }, {
-            .x = texture.width / 2.0f, .y = texture.height / 2.0f,
+            .x = scaled_width / 2.0f, .y = scaled_height / 2.0f,
         }, origin.rotation, origin.tint);
 
         if (!self.toggle) {
@@ -190,9 +194,9 @@ fn void config(StaticLayer *self, nk::Context *ctx)
             self.position.y = math::round(self.position.y);
         }
 
-        nk::property_float(ctx, "X:", float.min, &self.position.x,
+        nk::property_float(ctx, "#X:", float.min, &self.position.x,
             float.max, off, off);
-        nk::property_float(ctx, "Y:", float.min, &self.position.y,
+        nk::property_float(ctx, "#Y:", float.min, &self.position.y,
             float.max, off, off);
 
         nk::group_end(ctx);
@@ -208,6 +212,25 @@ fn void config(StaticLayer *self, nk::Context *ctx)
 
         nk::property_float(ctx, "##Rotation Angle", float.min,
             &self.rotation, float.max, off, off);
+
+        nk::group_end(ctx);
+    }
+
+    nk::label(ctx, "Scale: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Scale Group", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 2);
+
+        float scale_off = holding_shift ? 0.1f : 0.01f;
+
+        if (holding_shift) {
+            self.scale.x = math::round_to_decimals(self.scale.x, 1);
+            self.scale.y = math::round_to_decimals(self.scale.y, 1);
+        }
+
+        nk::property_float(ctx, "#X:", 0, &self.scale.x,
+            float.max, scale_off, scale_off);
+        nk::property_float(ctx, "#Y:", 0, &self.scale.y,
+            float.max, scale_off, scale_off);
 
         nk::group_end(ctx);
     }

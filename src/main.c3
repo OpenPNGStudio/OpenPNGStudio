@@ -25,6 +25,7 @@ extern void *c_ctx;
 fn int main() @winmain {
     Context ctx;
     ctx.init(mem);
+    defer ctx.free();
 
     console::init(&ctx.wm, mem);
 
@@ -58,7 +59,8 @@ fn int main() @winmain {
     }, HELP, &ctx);
 
     ctx.panel.add_right_entry(fn void(void *_ctx) {
-        // quit_openpngstudio();
+        Context *ctx = _ctx;
+        ctx.loop.stop();
     }, CANCEL, &ctx);
 
     // novacrash::uses_raylib = true;
@@ -110,7 +112,7 @@ fn Action update(Idle{Context*} *idle)
     mask::handle(&mask);
     bool ui_focused = false;
 
-    if (rl::windowShouldClose()) unreachable("unimplemented");
+    if (rl::windowShouldClose()) ctx.loop.stop();
 
     if (rl::isKeyPressed(rl::KEY_TAB)) ctx.editing = !ctx.editing;
 
@@ -182,7 +184,7 @@ fn Action update(Idle{Context*} *idle)
         ctx.camera.zoom = math::lerp(ctx.camera.zoom, target_zoom, 0.35f);
     }
 
-    if (rl::windowShouldClose()) unreachable("unimplemented");
+    if (rl::windowShouldClose()) ctx.loop.stop();
 
     return REARM;
 }
@@ -193,7 +195,7 @@ fn Action draw(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
 
-    if (rl::windowShouldClose()) unreachable("unimplemented");
+    if (rl::windowShouldClose()) ctx.loop.stop();
 
     rl::Color inverted = {255, 255, 255, 255};
     rl::Color bg = { 0x88, 0x88, 0x88, 0xFF };
@@ -213,7 +215,7 @@ fn Action draw(Idle{Context*} *idle)
     draw_nuklear(ctx.nk_ctx);
     rl::endDrawing();
 
-    if (rl::windowShouldClose()) unreachable("unimplemented");
+    if (rl::windowShouldClose()) ctx.loop.stop();
 
     return REARM;
 }

@@ -54,6 +54,8 @@ struct Context {
 
     rl::Color ambient;
     Path exe_path;
+
+    rl::Image icon;
 }
 
 Context *instance @local = null;
@@ -62,6 +64,8 @@ ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 
 fn void Context.init(&self, Allocator alloc)
 {
+    instance = self;
+
     self.exe_path = core::whereami()!!;
     self.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
 
@@ -89,20 +93,22 @@ fn void Context.init(&self, Allocator alloc)
     self.image_manager.init(alloc);
 
     initialize_raylib(self);
-    instance = self;
 }
 
 fn void Context.free(&self)
 {
+    rl::unloadImage(self.icon);
     unload_nuklear(self.nk_ctx);
-    rl::closeWindow();
     self.loop.free();
     self.microphone.free();
-    self.file_dialog.free()!!;
+    self.file_dialog.free();
+    self.model.free();
     self.wm.free();
     self.panel.free();
     self.layer_queue.free();
     self.image_manager.free();
+    self.exe_path.free();
+    rl::closeWindow();
 }
 
 fn void Context.load_layer(&self, ZString path)
@@ -144,13 +150,18 @@ fn void Context.load_layer(&self, ZString path)
         String base = pth.basename();
         String basename = base[0:base.rindex_of_char('.')!!];
         self.ctx.name = basename.zstr_copy(mem);
-        
+
         self.ctx.loaded = res;
     }, fn (self) {
         /* after work, main thread */
         image::Image *img = self.ctx.loaded;
 
-        if (img.ref == 1) img.texture = rl::loadTextureFromImage(img.image);
+        if (img.ref == 1) {
+            img.texture = rl::loadTextureFromImage(img.image);
+            rl::setTextureFilter(img.texture, BILINEAR);
+            rl::genTextureMipmaps(&img.texture);
+            rl::setTextureWrap(img.texture, TextureWrap.CLAMP.ordinal);
+        }
 
         self.ctx.ready = true;
 
@@ -271,9 +282,9 @@ fn void? load_icons2(Path exe_path) @local
         @pool() {
             Path tmp = dir.tappend("logo.png")!;
 
-            rl::Image icon = rl::loadImage(tmp.str_view().zstr_tcopy());
+            instance.icon = rl::loadImage(tmp.str_view().zstr_tcopy());
 
-            rl::setWindowIcon(icon);
+            rl::setWindowIcon(instance.icon);
         };
     };
 }

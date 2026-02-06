@@ -8,14 +8,6 @@ import std::math;
 import openpngstudio::core::mask;
 import libc;
 
-// fn void defaults(StaticLayer *layer)
-// {
-//     layer.props.texture = rl::loadTextureFromImage(layer.props.image);
-//     rl::setTextureFilter(layer.props.texture, BILINEAR);
-//     rl::genTextureMipmaps(&layer.props.texture);
-//     rl::setTextureWrap(layer.props.texture, TextureWrap.CLAMP.ordinal);
-// }
-
 // fn void start_timeout(StaticLayer *layer, unuv::UnLoop *loop)
 //     @export("layer_start_timeout")
 // {

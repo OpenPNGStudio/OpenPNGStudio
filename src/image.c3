@@ -70,6 +70,10 @@ fn void Manager.init(&self, Allocator alloc)
 
 fn void Manager.free(&self)
 {
+    self.images.@each(; Image *img) {
+        img.free();
+    };
+
     self.images.free();
     self.mutex.destroy()!!;
 }

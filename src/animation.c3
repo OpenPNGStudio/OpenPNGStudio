@@ -70,6 +70,13 @@ struct Engine {
 }
 
 fn void Engine.init(&self, Allocator alloc) => self.animations.init(alloc);
+fn void Engine.free(&self)
+{
+    foreach (anim : self.animations) {
+        free(anim);
+    }
+    self.animations.free();
+}
 
 fn void Engine.tick(&self, ulong now)
 {

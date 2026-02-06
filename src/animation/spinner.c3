@@ -59,7 +59,7 @@ fn void Spinner.config(&self, nk::Context *ctx) @dynamic
     nk::label(ctx, "Rotation: ", nk::TEXT_LEFT);
     if (nk::group_begin(ctx, "Rotation", nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
-        nk::property_float(ctx, "Rotation: ", 0, &self.target_rotation, 360f, 0.1f, 0.2f);
+        nk::property_float(ctx, "#Rotation: ", 0, &self.target_rotation, 360f, 0.1f, 0.2f);
 
         if (old_rotation != self.target_rotation) self.reset();
         nk::group_end(ctx);
@@ -69,7 +69,7 @@ fn void Spinner.config(&self, nk::Context *ctx) @dynamic
     if (nk::group_begin(ctx, "Length", nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
         int delay = (int) self.length;
-        nk::property_int(ctx, "Time (ms): ", 10, &delay, int.max, 1, 1);
+        nk::property_int(ctx, "#Time (ms): ", 10, &delay, int.max, 1, 1);
 
         if (delay != self.length) {
             self.length = delay;

@@ -11,4 +11,8 @@ struct Model {
     animation::Engine engine;
 }
 
-
+fn void Model.free(&self)
+{
+    self.mgr.free();
+    self.engine.free();
+}

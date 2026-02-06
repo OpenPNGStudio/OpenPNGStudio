@@ -9,7 +9,7 @@
 
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge&labelColor=191919&color=e90000)
 ![Codeberg Release](https://img.shields.io/gitea/v/release/OpenPNGStudio/OpenPNGStudio?gitea_url=https%3A%2F%2Fcodeberg.org&display_name=tag&style=for-the-badge&labelColor=191919&color=%2317a086)
-![Downloads](https://img.shields.io/badge/Downloads-9-blue?style=for-the-badge&labelColor=191919&color=ffc200)
+![Downloads](https://img.shields.io/badge/Downloads-12-blue?style=for-the-badge&labelColor=191919&color=ffc200)
 ![Codeberg Stars](https://img.shields.io/gitea/stars/OpenPNGStudio/OpenPNGStudio?gitea_url=https%3A%2F%2Fcodeberg.org&style=for-the-badge&labelColor=%23191919&color=%230278ff)
 ![Made in EU](https://img.shields.io/badge/Made_in-EU-blue?style=for-the-badge&labelColor=191919&color=%23003399)
 

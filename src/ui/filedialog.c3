@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::ui;
 
+/* TODO: fix journal leaking memory */
+
 import libc;
 import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
@@ -68,7 +70,7 @@ fn void FileDialog.init(&self, Allocator alloc)
 
 fn void FileDialog.populate(&self)
 {
-    self.content.free();
+    free_content(&self.content);
     @pool() {
         PathList? files = path::ls(tmem, self.path);
 
@@ -90,7 +92,11 @@ fn void FileDialog.populate(&self)
             ent.selected = false;
             os_extra(&ent)!!;
 
-            if (ent.is_file && !matches(self, file.str_view())) continue;
+            if (ent.is_file && !matches(self, file.str_view())) {
+                ent.path.free();
+                continue;
+            }
+
             self.content.push(ent);
         }
 
@@ -452,10 +458,26 @@ fn void? FileDialog.enter(&self, String name)
     self.history.register(ENTER, name);
 }
 
-fn void? FileDialog.free(&self)
+fn void FileDialog.free(&self)
 {
     self.filter.free();
     self.selected.free();
+    self.history.journal.free();
+    free_content(&self.content);
+
+    if (self.path.allocator != null) self.path.free();
+
+    free(self.search_filter.buffer);
+    free(self.write_file_name.buffer);
+}
+
+fn void free_content(List{DirectoryEntry} *content) @local
+{
+    foreach (&entry : content) {
+        entry.path.free();
+    }
+
+    content.free();
 }
 
 fn void FileDialog.show(&self, WindowManager *wm)

@@ -25,6 +25,7 @@ fn void LayerGroup.init(&self, Allocator alloc, ZString name = null)
 
 fn void LayerGroup.free(&self) @dynamic
 {
+    self.base.free();
     defer self.layers.free();
 
     foreach (layer : self.layers) {
