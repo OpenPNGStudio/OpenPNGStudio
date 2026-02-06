@@ -257,9 +257,13 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     nk::layout_row_dynamic(ctx, 4, 1);
     nk::spacer(ctx);
 
-    foreach (&a : self.animations) {
-        a.config(ctx);
+    int to_remove = -1;
+
+    foreach (i, &a : self.animations) {
+        if (a.config(ctx)) to_remove = (int) i;
     }
+
+    if (to_remove != -1) self.animations.remove_at(to_remove);
 
     nk::layout_row_template_begin(ctx, 35);
     nk::layout_row_template_push_static(ctx, 125);

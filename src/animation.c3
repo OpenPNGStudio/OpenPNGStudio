@@ -3,7 +3,7 @@ module openpngstudio::animation;
 
 import openpngstudio::core::mask;
 import std::collections::list;
-import openpngstudio::layer;
+import openpngstudio::layer, openpngstudio::ui::icons;
 import std::io;
 import nk;
 
@@ -26,7 +26,7 @@ struct BasicAnimation {
         bool running;
         bool repeat;
         bool enabled;
-        bool run_once; /* set to false when not running and mask doesn't match */
+        bool lock;
     }
 }
 
@@ -37,28 +37,31 @@ fn void BasicAnimation.init(&self)
     self.easing = 0;
     self.running = false;
     self.repeat = true;
-    self.run_once = false;
+    self.lock = false;
     self.enabled = false;
 }
 
-fn void BasicAnimation.enable(&self, bool state) @inline => 
+fn void BasicAnimation.enable(&self, bool state) @inline 
+{
+    if (!self.enabled && state) self.lock = false;
     self.enabled = state;
+}
 
 fn void BasicAnimation.start(&self, ulong now)
 {
-    if (self.running) return;
+    if (self.lock) return;
 
     self.start_time = now;
     self.running = true;
-    if (!self.repeat) self.run_once = true;
 }
 
 fn void BasicAnimation.stop(&self, Animation a)
 {
-    if (!self.running) return;
+    if (self.lock) return;
 
     self.start_time = 0;
     self.running = false;
+    self.lock = true;
     a.reset();
 }
 
@@ -75,15 +78,16 @@ fn void Engine.tick(&self, ulong now)
     foreach (a : self.animations) {
         BasicAnimation *b = a.get_base();
         if (!b.enabled) {
-            b.stop(a);
+            a.reset();
             continue;
         }
 
         if (mask::cmp(m, b.mask)) {
-            b.start(now);
+            if (!b.running) b.start(now);
             a.update(now);
         } else {
-            b.stop(a);
+            if (b.running) b.stop(a);
+            b.lock = false;
         }
     }
 }
@@ -105,11 +109,12 @@ struct AnimationEntry {
     CollapseStates custom_cfg_state;
 }
 
-fn void AnimationEntry.config(&self, nk::Context *ctx)
+fn bool AnimationEntry.config(&self, nk::Context *ctx)
 {
     float win_width = nk::window_get_width(ctx);
     float min_width = max(win_width * 0.49f, 250.0f);
     int current, old;
+    bool res = false;
 
     nk::layout_row_template_begin(ctx, 35);
     nk::layout_row_template_push_dynamic(ctx);
@@ -118,13 +123,20 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
 
     nk::label(ctx, "Animation: ", nk::TEXT_LEFT);
     if (nk::group_begin(ctx, "Animation", nk::WINDOW_NO_SCROLLBAR)) {
-        nk::layout_row_dynamic(ctx, 30, 1);
+        nk::layout_row_template_begin(ctx, 30);
+        nk::layout_row_template_push_dynamic(ctx);
+        nk::layout_row_template_push_static(ctx, 30);
+        nk::layout_row_template_end(ctx);
+
         nk::Rect b = nk::widget_bounds(ctx);
 
         old = self.selected_animation;
         current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
             nk::vec2(b.w, 160));
         self.selected_animation = current;
+
+        if (nk::button_image(ctx, icons::get(TRASH))) res = true;
+
         nk::group_end(ctx);
     }
 
@@ -143,7 +155,7 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
 
         switch (current) {
         case 0:
-            return;
+            return res;
         case 1:
             Spinner *spin = malloc(Spinner.sizeof);
             spin.init(360, 2500);
@@ -162,7 +174,7 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
         }
     }
 
-    if (self.a == null) return;
+    if (self.a == null) return res;
 
     BasicAnimation *base = self.a.get_base();
 
@@ -182,6 +194,24 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
         nk::group_end(ctx);
     }
 
+    nk::label(ctx, "Toggle repeat:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Toggle Repeat Goup", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_template_begin(ctx, 30);
+        nk::layout_row_template_push_dynamic(ctx);
+        nk::layout_row_template_push_static(ctx, 75);
+        nk::layout_row_template_end(ctx);
+
+        nk::spacing(ctx, 1);
+        bool has_toggle = base.repeat;
+        nk::checkbox_label(ctx, "Enable", &has_toggle);
+
+        if (has_toggle != base.repeat) base.lock = false;
+
+        base.repeat = has_toggle;
+
+        nk::group_end(ctx);
+    }
+
     mask::configure(&base.mask, &self.input_buffer, &self.input_length, ctx,
         "Animation Mask:");
 
@@ -194,4 +224,11 @@ fn void AnimationEntry.config(&self, nk::Context *ctx)
         self.a.config(ctx);
         nk::tree_state_pop(ctx);
     }
+
+    nk::layout_row_dynamic(ctx, 4, 1);
+    nk::spacer(ctx);
+    nk::layout_row_dynamic(ctx, 2, 1);
+    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+
+    return res;
 }

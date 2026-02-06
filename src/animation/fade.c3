@@ -46,7 +46,6 @@ fn void Fade.update(&self, ulong now) @dynamic
         per = 1.0;
 
         self.finished = true;
-        self.base.running = false;
         self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
 

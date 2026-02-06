@@ -22,8 +22,8 @@ fn void Shake.init(&self, ulong length)
 {
     self.base.init();
     random::seed(&self.rng, time::now());
-    self.start = -5;
-    self.end = 5;
+    self.start = -50;
+    self.end = 50;
     self.current = { 0, 0 };
     self.offset = self.gen_pos();
     self.length = length;
@@ -41,7 +41,6 @@ fn void Shake.update(&self, ulong now) @dynamic
         per = 1.0;
 
         self.offset = self.gen_pos();
-        self.base.running = false;
         self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
 
