@@ -134,7 +134,9 @@ fn void Context.load_layer(&self, ZString path)
         if (res.ref == 1) {
             if (path.ends_with(".gif")) {
                 self.ctx.animated = true;
-                unreachable("unimplemented");
+                res.image = rl::loadImageAnimFromMemory(".gif",
+                    (ZString) img.file_content.ptr, img.file_content.len, 
+                    &self.ctx.nframes, &self.ctx.delays);
             } else {
                 String ext = path[path.rindex_of_char('.')!!..];
                 ZString zext = ext.zstr_copy(mem);
@@ -170,6 +172,11 @@ fn void Context.load_layer(&self, ZString path)
             StaticLayer *slay = malloc(StaticLayer.sizeof);
             slay.init(mem, self.ctx.name, self.ctx.loaded);
             instance.model.mgr.add(slay);
+        } else {
+            AnimatedLayer *alay = malloc(AnimatedLayer.sizeof);
+            alay.init(mem, self.ctx.name, self.ctx.loaded,
+                self.ctx.delays[:self.ctx.nframes]);
+            instance.model.mgr.add(alay);
         }
 
         self.ctx.ready = true;

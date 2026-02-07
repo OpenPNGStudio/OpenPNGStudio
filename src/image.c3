@@ -30,6 +30,8 @@ struct ImageReq {
     Image *loaded;
     ZString name;
     bool animated;
+    int nframes;
+    int *delays;
 }
 
 fn uint Image.hash(Image *self)

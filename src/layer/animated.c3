@@ -5,7 +5,7 @@ import std::core::string;
 import std::core::mem;
 import std::io;
 import nk;
-import unuv;
+import ev;
 import raylib5::rl;
 import openpngstudio::animation;
 import openpngstudio::image;
@@ -15,6 +15,12 @@ struct AnimatedLayer (Layer) {
     StaticLayer base;
     isz frame_idx, prev_idx;
     int[] delays;
+
+    Timer{AnimatedLayer*} timer;
+    bitstruct : char {
+        bool animating;
+        bool stop;
+    }
 }
 
 fn void AnimatedLayer.init(&self, Allocator alloc, ZString name,
@@ -24,9 +30,33 @@ fn void AnimatedLayer.init(&self, Allocator alloc, ZString name,
     self.delays = delays;
     self.frame_idx = 0;
     self.prev_idx = -1;
+    self.animating = true;
+    self.stop = false;
+
+    ev::Loop *loop = &openpngstudio::get_ctx().loop;
+
+    self.timer.init(loop, delays[0], self, fn (timer) {
+        AnimatedLayer *layer = timer.ctx;
+        layer.prev_idx = layer.frame_idx;
+        timer.set_timeout(layer.delays[layer.frame_idx]);
+        layer.frame_idx = (layer.frame_idx + 1) % layer.delays.len;
+
+        if (layer.stop) {
+            layer.animating = false;
+            return DISARM;
+        }
+
+        return REARM;
+    });
+
+    loop.add(&self.timer);
 }
 
-fn void AnimatedLayer.free(&self) @dynamic => self.base.free();
+fn void AnimatedLayer.free(&self) @dynamic
+{
+    free(self.delays.ptr);
+    self.base.free();
+}
 
 fn bool AnimatedLayer.draw(&self, Origin origin) @dynamic
 {
@@ -49,38 +79,20 @@ fn bool AnimatedLayer.draw(&self, Origin origin) @dynamic
 }
 
 fn layer::Command AnimatedLayer.layer_entry(&self, nk::Context *ctx) @dynamic
-    => static_layer::entry(&self.base, ctx);
+{
+    layer::Command cmd = static_layer::entry(&self.base, ctx);
+    if (cmd.type != NONE) {
+        cmd.layer = self;
+    }
+
+    return cmd;
+}
 
 fn void AnimatedLayer.config(&self, nk::Context *ctx) @dynamic =>
     static_layer::config(&self.base, ctx);
 
-fn bool AnimatedLayer.can_cleanup(&self) @dynamic => self.base.can_cleanup();
-
-// fn void start_animating(AnimatedLayer *layer, unuv::UnLoop *loop)
-//     @export("layer_animated_start")
-// {
-//     unuv::UnTimer *timer = unuv::timer_new(loop);
-//     unuv::timer_set_data(timer, layer);
-//     uint delay = layer.props.frame_delays[0];
-//     unuv::timer_start(timer, delay, delay, &update_animation);
-// }
-//
-//
-// fn unuv::UnAction update_animation(unuv::UnTimer *timer) @local
-// {
-//     AnimatedLayer *layer = unuv::timer_get_data(timer);
-//
-//     layer.props.previous_frame_index = layer.props.current_frame_index;
-//     unuv::timer_set_repeat(timer, layer.props.frame_delays[layer.props.current_frame_index]);
-//     layer.props.current_frame_index = (layer.props.current_frame_index + 1) %
-//         layer.props.number_of_frames;
-//
-//     if (layer.layer.state.prepare_for_deletion) {
-//         if (!layer.layer.state.active) {
-//             static_layer::cleanup(&layer.layer);
-//             return unuv::DISARM;
-//         }
-//     }
-//
-//     return unuv::REARM;
-// }
+fn bool AnimatedLayer.can_cleanup(&self) @dynamic
+{
+    self.stop = true;
+    return self.base.can_cleanup() || self.animating;
+}

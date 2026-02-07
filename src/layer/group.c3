@@ -96,13 +96,9 @@ fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
     if (nk::tree_state_push(ctx, nk::TREE_TAB, (CChar*) self.base.name.buffer,
         &self.tree_state)) {
         layer::Command res = static_layer::entry(&self.base, ctx);
-        switch (res.type) {
-        case SELECT:
-        case CONFIG:
-        case DELETE:
+        if (res.type != NONE) {
             res.parent = self.parent;
             res.layer = self;
-        default:
         }
 
         foreach (layer : self.layers) {
