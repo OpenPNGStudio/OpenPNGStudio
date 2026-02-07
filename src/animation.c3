@@ -85,7 +85,7 @@ fn void Engine.tick(&self, ulong now)
     foreach (a : self.animations) {
         BasicAnimation *b = a.get_base();
         if (!b.enabled) {
-            a.reset();
+            b.stop(a);
             continue;
         }
 

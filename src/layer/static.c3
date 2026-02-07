@@ -28,6 +28,7 @@ struct StaticLayer (Layer) {
         bool toggle;
         bool is_toggled;
         bool is_toggle_running;
+        bool is_timeout_running;
         bool active;
     }
 }
@@ -51,6 +52,7 @@ fn void StaticLayer.init(&self, Allocator alloc, ZString name,
     self.toggle = false;
     self.is_toggled = false;
     self.is_toggle_running = false;
+    self.is_timeout_running = false;
     self.active = false;
     self.timeout = 0;
     self.image = img;
@@ -113,12 +115,12 @@ fn bool draw(StaticLayer *self, Origin origin)
 
         if (!self.toggle) {
             /* spawn live timeout */
-            if (!self.active && self.timeout > 0) {
-                start_timeout(self);
+            if (!self.active && self.timeout > 0 && !self.is_timeout_running) {
+                if (self.mask != mask::DEFAULT) start_timeout(self);
             }
         } else {
             if (!self.is_toggle_running && mask_test) {
-                start_toggle(self);
+                if (self.mask != mask::DEFAULT) start_toggle(self);
             }
         }
 
@@ -127,6 +129,7 @@ fn bool draw(StaticLayer *self, Origin origin)
 
     foreach (a : self.animations) {
         if (a.a == null) continue;
+
         BasicAnimation *b = a.a.get_base();
         b.enable(false);
     }
@@ -310,25 +313,28 @@ fn void config(StaticLayer *self, nk::Context *ctx)
 
 alias LayerTimer = Timer{StaticLayer*};
 
+import std::io;
+
 fn void start_timeout(StaticLayer *self)
 {
     Loop *loop = &openpngstudio::get_ctx().loop;
     self.active = true;
+    self.is_timeout_running = true;
+
     LayerTimer *timer = malloc(LayerTimer.sizeof);
     timer.init(loop, self.timeout, self, fn (timer) {
         StaticLayer *self = timer.ctx;
         self.active = false;
+        self.is_timeout_running = false;
 
         Loop *loop = &openpngstudio::get_ctx().loop;
-        loop.submit_cleanup(timer, &timer);
+        loop.submit_cleanup(timer, &free);
 
         return DISARM;
     });
 
     loop.add(timer);
 }
-
-import std::io;
 
 fn void start_toggle(StaticLayer *self)
 {
@@ -343,7 +349,7 @@ fn void start_toggle(StaticLayer *self)
         self.is_toggle_running = false;
 
         Loop *loop = &openpngstudio::get_ctx().loop;
-        loop.submit_cleanup(timer, &timer);
+        loop.submit_cleanup(timer, &free);
 
         return DISARM;
     });

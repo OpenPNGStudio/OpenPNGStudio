@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+
 module openpngstudio::layer::group;
 
 import openpngstudio::layer;
@@ -42,8 +43,8 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
         origin.position.x += self.base.position.x;
         origin.position.y += -self.base.position.y;
 
-        origin.scale.x += self.base.scale.x;
-        origin.scale.y += self.base.scale.y;
+        origin.scale.x += self.base.scale.x - 1;
+        origin.scale.y += self.base.scale.y - 1;
 
         origin.rotation += self.base.rotation;
 
@@ -63,12 +64,17 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
 
         if (!self.base.toggle) {
             /* spawn live timeout */
-            if (!self.base.active && self.base.timeout > 0) {
-                // TODO: start timeout 
+            if (!self.base.active && self.base.timeout > 0 && 
+                    !self.base.is_timeout_running) {
+                if (self.base.mask != mask::DEFAULT) {
+                    static_layer::start_timeout(&self.base);
+                }
             }
         } else {
             if (!self.base.is_toggle_running && mask_test) {
-                // TODO: start toggle
+                if (self.base.mask != mask::DEFAULT) {
+                    static_layer::start_toggle(&self.base);
+                }
             }
         }
 
