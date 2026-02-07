@@ -8,6 +8,7 @@ import openpngstudio::animation;
 import openpngstudio::core::mask;
 import openpngstudio::ui::line_edit;
 import openpngstudio::ui::icons;
+import ev;
 import std::math;
 import raylib5::rl;
 import nk;
@@ -113,11 +114,11 @@ fn bool draw(StaticLayer *self, Origin origin)
         if (!self.toggle) {
             /* spawn live timeout */
             if (!self.active && self.timeout > 0) {
-                // TODO: start timeout 
+                start_timeout(self);
             }
         } else {
             if (!self.is_toggle_running && mask_test) {
-                // TODO: start toggle
+                start_toggle(self);
             }
         }
 
@@ -305,4 +306,47 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     }
 
     nk::spacer(ctx);
+}
+
+alias LayerTimer = Timer{StaticLayer*};
+
+fn void start_timeout(StaticLayer *self)
+{
+    Loop *loop = &openpngstudio::get_ctx().loop;
+    self.active = true;
+    LayerTimer *timer = malloc(LayerTimer.sizeof);
+    timer.init(loop, self.timeout, self, fn (timer) {
+        StaticLayer *self = timer.ctx;
+        self.active = false;
+
+        Loop *loop = &openpngstudio::get_ctx().loop;
+        loop.submit_cleanup(timer, &timer);
+
+        return DISARM;
+    });
+
+    loop.add(timer);
+}
+
+import std::io;
+
+fn void start_toggle(StaticLayer *self)
+{
+    Loop *loop = &openpngstudio::get_ctx().loop;
+
+    self.is_toggled = !self.is_toggled;
+    self.is_toggle_running = true;
+
+    LayerTimer *timer = malloc(LayerTimer.sizeof);
+    timer.init(loop, 250, self, fn (timer) {
+        StaticLayer *self = timer.ctx;
+        self.is_toggle_running = false;
+
+        Loop *loop = &openpngstudio::get_ctx().loop;
+        loop.submit_cleanup(timer, &timer);
+
+        return DISARM;
+    });
+
+    loop.add(timer);
 }
