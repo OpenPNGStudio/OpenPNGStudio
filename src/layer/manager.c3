@@ -92,6 +92,7 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
             }
 
             cmd.parent.del(cmd.layer);
+            openpngstudio::get_ctx().cleanup_queue.push(cmd.layer);
         default:
             io::printn(cmd);
         }

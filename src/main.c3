@@ -158,6 +158,17 @@ fn Action update(Idle{Context*} *idle)
 
     ctx.model.engine.tick(ctx.loop.now);
 
+    if (try ImageReq req = ctx.layer_queue.first()) {
+        if (req.ready) ctx.layer_queue.pop_front()!!;
+    }
+
+    if (try Layer layer = ctx.cleanup_queue.first()) {
+        if (layer.can_cleanup()) {
+            layer.free();
+            ctx.cleanup_queue.pop_front()!!;
+        }
+    }
+
     if (!ui_focused) {
         // if (rl::isKeyPressed(KEY_SPACE)) {
         //     ctx.hide_ui = !ctx.hide_ui;

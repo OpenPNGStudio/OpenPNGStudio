@@ -73,6 +73,8 @@ fn layer::Command StaticLayer.layer_entry(&self, nk::Context *ctx) @dynamic =>
     entry(self, ctx);
 fn void StaticLayer.config(&self, nk::Context *ctx) @dynamic => 
     config(self, ctx);
+fn bool StaticLayer.can_cleanup(&self) @dynamic => !(self.is_toggle_running ||
+    self.is_timeout_running);
 
 fn bool draw(StaticLayer *self, Origin origin)
 {

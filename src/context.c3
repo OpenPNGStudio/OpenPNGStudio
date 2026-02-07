@@ -43,6 +43,7 @@ struct Context {
     Microphone microphone;
 
     LinkedList{ImageReq} layer_queue;
+    LinkedList{Layer} cleanup_queue;
 
     ZString model_output;
 
@@ -91,6 +92,7 @@ fn void Context.init(&self, Allocator alloc)
 
     self.layer_queue.init(alloc);
     self.image_manager.init(alloc);
+    self.cleanup_queue.init(alloc);
 
     initialize_raylib(self);
 }
@@ -107,6 +109,7 @@ fn void Context.free(&self)
     self.panel.free();
     self.layer_queue.free();
     self.image_manager.free();
+    self.cleanup_queue.free();
     self.exe_path.free();
     rl::closeWindow();
 }
@@ -163,13 +166,14 @@ fn void Context.load_layer(&self, ZString path)
             rl::setTextureWrap(img.texture, TextureWrap.CLAMP.ordinal);
         }
 
-        self.ctx.ready = true;
-
         if (!self.ctx.animated) {
             StaticLayer *slay = malloc(StaticLayer.sizeof);
             slay.init(mem, self.ctx.name, self.ctx.loaded);
             instance.model.mgr.add(slay);
         }
+
+        self.ctx.ready = true;
+
         return DISARM;
     });
 

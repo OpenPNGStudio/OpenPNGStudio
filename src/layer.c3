@@ -28,4 +28,5 @@ interface Layer {
     fn Command layer_entry(nk::Context *ctx);
     fn void config(nk::Context *ctx);
     fn void free();
+    fn bool can_cleanup();
 }

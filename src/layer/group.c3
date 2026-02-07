@@ -27,12 +27,13 @@ fn void LayerGroup.init(&self, Allocator alloc, ZString name = null)
 fn void LayerGroup.free(&self) @dynamic
 {
     self.base.free();
-    defer self.layers.free();
 
     foreach (layer : self.layers) {
         layer.free();
         free(layer.ptr);
     }
+
+    self.layers.free();
 }
 
 fn bool LayerGroup.draw(&self, Origin origin) @dynamic
@@ -122,14 +123,22 @@ fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
 fn void LayerGroup.config(&self, nk::Context *ctx) @dynamic =>
     static_layer::config(&self.base, ctx);
 
+fn bool LayerGroup.can_cleanup(&self) @dynamic
+{
+    bool res = self.base.can_cleanup();
+    if (!res) return false;
+
+    foreach (layer : self.layers) {
+        if (!layer.can_cleanup()) return false;
+    }
+    
+    return true;
+}
+
 fn void LayerGroup.add(&self, Layer layer) @inline =>
     self.layers.push(layer);
 
-fn void LayerGroup.del(&self, Layer layer)
-{
-    self.layers.remove_item(layer);
-    layer.free();
-}
+fn void LayerGroup.del(&self, Layer layer) => self.layers.remove_item(layer);
 
 fn void? LayerGroup.up(&self, layer::Command *sel) @maydiscard
 {

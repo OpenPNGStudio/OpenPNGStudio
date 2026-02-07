@@ -54,6 +54,8 @@ fn layer::Command AnimatedLayer.layer_entry(&self, nk::Context *ctx) @dynamic
 fn void AnimatedLayer.config(&self, nk::Context *ctx) @dynamic =>
     static_layer::config(&self.base, ctx);
 
+fn bool AnimatedLayer.can_cleanup(&self) @dynamic => self.base.can_cleanup();
+
 // fn void start_animating(AnimatedLayer *layer, unuv::UnLoop *loop)
 //     @export("layer_animated_start")
 // {
