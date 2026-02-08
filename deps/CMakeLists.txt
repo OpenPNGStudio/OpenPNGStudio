@@ -1,17 +1,3 @@
-# libuv
-set(BUILD_SHARED_LIBS OFF)
-set(LIBUV_BUILD_TESTS OFF)
-set(LIBUV_BUILD_BENCH OFF)
-set(LIBUV_BUILD_SHARED OFF)
-
-FetchContent_Declare(
-    libuv 
-    URL "https://github.com/libuv/libuv/archive/refs/tags/v${LIBUV_VERSION}.tar.gz"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-
-FetchContent_MakeAvailable(libuv)
-
 # raylib
 set(BUILD_EXAMPLES OFF)
 set(CUSTOMIZE_BUILD ON)
@@ -40,15 +26,6 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(raylib)
-
-# libunuv
-FetchContent_Declare(
-    libunuv
-    URL "https://github.com/LowByteFox/libunuv/archive/refs/heads/main.tar.gz"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-
-FetchContent_MakeAvailable(libunuv)
 
 if (WIN32)
     # mman

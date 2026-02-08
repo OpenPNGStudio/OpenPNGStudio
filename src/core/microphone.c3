@@ -4,16 +4,22 @@ module openpngstudio::core::microphone;
 import std::atomic::types;
 import openpngstudio::core::mask;
 import std::math @public;
-import unuv;
+import ev;
 import std::io;
+
+alias MicTimer = Timer{Microphone*};
 
 struct Microphone {
     Atomic{usz} volume;
     Atomic{int} multiplier;
+    MicTimer pause_timer, talk_timer;
 
     /* Private State */
     usz previous_volume, trigger;
-    bool talk_timer, pause_timer;
+    bitstruct : char {
+        bool talk_timer_running;
+        bool pause_timer_running;
+    }
 }
 
 const DEFAULT_MULTIPLIER = 2500;
@@ -27,14 +33,14 @@ fn void Microphone.init(&self)
 {
     self.multiplier.store(DEFAULT_MULTIPLIER);
     self.trigger = DEFAULT_TRIGGER;
-    self.talk_timer = false;
-    self.pause_timer = false;
+    self.talk_timer_running = false;
+    self.pause_timer_running = false;
     mic_setup(self);
 }
 
 fn void Microphone.free(&self) => mic_free();
 
-fn void Microphone.update(&self, unuv::UnLoop *loop)
+fn void Microphone.update(&self, ev::Loop *loop)
 {
     usz volume = self.volume.load();
     volume = (usz) math::lerp(volume, (float) self.previous_volume, 0.75f);
@@ -44,58 +50,53 @@ fn void Microphone.update(&self, unuv::UnLoop *loop)
 
     if (percentage > self.trigger) {
         mask &= ~mask::QUIET;
-        if (!self.talk_timer) {
+        if (!self.talk_timer_running) {
             mask |= mask::TALK;
-            unuv::UnTimer *timer = unuv::timer_new(loop);
-            unuv::timer_set_data(timer, self);
             int delay = DEFAULT_TIMER_TTL / 2;
-            unuv::timer_start(timer, delay, delay, &update_talk);
-            self.talk_timer = true;
+
+            self.talk_timer.init(loop, delay, self, fn (timer) {
+                Microphone *self = timer.ctx;
+
+                int percentage = (int) (self.previous_volume * 100) / 200;
+                if (percentage > self.trigger) return REARM;
+
+                self.talk_timer_running = false;
+
+                Mask mask = mask::get();
+                mask &= ~mask::TALK;
+                mask::set(mask);
+
+                return DISARM;
+            });
+
+            loop.add(&self.talk_timer);
+            self.talk_timer_running = true;
         }
 
-        if (!self.pause_timer) {
+        if (!self.pause_timer_running) {
             mask |= mask::PAUSE;
-            unuv::UnTimer *timer = unuv::timer_new(loop);
-            unuv::timer_set_data(timer, self);
             int delay = DEFAULT_TIMER_TTL;
-            unuv::timer_start(timer, delay, delay, &update_pause);
-            self.pause_timer = true;
+
+            self.pause_timer.init(loop, delay, self, fn (timer) {
+                Microphone *self = timer.ctx;
+
+                int percentage = (int) (self.previous_volume * 100) / 200;
+                if (percentage > self.trigger) return REARM;
+
+                self.pause_timer_running = false;
+                Mask mask = mask::get();
+                mask |= mask::QUIET;
+                mask &= ~mask::PAUSE;
+                mask &= ~mask::TALK;
+                mask::set(mask);
+
+                return DISARM;
+            });
+            
+            loop.add(&self.pause_timer);
+            self.pause_timer_running = true;
         }
     }
 
     mask::set(mask);
-}
-
-fn unuv::UnAction update_talk(unuv::UnTimer *timer) @local
-{
-    Microphone *self = unuv::timer_get_data(timer);
-    unuv::timer_set_repeat(timer, DEFAULT_TIMER_TTL / 2);
-
-    int percentage = (int) (self.previous_volume * 100) / 200;
-    if (percentage > self.trigger) return unuv::REARM;
-
-    self.talk_timer = false;
-    Mask mask = mask::get();
-    mask &= ~mask::TALK;
-    mask::set(mask);
-
-    return unuv::DISARM;
-}
-
-fn unuv::UnAction update_pause(unuv::UnTimer *timer) @local
-{
-    Microphone *self = unuv::timer_get_data(timer);
-    unuv::timer_set_repeat(timer, DEFAULT_TIMER_TTL);
-
-    int percentage = (int) (self.previous_volume * 100) / 200;
-    if (percentage > self.trigger) return unuv::REARM;
-
-    self.pause_timer = false;
-    Mask mask = mask::get();
-    mask |= mask::QUIET;
-    mask &= ~mask::PAUSE;
-    mask &= ~mask::TALK;
-    mask::set(mask);
-
-    return unuv::DISARM;
 }

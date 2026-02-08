@@ -12,7 +12,6 @@ import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
 import raylib5::rl;
-import unuv;
 import std::math @public;
 
 import ev;
@@ -124,7 +123,7 @@ fn Action update(Idle{Context*} *idle)
     mask::set(mask);
 
     ctx.panel.ui(ctx.nk_ctx);
-    // app_ctx.microphone.update(loop);
+    ctx.microphone.update(&ctx.loop);
     if (rl::isKeyPressed(rl::KEY_GRAVE) && rl::isKeyDown(rl::KEY_LEFT_SHIFT)) {
         console::show(&ctx.wm);
     }

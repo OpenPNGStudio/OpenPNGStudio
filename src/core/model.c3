@@ -4,7 +4,6 @@ module openpngstudio::core::model;
 import openpngstudio::ui;
 import openpngstudio::layer;
 import openpngstudio::animation;
-import unuv;
 
 struct Model {
     layer::Manager mgr;
