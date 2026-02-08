@@ -22,11 +22,13 @@ extern fn void quit_openpngstudio();
 extern void *c_ctx;
 
 fn int main() @winmain {
+    console::init(mem);
+
     Context ctx;
     ctx.init(mem);
     defer ctx.free();
 
-    console::init(&ctx.wm, mem);
+    console::register(&ctx.wm);
 
     ctx.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -121,14 +123,17 @@ fn Action update(Idle{Context*} *idle)
     mask::update(&mask);
     mask::set(mask);
 
-    ctx.panel.ui(ctx.nk_ctx);
-    ctx.microphone.update(&ctx.loop);
     if (rl::isKeyPressed(rl::KEY_GRAVE) && rl::isKeyDown(rl::KEY_LEFT_SHIFT)) {
         console::show(&ctx.wm);
     }
 
-    ctx.wm.update(ctx.width, ctx.height);
-    ctx.wm.ui(ctx.nk_ctx, ctx.width, ctx.height);
+    if (!ctx.hide_ui) {
+        ctx.panel.ui(ctx.nk_ctx);
+        ctx.wm.update(ctx.width, ctx.height);
+        ctx.wm.ui(ctx.nk_ctx, ctx.width, ctx.height);
+    }
+
+    ctx.microphone.update(&ctx.loop);
 
     FileDialogState state = ctx.file_dialog.get_state();
 
@@ -167,10 +172,6 @@ fn Action update(Idle{Context*} *idle)
         }
     }
 
-    // if (rl::isKeyPressed(KEY_SPACE)) {
-    //     ctx.hide_ui = !ctx.hide_ui;
-    // }
-
     if (rl::isMouseButtonDown(MIDDLE)) {
         rl::Vector2 delta = rl::getMouseDelta();
         delta = rl::vector2Scale(delta, -1.0f/ctx.camera.zoom);
@@ -178,6 +179,8 @@ fn Action update(Idle{Context*} *idle)
     }
 
     if (!ctx.wm.window_focused) {
+        if (rl::isKeyPressed(rl::KEY_SPACE)) ctx.hide_ui = !ctx.hide_ui;
+
         float wheel = rl::getMouseWheelMove();
         static float target_zoom = 1.0;
         if (wheel != 0) {

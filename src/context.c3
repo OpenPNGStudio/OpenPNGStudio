@@ -68,6 +68,7 @@ fn void Context.init(&self, Allocator alloc)
     instance = self;
 
     self.exe_path = core::whereami()!!;
+    log::info("Executable location: %s", self.exe_path);
     self.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
 
     self.panel.init(alloc);

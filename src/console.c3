@@ -3,82 +3,83 @@ module openpngstudio::console;
 
 import openpngstudio::ui::wm;
 import std::collections::linkedlist;
-import std::io;
+import std::io, std::time;
 import std::core::string;
 
-import nk;
-
-enum Type {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR
-}
+import nk, raylib5::rl;
 
 struct Record {
-    Type type;
-    ZString fun;
-    usz line;
+    LogPriority type;
+    String file, fun;
+    int line;
     ZString buffer;
 }
 
-struct Console (wm::Window) @local {
+struct Console (wm::Window, Logger) @local {
     Allocator alloc;
     int id;
-    LinkedList{Record} log;
+    LinkedList{Record} record;
+    float max_width;
 }
 
 const NLOGS = 128;
 
 Console c @local;
 
-fn void init(WindowManager *wm, Allocator alloc)
+fn void init(Allocator alloc)
 {
     c.alloc = alloc;
-    c.log.init(alloc);
-    wm.register("Console", &c);
+    c.record.init(alloc);
+
+    log::set_logger(&c);
 }
 
-fn void free()
-{
-    c.log.free();
-}
+fn void register(WindowManager *wm) => wm.register("Console", &c);
 
-fn void show(WindowManager *wm)
-{
-    wm.show(&c);
-}
+fn void free() => c.record.free();
+
+fn void show(WindowManager *wm) => wm.show(&c);
 
 fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
-    nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
-    nk::layout_row_push(ctx, 0.20f);
+    float win_width = nk::window_get_width(ctx);
+
+    nk::layout_row_begin(ctx, nk::STATIC, 30, 4);
+    nk::layout_row_push(ctx, 0.20f * win_width);
     nk::label(ctx, "Function", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.10f);
+    nk::layout_row_push(ctx, 0.10f * win_width);
     nk::label(ctx, "Line", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.17f);
+    nk::layout_row_push(ctx, 0.10f * win_width);
     nk::label(ctx, "Type", nk::TEXT_LEFT);
-    nk::layout_row_push(ctx, 0.43f);
+    nk::layout_row_push(ctx, 100);
     nk::label(ctx, "Message", nk::TEXT_LEFT);
     nk::layout_row_end(ctx);
 
-    nk::layout_row_dynamic(ctx, 2, 1);
+    float line_width = 0.4 * win_width + self.max_width;
+
+    nk::layout_row_static(ctx, 2, (int) line_width, 1);
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
-    LinkedListArrayView{Record} logs = c.log.array_view();
+    LinkedListArrayView{Record} logs = c.record.array_view();
+
+    self.max_width = 0;
 
     foreach (&iter : logs) {
-        nk::layout_row_begin(ctx, nk::DYNAMIC, 30, 4);
-        nk::layout_row_push(ctx, 0.20f);
+        nk::layout_row_begin(ctx, nk::STATIC, 30, 4);
+        nk::layout_row_push(ctx, 0.20f * win_width);
         nk::label(ctx, (CChar*) iter.fun, nk::TEXT_LEFT);
 
         @pool() {
             ZString tmp = string::tformat_zstr("%d", iter.line);
-            nk::layout_row_push(ctx, 0.10f);
+            nk::layout_row_push(ctx, 0.10f * win_width);
             nk::label(ctx, (CChar*) tmp, nk::TEXT_LEFT);
         };
 
+        nk::layout_row_push(ctx, 0.10f * win_width);
         switch (iter.type) {
+	    case VERBOSE:
+            nk::label_colored(ctx, "Debug", nk::TEXT_LEFT,
+                nk::rgb(0x0D, 0xBC, 0x79));
         case DEBUG:
             nk::label_colored(ctx, "Debug", nk::TEXT_LEFT,
                 nk::rgb(0x0D, 0xBC, 0x79));
@@ -91,85 +92,51 @@ fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         case ERROR:
             nk::label_colored(ctx, "Error", nk::TEXT_LEFT,
                 nk::rgb(0xCd, 0x31, 0x31));
+        case CRITICAL:
+            nk::label_colored(ctx, "Debug", nk::TEXT_LEFT,
+                nk::rgb(0x0D, 0xBC, 0x79));
         }
 
-        nk::layout_row_push(ctx, 0.5f);
+        openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
+        rl::Vector2 size = rl::measureTextEx(app_ctx.font, iter.buffer, 16, 
+            1);
+
+        if (size.x + 16 > self.max_width) self.max_width = size.x + 16;
+
+        nk::layout_row_push(ctx, self.max_width);
         nk::label(ctx, (CChar*) iter.buffer, nk::TEXT_LEFT);
 
         nk::layout_row_end(ctx);
     }
 }
 
-fn void _debug(ZString fun, usz line, ZString fmt, args...)
-    @export("console_debug")
+fn void Console.log(&self, LogPriority priority, LogCategory category, 
+    LogTag tag, String file, String function, int line, String fmt, 
+    any[] args) @dynamic
 {
-    io::fprintf(io::stderr(), "%s:%d \e[42;1m\e[37;1m D \e[0m ", fun, line)!!;
+	@stack_mem(256 + 64; Allocator mem)
+	{
+		DString str;
+		str.init(mem, 256);
+		str.appendf(fmt, ...args);
+		TzDateTime time = datetime::now().to_local();
+		io::eprintfn("[%02d:%02d:%02d:%04d] %s:%d [%s] %s", time.hour, 
+            time.min, time.sec, (time.usec / 1000), file, line, priority, str);
+	};
+
+    if (self.record.len() == NLOGS) {
+        if (try Record old = self.record.pop_front()) {
+            allocator::free(self.alloc, old.buffer);
+        }
+    }
 
     @pool() {
-        String tmp = string::tformat(fmt.str_view(), ...args);
-        io::fprintn(io::stderr(), tmp)!!;
-        if (c.log.len() == NLOGS) c.log.pop_front()!!;
-
-        c.log.push({
-            DEBUG,
-            fun,
+        self.record.push({
+            priority,
+            file,
+            function,
             line,
-            tmp.zstr_copy(c.alloc)
-        });
-    };
-}
-
-fn void _info(ZString fun, usz line, ZString fmt, args...)
-    @export("console_info")
-{
-    io::fprintf(io::stderr(), "%s:%d \e[46;1m\e[37;1m I \e[0m ", fun, line)!!;
-
-    @pool() {
-        String tmp = string::tformat(fmt.str_view(), args);
-        io::fprintn(io::stderr(), tmp)!!;
-        if (c.log.len() == NLOGS) c.log.pop_front()!!;
-
-        c.log.push({
-            INFO,
-            fun,
-            line,
-            tmp.zstr_copy(c.alloc)
-        });
-    };
-}
-
-fn void _warn(ZString fun, usz line, ZString fmt, args...) @export("console_warn")
-{
-    io::fprintf(io::stderr(), "%s:%d \e[43;1m\e[30;1m W \e[0m ", fun, line)!!;
-
-    @pool() {
-        String tmp = string::tformat(fmt.str_view(), ...args);
-        io::fprintn(io::stderr(), tmp)!!;
-        if (c.log.len() == NLOGS) c.log.pop_front()!!;
-
-        c.log.push({
-            WARN,
-            fun,
-            line,
-            tmp.zstr_copy(c.alloc)
-        });
-    };
-}
-
-fn void _error(ZString fun, usz line, ZString fmt, args...) @export("console_error")
-{
-    io::fprintf(io::stderr(), "%s:%d \e[41;1m\e[30m E \e[0m ", fun, line)!!;
-
-    @pool() {
-        String tmp = string::tformat(fmt.str_view(), ...args);
-        io::fprintn(io::stderr(), tmp)!!;
-        if (c.log.len() == NLOGS) c.log.pop_front()!!;
-
-        c.log.push({
-            ERROR,
-            fun,
-            line,
-            tmp.zstr_copy(c.alloc)
+            string::tformat(fmt, ...args).zstr_copy(self.alloc)
         });
     };
 }
