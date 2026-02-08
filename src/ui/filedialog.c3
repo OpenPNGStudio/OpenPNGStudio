@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::ui;
 
-/* TODO: fix journal leaking memory */
-
 import libc;
 import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
@@ -23,22 +21,6 @@ enum FileDialogState : const int {
     WRITE_READY
 }
 
-enum FileDialogEvent : const int {
-    ENTER,
-    LEAVE
-}
-
-struct FileDialogJournalEntry {
-    FileDialogEvent event;
-    String file;
-}
-
-struct FileDialogJournal {
-    List{FileDialogJournalEntry} journal;
-    usz index, limit;
-    bool locked;
-}
-
 struct DirectoryEntry {
     Path path;
     bool is_file, is_hidden, is_system;
@@ -57,15 +39,12 @@ struct FileDialog (wm::Window) {
     bool open_for_reading, single_file_mode, contextual_open;
     LineEdit search_filter, write_file_name;
     MessageBox msgbox;
-
-    FileDialogJournal history;
 }
 
 fn void FileDialog.init(&self, Allocator alloc)
 {
     self.last_selected = -1;
     self.path = path::home_directory(alloc)!!;
-    self.history.journal.init(alloc);
 }
 
 fn void FileDialog.populate(&self)
@@ -219,24 +198,9 @@ fn void draw_titlebar(FileDialog *self, nk::Context *ctx) @local
 {
     nk::layout_row_template_begin(ctx, 32);
     nk::layout_row_template_push_static(ctx, 32);
-    nk::layout_row_template_push_static(ctx, 32);
-    nk::layout_row_template_push_static(ctx, 32);
     nk::layout_row_template_push_dynamic(ctx);
     nk::layout_row_template_push_static(ctx, 32);
     nk::layout_row_template_end(ctx);
-
-    if (!self.history.can_prev()) nk::widget_disable_begin(ctx);
-    if (nk::button_image(ctx, icons::get(LEFT))) {
-        self.history.prev(self);
-        self.populate();
-    }
-    if (!self.history.can_prev()) nk::widget_disable_end(ctx);
-    if (!self.history.can_next()) nk::widget_disable_begin(ctx);
-    if (nk::button_image(ctx, icons::get(RIGHT))) {
-        self.history.next(self);
-        self.populate();
-    }
-    if (!self.history.can_next()) nk::widget_disable_end(ctx);
 
     if (nk::button_image(ctx, icons::get(UP))) {
         if (try self.up()) {}
@@ -442,8 +406,6 @@ fn bool draw_entry(FileDialog *self, nk::Context *ctx, DirectoryEntry *ent) @loc
 
 fn void? FileDialog.up(&self)
 {
-    self.history.register(LEAVE, self.path.basename());
-
     self.path = self.path.parent()!;
     self.search_filter.cleanup = true;
     self.search_filter.reinit();
@@ -454,15 +416,12 @@ fn void? FileDialog.enter(&self, String name)
     self.path = self.path.append(mem, name)!;
     self.search_filter.cleanup = true;
     self.search_filter.reinit();
-
-    self.history.register(ENTER, name);
 }
 
 fn void FileDialog.free(&self)
 {
     self.filter.free();
     self.selected.free();
-    self.history.journal.free();
     free_content(&self.content);
 
     if (self.path.allocator != null) self.path.free();
@@ -552,69 +511,4 @@ fn bool DirectoryEntry.less(&self, DirectoryEntry b)
     bp = b.path.str_view();
 
     return libc::strncmp(ap.ptr, bp.ptr, min(ap.len, bp.len)) < 0;
-}
-
-fn bool FileDialogJournal.can_next(&self) => self.index < self.limit;
-fn bool FileDialogJournal.can_prev(&self) => self.index > 0;
-
-fn void FileDialogJournal.register(&self, FileDialogEvent ev, String file)
-{
-    if (self.locked) return;
-    self.locked = true;
-    defer self.locked = false;
-
-    if (self.index <= self.limit) {
-        if (self.index == self.limit) {
-            if (self.limit == self.journal.len()) {
-                self.journal.push({
-                    .event = ev,
-                    .file = file
-                });
-                self.index++;
-            } else {
-                self.journal[self.index++] = {
-                    .event = ev,
-                    .file = file
-                };
-            }
-        } else {
-            self.journal[self.index++] = {
-                .event = ev,
-                .file = file
-            };
-        }
-    }
-    self.limit = self.index;
-}
-
-fn void FileDialogJournal.next(&self, FileDialog *dialog)
-{
-    if (self.locked) return;
-    self.locked = true;
-    defer self.locked = false;
-
-    if (self.index < self.limit) {
-        FileDialogJournalEntry *ent = self.journal.get_ref(self.index++);
-        if (ent.event == ENTER) {
-            dialog.enter(ent.file)!!;
-        } else {
-            if (try dialog.up()) {}
-        }
-    }
-}
-
-fn void FileDialogJournal.prev(&self, FileDialog *dialog)
-{
-    if (self.locked) return;
-    self.locked = true;
-    defer self.locked = false;
-
-    if (self.index > 0) {
-        FileDialogJournalEntry *ent = self.journal.get_ref(--self.index);
-        if (ent.event == LEAVE) {
-            dialog.enter(ent.file)!!;
-        } else {
-            dialog.up()!!;
-        }
-    }
 }

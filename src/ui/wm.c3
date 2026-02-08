@@ -28,7 +28,10 @@ struct ManagedWindow {
 struct WindowManager {
     List{ManagedWindow} windows;
     ui::Panel *panel;
-    bool show_bring_back;
+    bitstruct : char {
+        bool window_focused;
+        bool show_bring_back;
+    }
 }
 
 fn void WindowManager.init(&self, ui::Panel *panel, Allocator alloc)
@@ -152,6 +155,8 @@ fn void WindowManager.update(&self, float width, float height)
 
 fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
 {
+    self.window_focused = false;
+
     foreach (&managed : self.windows) {
         managed.focus = false;
 
@@ -206,6 +211,8 @@ fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)
 
             if (managed.state != HIDE) nk::end(ctx);
         }
+
+        if (managed.focus) self.window_focused = true;
     }
 }
 

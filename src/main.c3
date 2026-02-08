@@ -109,7 +109,6 @@ fn Action update(Idle{Context*} *idle)
     Context *ctx = idle.ctx;
     Mask mask = mask::get();
     mask::handle(&mask);
-    bool ui_focused = false;
 
     if (rl::windowShouldClose()) ctx.loop.stop();
 
@@ -168,17 +167,17 @@ fn Action update(Idle{Context*} *idle)
         }
     }
 
-    if (!ui_focused) {
-        // if (rl::isKeyPressed(KEY_SPACE)) {
-        //     ctx.hide_ui = !ctx.hide_ui;
-        // }
+    // if (rl::isKeyPressed(KEY_SPACE)) {
+    //     ctx.hide_ui = !ctx.hide_ui;
+    // }
 
-        if (rl::isMouseButtonDown(MIDDLE)) {
-            rl::Vector2 delta = rl::getMouseDelta();
-            delta = rl::vector2Scale(delta, -1.0f/ctx.camera.zoom);
-            ctx.camera.target = rl::vector2Add(ctx.camera.target, delta);
-        }
+    if (rl::isMouseButtonDown(MIDDLE)) {
+        rl::Vector2 delta = rl::getMouseDelta();
+        delta = rl::vector2Scale(delta, -1.0f/ctx.camera.zoom);
+        ctx.camera.target = rl::vector2Add(ctx.camera.target, delta);
+    }
 
+    if (!ctx.wm.window_focused) {
         float wheel = rl::getMouseWheelMove();
         static float target_zoom = 1.0;
         if (wheel != 0) {
@@ -251,7 +250,6 @@ fn void save(void *_ctx, bool save_as) @local
     ctx.loading_state = WRITING_MODEL;
 }
 
-/* TODO: submit work */
 fn void load_file(Context *ctx) @local
 {
     List{ZString} selection = ctx.file_dialog.get_selection();
