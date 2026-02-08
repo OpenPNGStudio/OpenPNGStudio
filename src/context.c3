@@ -33,6 +33,7 @@ struct Context {
     model::Model model;
 
     image::Manager image_manager;
+    Scene scene;
 
     ui::Panel panel;
     nk::Context *nk_ctx;
@@ -61,7 +62,8 @@ struct Context {
 
 Context *instance @local = null;
 
-ZString filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
+ZString edit_filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
+ZString stream_filter = "opng";
 
 fn void Context.init(&self, Allocator alloc)
 {
@@ -75,7 +77,7 @@ fn void Context.init(&self, Allocator alloc)
     self.wm.init(&self.panel, alloc);
 
     self.file_dialog.init(alloc);
-    self.file_dialog.set_filter(filter);
+    self.file_dialog.set_filter(edit_filter);
     self.file_dialog.populate();
 
     self.model.mgr.init(&self.wm, alloc);
@@ -94,6 +96,9 @@ fn void Context.init(&self, Allocator alloc)
     self.layer_queue.init(alloc);
     self.image_manager.init(alloc);
     self.cleanup_queue.init(alloc);
+    self.scene.init();
+
+    self.wm.register("Scene Configurator", &self.scene);
 
     initialize_raylib(self);
 }
@@ -194,7 +199,8 @@ extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
 
 fn void initialize_raylib(Context *self) @local
 {
-    rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE);
+    rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE | 
+        rl::FLAG_WINDOW_TRANSPARENT);
     rl::initWindow(1024, 640, "OpenPNGStudio");
     rl::setExitKey(rl::KEY_NULL);
 
@@ -272,6 +278,8 @@ fn void? load_icons2(Path exe_path) @local
             {icons::Type.COMBO_OPEN, "icons/combo-open.png"},
             {icons::Type.COMBO_OPEN2, "icons/combo-open2.png"},
             {icons::Type.PICK, "icons/pick.png"},
+            {icons::Type.IMAGE, "icons/image.png"},
+            {icons::Type.MICROPHONE, "icons/microphone.png"},
             {icons::Type.OPEN, "icons/open.png"},
             {icons::Type.SAVE, "icons/save.png"},
             {icons::Type.LAYERS, "icons/layers.png"},
@@ -302,8 +310,3 @@ fn void? load_icons2(Path exe_path) @local
 }
 
 fn Context *get_ctx() => instance;
-
-// fn void Context.add_layer(&self, StaticLayer *layer) @export("layer_manager_add_layer")
-// {
-//     self.model.mgr.add_layer(layer);
-// }
