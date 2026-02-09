@@ -138,7 +138,7 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
         nk::Rect b = nk::widget_bounds(ctx);
 
         old = self.selected_animation;
-        current = nk::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
+        current = ui::combo(ctx, ANIMATIONS.ptr, ANIMATIONS.len, old, 30,
             nk::vec2(b.w, 160));
         self.selected_animation = current;
 
@@ -191,7 +191,7 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
         nk::Rect b = nk::widget_bounds(ctx);
         old = self.selected_easing;
 
-        current = nk::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
+        current = ui::combo(ctx, easings::NAMES.ptr, easings::NAMES.len, old,
             30, nk::vec2(b.w, 200));
 
         if (old != current) {

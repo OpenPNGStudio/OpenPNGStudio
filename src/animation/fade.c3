@@ -2,6 +2,7 @@
 module openpngstudio::animation::fade;
 
 import std::time;
+import openpngstudio::ui;
 import std::core::mem;
 import openpngstudio::layer;
 import openpngstudio::animation::easings;
@@ -75,7 +76,7 @@ fn void Fade.config(&self, nk::Context *ctx) @dynamic
         nk::Rect b = nk::widget_bounds(ctx);
 
         int old = (int) self.mode;
-        self.mode = (FadeMode) nk::combo(ctx, MODES.ptr, MODES.len, old, 30,
+        self.mode = (FadeMode) ui::combo(ctx, MODES.ptr, MODES.len, old, 30,
             nk::vec2(b.w, 200));
         nk::group_end(ctx);
     }
