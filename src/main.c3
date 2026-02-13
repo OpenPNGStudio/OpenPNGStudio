@@ -101,7 +101,7 @@ fn Action update(Idle{Context*} *idle)
         ctx.wm.ui(ctx.nk_ctx, ctx.width, ctx.height);
     }
 
-    ctx.microphone.update(&ctx.loop);
+    ctx.microphone.internal_update(&ctx.loop);
 
     FileDialogState state = ctx.file_dialog.get_state();
 
@@ -118,7 +118,7 @@ fn Action update(Idle{Context*} *idle)
         case WRITING_MODEL:
             write_model(ctx);
         case LOADING_MODEL:
-            /* TODO */
+            /* ERROR */
             break;
         }
 
@@ -332,7 +332,7 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        io::printn("hello, world");
+        ctx.wm.show(&ctx.microphone);
     }, MICROPHONE, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {

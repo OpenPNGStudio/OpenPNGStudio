@@ -23,7 +23,7 @@ fn void Scene.init(&self)
 {
     self.background = { 0x88, 0x88, 0x88, 0xFF };
     self.picker.color = color_to_nk_f(self.background);
-    libc::sprintf(&self.picker.buffer, "%2x%2x%2x", self.background.r, 
+    libc::sprintf(&self.picker.buffer, "%02x%02x%02x", self.background.r, 
         self.background.g, self.background.b);
     self.picker.buffer_len = 6;
     self.picker.res = false;

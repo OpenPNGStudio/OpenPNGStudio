@@ -85,6 +85,7 @@ fn void Context.init(&self, Allocator alloc)
 
     self.wm.register("File Dialog", &self.file_dialog);
     self.microphone.init();
+    self.wm.register("Microphone Configuration", &self.microphone);
 
     self.loop.init(alloc);
     self.camera.zoom = 1.0f;

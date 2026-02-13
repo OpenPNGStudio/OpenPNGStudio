@@ -18,11 +18,11 @@ import std::io;
 fn void ColorPicker.ui(&self, nk::Context *ctx)
 {
     if (nk::group_begin(ctx, "Color Picker", nk::WINDOW_NO_SCROLLBAR)) {
-        nk::layout_row_dynamic(ctx, 200, 1);
+        nk::layout_row_dynamic(ctx, 216, 1);
         bool res = nk::color_pick(ctx, &self.color, nk::RGB);
         if (self.res != res && !res) {
             rl::Color color = openpngstudio::color_from_nk_f(self.color);
-            libc::sprintf(&self.buffer, "%2x%2x%2x", color.r, 
+            libc::sprintf(&self.buffer, "%02x%02x%02x", color.r, 
                 color.g, color.b);
             self.buffer_len = 6;
         }

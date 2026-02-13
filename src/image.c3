@@ -97,7 +97,7 @@ fn Image *Manager.get(&self, Image *img)
 
 
 /* stdlib smh */
-module std::collections::set <Value>;
+module std::collections::set<Value>;
 
 <*
  Check if the set contains the given value.
