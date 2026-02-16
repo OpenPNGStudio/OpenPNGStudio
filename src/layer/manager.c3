@@ -39,6 +39,10 @@ fn void Manager.free(&self)
 
 fn void Manager.add(&self, Layer layer) => self.root.add(layer);
 
+extern fn Flags winabi_get_nk_flags(nk::Context *ctx);
+extern fn void winabi_add_nk_flag(nk::Context *ctx, Flags flag);
+extern fn void winabi_set_nk_flag(nk::Context *ctx, Flags flag);
+
 fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
     float win_width = nk::window_get_width(ctx);
@@ -62,8 +66,8 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     bool res = nk::group_begin(ctx, "Layers", 0);
 
     nk::style_push_vec2(ctx, &ctx.style.window.padding, nk::vec2(0, 0));
-    Flags old = ctx.current.flags;
-    ctx.current.flags |= nk::WINDOW_NO_SCROLLBAR;
+    Flags old = winabi_get_nk_flags(ctx);
+    winabi_add_nk_flag(ctx, nk::WINDOW_NO_SCROLLBAR);
 
     layer::Command cmd;
 
@@ -98,7 +102,7 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         }
     }
 
-    ctx.current.flags = old;
+    winabi_set_nk_flag(ctx, old);
     nk::style_pop_vec2(ctx);
     
     if (res) nk::group_end(ctx);

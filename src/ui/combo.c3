@@ -10,26 +10,7 @@ macro combo_begin(nk::Context *ctx, CChar *label, nk::Vec2 size) =>
         &&(nk::Image[2]){icons::get(COMBO_OPEN), icons::get(COMBO)},
         size);
 
-fn nk::Vec2 panel_get_padding(nk::Style *style, nk::PanelType type) @local
-{
-    switch (type) {
-    default:
-    case nk::PANEL_WINDOW: 
-        return style.window.padding;
-    case nk::PANEL_GROUP:
-        return style.window.group_padding;
-    case nk::PANEL_POPUP: 
-        return style.window.popup_padding;
-    case nk::PANEL_CONTEXTUAL: 
-        return style.window.contextual_padding;
-    case nk::PANEL_COMBO: 
-        return style.window.combo_padding;
-    case nk::PANEL_MENU:
-        return style.window.menu_padding;
-    case nk::PANEL_TOOLTIP: 
-        return style.window.menu_padding;
-    }
-}
+extern fn nk::Vec2 winabi_panel_get_padding(nk::Context *ctx);
 
 fn int combo(nk::Context *ctx, CChar **items, int count,
     int selected, int item_height, nk::Vec2 size)
@@ -42,7 +23,7 @@ fn int combo(nk::Context *ctx, CChar **items, int count,
     if (!ctx || !items ||!count) return selected;
 
     item_spacing = ctx.style.window.spacing;
-    window_padding = panel_get_padding(&ctx.style, ctx.current.layout.type);
+    window_padding = winabi_panel_get_padding(ctx);
 
     max_height = count * item_height + count * (int) item_spacing.y;
     max_height += (int) item_spacing.y * 2 + (int) window_padding.y * 2;

@@ -171,7 +171,7 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
                 nk::rgb(0xFF, 0, 0));
         }
     
-        nk::progress(ctx, &volume, 200, false);
+        nk::progress(ctx, (uint*) &volume, 200, false);
     
         if (percentage > self.trigger) {
             nk::style_pop_color(ctx);
@@ -197,7 +197,7 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
 
-        nk::progress(ctx, &self.trigger, 100, true);
+        nk::progress(ctx, (uint*) &self.trigger, 100, true);
         
         nk::group_end(ctx);
     }

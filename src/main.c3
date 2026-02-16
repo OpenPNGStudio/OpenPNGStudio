@@ -3,9 +3,10 @@ module openpngstudio;
 import std::io, std::collections::list;
 
 import nk;
-
+/*
 import novacrash;
 import novacrash::options;
+*/
 
 import openpngstudio::console;
 import openpngstudio::ui;
@@ -21,7 +22,7 @@ extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
 
-fn int main() @winmain {
+fn int main() {
     console::init(mem);
 
     Context ctx;
@@ -31,7 +32,7 @@ fn int main() @winmain {
     console::register(&ctx.wm);
 
     initialize_panel(&ctx);
-
+    /*
     novacrash::uses_raylib = true;
     options::cfg.app_name = "OpenPNGStudio";
     options::cfg.message = "has reached a";
@@ -56,6 +57,7 @@ fn int main() @winmain {
         .crash_icon = $embed("../assets/logo.png"),
         .title_size = 32,
     };
+    */
 
     Idle{Context*} update_idle;
     Idle{Context*} draw_idle;
