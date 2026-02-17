@@ -16,9 +16,9 @@ Every `OPNG` file begins with a header:
 
 *Magic - 4 byte ASCII string `OPNG`<br>
 *Version - major and minor release of `OpenPNGStudio`, e.g: `0x0003` (0.3)<br>
-*Compression  method - compression algorithm used: `0 (None)`,  `1 (LZF)`<br>
+*Compression  method - compression algorithm used: `0 (None)`,  `1 (LZF)`, `2 (LZ4)`, `3 (ZSTD)`, `4 (XZ)`<br>
 *Password encryption method - method used to encrypt password: `0 (None)`, `1 (Argon2id)`<br>
-*Data encryption method - method used to encrypt data: `0 (None)`, `1 (ChaCha20_Poly1305)`<br>
+*Data encryption method - method used to encrypt data: `0 (None)`, `1 (XChaCha20_Poly1305)`<br>
 
 If compression is present, every algorithm stores own parameters:
 > Coming soon
@@ -39,10 +39,11 @@ Directory info header:
 
 `SQLite` header:
 
-| Offset | Size | Description     |
-| ------ | ---- | --------------- |
-| 0x0    | 0x8  | Serialized size |
-| 0x8    | 0x8  | Data offset     |
+| Offset | Size | Description       |
+| ------ | ---- | ----------------- |
+| 0x0    | 0x8  | Uncompressed Size |
+| 0x8    | 0x8  | Size			    |
+| 0x10   | 0x8  | Data offset       |
 
 `Images` header:
 
