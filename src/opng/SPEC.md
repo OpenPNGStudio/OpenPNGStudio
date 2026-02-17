@@ -27,40 +27,25 @@ For encryption to be present, both password and data encryption __must__ be pres
 > Coming soon
 
 Directory info header:
+
 | Offset | Size | Description       |
 | ------ | ---- | ----------------- |
 | 0x0    | 0x1  | Directory type*   |
 | 0x1    | 0x8  | Directory offset* |
 | 0x9    | 0x4  | Entry count       |
 
-*Directory type - type of data stored in the directory: `0 (Configuration)`, `1 (Layer Info)`, `2 (Images)`, `3 (Animations)`<br>
+*Directory type - type of data stored in the directory: `0 (SQLite), 1 (Images)`<br>
 *Directory offset - file cursor position from the start where data is located<br>
 
-`Configuration` header:
-| Offset | Size | Description              |
-| ------ | ---- | ------------------------ |
-| 0x0    | 0x8  | Microphone trigger       |
-| 0x8    | 0x4  | Microphone sensitivity   |
-| 0xC    | 0x4  | Background color (RGBA)* |
+`SQLite` header:
 
-*Background color (RGBA) - Alpha is ignored<br>
-
-`Layer Info` header:
-| Offset | Size | Description       |
-| ------ | ---- | ----------------- |
-| 0x0    | 0x4  | X Position offset |
-| 0x4    | 0x4  | Y Position offset |
-| 0x8    | 0x4  | Rotation          |
-| 0xC    | 0x4  | Timeout           |
-| 0x10   | 0x1  | Toggle mode*      |
-| 0x11   | 0x8  | Mask*             |
-| 0x19   | 0x4  | Image ID          |
-| 0x1D   | 0x4  | Animation ID      |
-
-*Toggle mode - when enabled, timeout is ignored<br>
-*Mask - bit mask of when layer can be shown<br>
+| Offset | Size | Description            |
+| ------ | ---- | ---------------------- |
+| 0x0    | 0x8  | SQLite serialized size |
+| 0x8    | 0x8  | Data offset            |
 
 `Images` header:
+
 | Offset | Size | Description       |
 | ------ | ---- | ----------------- |
 | 0x0    | 0x1  | Image Type*       |
@@ -72,18 +57,4 @@ Directory info header:
 *Image Type - type of the image: `0 (Static)`, `1 (Animated e.g. GIF)`<br>
 *Image Offset - file cursor position from the start where data is located<br>
 
-> Note: every image is stored using QOI format
-
-`Animations` header:
-| Offset | Size | Description          |
-| ------ | ---- | -------------------- |
-| 0x0    | 0x1  | Animation Type*      |
-| 0x1    | 0x4  | Animation ID         |
-| 0x5    | 0x1  | Animation Easing*    |
-| 0x6    | 0x8  | Animation Mask*      |
-| 0xE    | 0x4  | Animation Data Size* |
-
-*Animation Type - type of the animation applied to the layer: `0 (Spinner)`, `1 (Shake)`, `2 (Fade)`<br>
-*Animation Easing - ID of easing applied to the animation: [list](https://github.com/OpenPNGStudio/OpenPNGStudio/blob/main/src/c3/animation/easings.c3#L7)<br>
-*Animation Mask - bit mask of when animation can be played<br>
-*Animation Data Size - size of following data of animation<br>
+> Note: every image is stored using QOI format (for now)
