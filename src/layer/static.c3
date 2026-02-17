@@ -21,9 +21,9 @@ struct StaticLayer (Layer) {
     usz timeout;
     image::Image* image;
     Mask mask;
-    List{AnimationEntry} animations;
     char[2] input_buffer;
     int input_length;
+    List{AnimationEntry} animations;
     bitstruct : char {
         bool toggle;
         bool is_toggled;

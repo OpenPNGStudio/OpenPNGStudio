@@ -180,6 +180,16 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         nk::group_end(ctx);
     }
 
+    nk::label(ctx, "Microphone Trigger:", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Microphone Trigger",
+        nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_dynamic(ctx, 30, 1);
+
+        nk::progress(ctx, (uint*) &self.trigger, 100, true);
+        
+        nk::group_end(ctx);
+    }
+
     nk::label(ctx, "Microphone Sensitivity:", nk::TEXT_LEFT);
     if (nk::group_begin(ctx, "Microphone Sensitivity",
         nk::WINDOW_NO_SCROLLBAR)) {
@@ -188,16 +198,6 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         int multiplier = self.multiplier.load();
         nk::slider_int(ctx, 0, &multiplier, 25000, 100);
         self.multiplier.store(multiplier);
-        
-        nk::group_end(ctx);
-    }
-
-    nk::label(ctx, "Microphone Trigger:", nk::TEXT_LEFT);
-    if (nk::group_begin(ctx, "Microphone Trigger",
-        nk::WINDOW_NO_SCROLLBAR)) {
-        nk::layout_row_dynamic(ctx, 30, 1);
-
-        nk::progress(ctx, (uint*) &self.trigger, 100, true);
         
         nk::group_end(ctx);
     }

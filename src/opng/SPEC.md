@@ -39,10 +39,10 @@ Directory info header:
 
 `SQLite` header:
 
-| Offset | Size | Description            |
-| ------ | ---- | ---------------------- |
-| 0x0    | 0x8  | SQLite serialized size |
-| 0x8    | 0x8  | Data offset            |
+| Offset | Size | Description     |
+| ------ | ---- | --------------- |
+| 0x0    | 0x8  | Serialized size |
+| 0x8    | 0x8  | Data offset     |
 
 `Images` header:
 
@@ -58,3 +58,46 @@ Directory info header:
 *Image Offset - file cursor position from the start where data is located<br>
 
 > Note: every image is stored using QOI format (for now)
+
+## SQLite Schema
+
+`Layers (1)`:
+
+| Name | Type |
+| ---- | ---- |
+| ID   | INTEGER PRIMARY KEY |
+| Child_Count | INTEGER |
+| Data_ID | INTEGER |
+
+> If `Child_Count` is more than 0, it's a group.
+
+`Layer Data (1->1)`:
+
+| Name | Type |
+| ---- | ---- |
+| ID   | INTEGER PRIMARY KEY |
+| Name | TEXT |
+| X    | REAL |
+| Y    | REAL |
+| Scale_X  | REAL |
+| Scale_Y  | REAL |
+| Rotation | REAL |
+| Tint | INTEGER |
+| Timeout | INTEGER |
+| Image_ID | INTEGER |
+| Mask | BIGINT |
+| Toggle | BOOLEAN |
+
+`Animation Data (1->N)`:
+
+| Name | Type |
+| ---- | ---- |
+| ID   | INTEGER PRIMARY KEY |
+| Type | INTEGER |
+| Mask | BIGINT |
+| Easing | INTEGER |
+| Repeat | BOOLEAN |
+| Layer | INTEGER |
+| Data | BLOB |
+
+> `Layer` is the layer ID that owns the animation.
