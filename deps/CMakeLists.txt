@@ -27,13 +27,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 
-if (WIN32)
-    # mman
-    FetchContent_Declare(
-        mman
-        URL "https://github.com/boldowa/mman-win32/archive/refs/heads/master.tar.gz"
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
+# sqlite3
 
-    FetchContent_MakeAvailable(mman)
-endif()
+FetchContent_Declare(
+    sqlite3
+    URL "https://sqlite.org/2026/sqlite-amalgamation-3510200.zip"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_MakeAvailable(sqlite3)

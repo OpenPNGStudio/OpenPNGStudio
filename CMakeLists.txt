@@ -42,26 +42,19 @@ set(VENDOR_HEADERS
     "https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h"
 )
 
-if (WIN32)
-    list(APPEND VENDOR_HEADERS
-        "https://raw.githubusercontent.com/raylib-extras/extras-c/refs/heads/main/raylib_win32.h")
-endif()
-
 foreach(url IN LISTS VENDOR_HEADERS)
     fetch_file(${url} ${VENDOR_INCLUDE_DIR})
 endforeach()
 
 file(GLOB_RECURSE SRCS src/*.c)
+# not ideal but eh
+list(APPEND SRCS "${CMAKE_BINARY_DIR}/_deps/sqlite3-src/sqlite3.c")
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${libuv_SOURCE_DIR}/include"
     "${raylib_SOURCE_DIR}"
     "${libunuv_SOURCE_DIR}/include")
-if (WIN32)
-target_include_directories(${PROJECT_NAME} PUBLIC
-    "${mman_SOURCE_DIR}")
-endif()
 target_include_directories(${PROJECT_NAME} PUBLIC include include/vendor)
 
 install(TARGETS ${PROJECT_NAME})
