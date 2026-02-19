@@ -72,6 +72,14 @@ extern fn SqliteResult prepare_v2(
 	ZString* pzTail
 ) @cname("sqlite3_prepare_v2");
 
+extern fn char *serialize(SqliteHandle handle,
+    ZString zSchema,
+    long *size,
+    uint flags
+) @cname("sqlite3_serialize");
+
+extern fn long last_insert_rowid(SqliteHandle handle) @cname("sqlite3_last_insert_rowid");
+
 extern fn SqliteResult step(SqliteStmt stmt) @cname("sqlite3_step");
 extern fn SqliteResult finalize(SqliteStmt pStmt) @cname("sqlite3_finalize");
 extern fn CLong changes64(SqliteHandle handle) @cname("sqlite3_changes64");

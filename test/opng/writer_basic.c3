@@ -4,6 +4,70 @@ module writer_basic;
 import std::io, std::core::test;
 import opng_test_common;
 import opng;
+import sqlite3;
+
+fn void basic() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    /*
+    long size = 0;
+    char *buf = sqlite3::serialize(wr.db, null, &size, 0);
+
+    file::save("/tmp/test.db", buf[:size])!!;
+    */
+}
+
+fn void basic_layer_data() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    test::eq(wr.add_layer_data(opng_test_common::DATA)!!, 1);
+    /* TODO properly test inserted data */
+}
+
+fn void basic_layer() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    uint id = wr.add_layer_data(opng_test_common::DATA)!!;
+    wr.add_layer({0, id})!!;
+    /* TODO properly test inserted data */
+}
+
+struct SQLAnimation {
+    int type;
+    ulong mask;
+    int easing;
+    bool repeat;
+    uint layer_id;
+    void *data;
+    usz data_size;
+}
+
+fn void basic_animation() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    int foo = 77;
+    
+    wr.add_animation({
+        0, 7564, 2, true, 1, &foo, int.sizeof
+    })!!;
+    /* TODO properly test inserted data */
+
+    long size = 0;
+    char *buf = sqlite3::serialize(wr.db, null, &size, 0);
+
+    file::save("/tmp/test.db", buf[:size])!!;
+}
+
+
+/*
 
 fn void basic() @test
 {
@@ -12,7 +76,7 @@ fn void basic() @test
 
     char[] buf = wr.stream.get_buf();
 
-    test::eq(buf[:4], "OPNG"); /* magic */
+    test::eq(buf[:4], "OPNG");
 
     ushort ver;
     copy(@as_char_view(ver), buf[4:2]);
@@ -39,7 +103,7 @@ fn void configuration() @test
     usz offset;
     copy(@as_char_view(offset), dirs[1:8]);
 
-    test::eq(offset, 9 + DirType.COUNT * 13); /* location of CONFIGURATION */
+    test::eq(offset, 9 + DirType.COUNT * 13);
 
     char[] cfg = buf[wr.dirs_start + DirType.COUNT * 13..];
 
@@ -321,3 +385,5 @@ fn void copy(char[] dest, char[] src) @local
         dest[i] = c;
     }
 }
+
+*/

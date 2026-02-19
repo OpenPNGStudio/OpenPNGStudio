@@ -10,6 +10,7 @@ faultdef NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
     ENCRYPTION_METHOD_MISMATCH, NO_MORE_DIRS, DIR_TYPE_MISMATCH,
     IMAGE_TYPE_MISMATCH, ANIMATION_TYPE_MISMATCH;
 
+/*
 struct DirResult {
     DirType type;
     union value {
@@ -19,6 +20,7 @@ struct DirResult {
         Animation[] animations;
     }
 }
+*/
 
 struct Reader {
     Allocator alloc;
@@ -37,6 +39,7 @@ fn void Reader.free(&self)
     self.animation_data_offsets.free();
 }
 
+/*
 fn DirResult? Reader.read_dir(&self)
 {
     if (self.dir_count >= DirType.COUNT) return NO_MORE_DIRS?;
@@ -149,6 +152,7 @@ fn void? read_animations(Reader *self, DirResult *res)
         self.stream.skip(anim.data_size)!;
     }
 }
+*/
 
 module opng;
 

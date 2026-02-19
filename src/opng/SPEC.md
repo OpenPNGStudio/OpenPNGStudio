@@ -66,9 +66,9 @@ Directory info header:
 
 | Name | Type |
 | ---- | ---- |
-| ID   | INTEGER PRIMARY KEY |
-| Child_Count | INTEGER |
-| Data_ID | INTEGER |
+| id   | INTEGER PRIMARY KEY |
+| nchildren | INTEGER |
+| data_id | INTEGER |
 
 > If `Child_Count` is more than 0, it's a group.
 

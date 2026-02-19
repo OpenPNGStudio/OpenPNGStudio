@@ -5,6 +5,9 @@ import std::io, std::core::test, std::core::mem::allocator;
 import opng_test_common;
 import opng;
 
+
+/*
+
 fn void layer_with_text() @test
 {
     Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
@@ -116,3 +119,5 @@ fn void layer_with_anim() @test
 
     test::eq(rd.animation_data_offsets.len(), 0);
 }
+
+*/

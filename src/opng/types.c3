@@ -6,6 +6,9 @@ module opng::types;
 enum Compression : inline char {
     NONE,
     LZF,
+    LZ4,
+    ZSTD,
+    XZ,
 
     LIMIT, /* used for comparison */
 }
@@ -19,7 +22,7 @@ enum Kdf : inline char {
 
 enum Encryption : inline char {
     NONE,
-    CHACHA20_POLY1305,
+    XCHACHA20_POLY1305,
 
     LIMIT, /* used for comparison */
 }
@@ -33,10 +36,8 @@ struct Header {
 }
 
 enum DirType : inline char {
-    CONFIGURATION,
-    LAYER_INFO,
+    SQLITE,
     IMAGES,
-    ANIMATIONS,
 
     COUNT, /* for writer and comparison */
 }
@@ -49,51 +50,47 @@ struct Dir {
 
 const DIR_SIZE = 13; /* 1 + 8 + 4 */
 
-struct Configuration {
-    usz microphone_trigger;
-    uint microphone_sensitivity;
-    uint background_color; /* RGBA */
-}
-
-struct LayerInfo {
-    int x, y;
-    float rotation;
-    uint timeout;
-    bool toggle_mode;
-    ulong mask;
-    uint image_id, animation_id;
+struct SQLiteDir {
+    usz uncompressed_size, size, offset;
 }
 
 enum ImageType : inline char {
     STATIC,
-    ANIMATED,
-
-    LIMIT, /* used for comparison */
+    ANIMATED
 }
 
-struct Image {
+struct ImagesDir {
     ImageType type;
     uint id;
-    usz uncompressed_size, size;
-    usz offset;
+    usz uncompressed_size, size, offset;
 }
 
-enum AnimationType : inline char {
-    SPINNER,
-    SHAKE,
-    FADE,
-
-    LIMIT, /* used for comparison */
+struct Vec2 {
+    float x, y;
 }
 
-struct Animation {
-    AnimationType type;
-    uint id;
-    char easing;
+struct SQLLayer {
+    usz nchildren;
+    uint data_id;
+}
+
+struct SQLLayerData {
+    ZString name;
+    Vec2 position, scale;
+    float rotation;
+    uint tint;
+    usz timeout;
+    uint image_id;
     ulong mask;
-    uint data_size;
+    bool toggle;
 }
 
-struct IdPair {
-    uint image_id, animation_id;
+struct SQLAnimation {
+    int type;
+    ulong mask;
+    int easing;
+    bool repeat;
+    uint layer_id;
+    void *data;
+    usz data_size;
 }

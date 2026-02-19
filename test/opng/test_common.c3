@@ -11,6 +11,14 @@ const ReaderConfig RCFG = {
     0x0003,
 };
 
-const LayerInfo INFO = {
-    6, 7, 180, 1000, false, 0xFF, 0, 0
+const SQLLayerData DATA = {
+    "foo",
+    {-5, 5},
+    {1, 1},
+    0,
+    0xFF333333,
+    0,
+    0,
+    77,
+    false
 };

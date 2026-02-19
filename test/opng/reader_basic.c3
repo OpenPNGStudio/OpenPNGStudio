@@ -5,6 +5,8 @@ import std::io, std::core::test, std::core::mem::allocator;
 import opng_test_common;
 import opng;
 
+/*
+
 fn void basic() @test
 {
     Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
@@ -214,3 +216,5 @@ fn void layers_with_2_layers() @test
     test::eq(info.image_id, pair2.image_id);
     test::eq(info.animation_id, pair2.animation_id);
 }
+
+*/
