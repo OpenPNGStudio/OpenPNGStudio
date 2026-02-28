@@ -9,10 +9,17 @@ import opng::types, opng::stream;
 
 faultdef SQLITE_FAILED;
 
+enum State {
+    DEFAULT,
+    SQLITE,
+    IMAGES,
+}
+
 struct Writer {
     Stream stream;
+    State state;
     SqliteHandle db;
-    usz dirs_start;
+    usz dirs_start, sqlite_start;
     usz[DirType.COUNT] offsets;
 }
 
@@ -22,6 +29,55 @@ fn void Writer.free(&self)
     sqlite3::close(self.db);
 }
 
+<*
+@require self.state == DEFAULT
+*>
+fn void? Writer.start_sqlite(&self)
+{
+    self.state = SQLITE;
+    usz offset = self.stream.offset()!;
+    self.sqlite_start = offset;
+
+    find_dir(self, SQLITE)!;
+    DirType t = SQLITE;
+
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    int entries = 1;
+    self.stream.@write(entries)!;
+
+    self.stream.offset(true, offset)!;
+
+    usz tmp = 0;
+
+    self.stream.@write(tmp)!;
+    self.stream.@write(tmp)!;
+    self.stream.@write(tmp)!;
+}
+
+<*
+@require self.state == SQLITE
+*>
+fn void? Writer.end_sqlite(&self)
+{
+    usz offset = self.stream.offset()!;
+    self.stream.offset(true, self.sqlite_start)!;
+    
+    usz size = 0;
+    char *buf = sqlite3::serialize(self.db, null, (long*) &size, 0);
+
+    self.stream.@write(size)!;
+    self.stream.@write(size)!;
+    self.stream.@write(offset)!;
+
+    self.stream.write(buf[:size])!;
+    
+    self.state = DEFAULT;
+}
+
+<*
+@require self.state == SQLITE
+*>
 fn uint? Writer.add_layer_data(&self, SQLLayerData data)
 {
     @pool() {
@@ -80,6 +136,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     };
 }
 
+<*
+@require self.state == SQLITE
+*>
 fn void? Writer.add_layer(&self, SQLLayer layer)
 {
     @pool() {
@@ -109,6 +168,9 @@ VALUES (?, ?);
     };
 }
 
+<*
+@require self.state == SQLITE
+*>
 fn void? Writer.add_animation(&self, SQLAnimation animation)
 {
     @pool() {
@@ -218,6 +280,7 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
     self.stream.@write(cfg.encryption)!;
 
     self.dirs_start = self.stream.offset()!;
+    self.state = DEFAULT;
 
     char[DirType.COUNT * types::DIR_SIZE] empty;
     self.stream.write(&empty)!;

@@ -11,69 +11,6 @@ fn void basic() @test
     Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
     defer wr.free();
 
-    /*
-    long size = 0;
-    char *buf = sqlite3::serialize(wr.db, null, &size, 0);
-
-    file::save("/tmp/test.db", buf[:size])!!;
-    */
-}
-
-fn void basic_layer_data() @test
-{
-    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
-    defer wr.free();
-
-    test::eq(wr.add_layer_data(opng_test_common::DATA)!!, 1);
-    /* TODO properly test inserted data */
-}
-
-fn void basic_layer() @test
-{
-    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
-    defer wr.free();
-
-    uint id = wr.add_layer_data(opng_test_common::DATA)!!;
-    wr.add_layer({0, id})!!;
-    /* TODO properly test inserted data */
-}
-
-struct SQLAnimation {
-    int type;
-    ulong mask;
-    int easing;
-    bool repeat;
-    uint layer_id;
-    void *data;
-    usz data_size;
-}
-
-fn void basic_animation() @test
-{
-    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
-    defer wr.free();
-
-    int foo = 77;
-    
-    wr.add_animation({
-        0, 7564, 2, true, 1, &foo, int.sizeof
-    })!!;
-    /* TODO properly test inserted data */
-
-    long size = 0;
-    char *buf = sqlite3::serialize(wr.db, null, &size, 0);
-
-    file::save("/tmp/test.db", buf[:size])!!;
-}
-
-
-/*
-
-fn void basic() @test
-{
-    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
-    defer wr.free();
-
     char[] buf = wr.stream.get_buf();
 
     test::eq(buf[:4], "OPNG");
@@ -90,6 +27,75 @@ fn void basic() @test
     test::eq(wr.dirs_start, 9);
 }
 
+fn void basic_layer_data() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    wr.start_sqlite()!!;
+    test::eq(wr.add_layer_data(opng_test_common::DATA)!!, 1);
+    wr.end_sqlite()!!;
+    /* TODO properly test inserted data */
+
+    char[] buf = wr.stream.get_buf();
+    Dir sqlite;
+    copy(@as_char_view(sqlite.type), buf[9:1]);
+    copy(@as_char_view(sqlite.offset), buf[9 + 1:8]);
+    copy(@as_char_view(sqlite.nentries), buf[9 + 1 + 8:4]);
+
+    test::eq(sqlite.type, DirType.SQLITE);
+    test::eq(sqlite.offset, 9 + types::DIR_SIZE * DirType.COUNT);
+    test::eq(sqlite.nentries, 1);
+
+    char[] sqlite_header = buf[sqlite.offset..];
+    SQLiteDir dir;
+    copy(@as_char_view(dir.uncompressed_size), sqlite_header[0:8]);
+    copy(@as_char_view(dir.size), sqlite_header[8:8]);
+    copy(@as_char_view(dir.offset), sqlite_header[16:8]);
+
+    test::eq(dir.uncompressed_size, dir.size);
+    test::gt(dir.uncompressed_size, 0);
+    test::eq(dir.offset, sqlite.offset + 8 * 3);
+}
+
+fn void basic_layer() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    wr.start_sqlite()!!;
+    uint id = wr.add_layer_data(opng_test_common::DATA)!!;
+    wr.add_layer({0, id})!!;
+    wr.end_sqlite()!!;
+    /* TODO properly test inserted data */
+}
+
+fn void basic_animation() @test
+{
+    Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
+    defer wr.free();
+
+    int foo = 77;
+
+    wr.start_sqlite()!!;
+    wr.add_animation({
+        0, 7564, 2, true, 1, &foo, int.sizeof
+    })!!;
+    wr.end_sqlite()!!;
+    /* TODO properly test inserted data */
+}
+
+<*
+@require dest.len >= src.len
+*>
+fn void copy(char[] dest, char[] src) @local
+{
+    foreach (i, c : src) {
+        dest[i] = c;
+    }
+}
+
+/*
 fn void configuration() @test
 {
     Writer wr = opng::write_memory(mem, opng_test_common::CFG)!!;
@@ -375,15 +381,4 @@ fn void layers_with_2_layers() @test
     test::eq(info.image_id, pair2.image_id);
     test::eq(info.animation_id, pair2.animation_id);
 }
-
-<*
-@require dest.len >= src.len
-*>
-fn void copy(char[] dest, char[] src) @local
-{
-    foreach (i, c : src) {
-        dest[i] = c;
-    }
-}
-
 */

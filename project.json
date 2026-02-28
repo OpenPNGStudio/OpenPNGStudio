@@ -10,11 +10,8 @@
     "output": "build",
     "targets": {
         "OpenPNGStudio-linux-x64": {
-            "type": "executable",
+            "type": "static-lib",
             "name": "OpenPNGStudio",
-            "linker-search-paths": ["build/miniroot/usr/lib64",
-                "build/miniroot/usr/lib/x86_64-linux-gnu"],
-            "linked-libraries": ["OpenPNGStudio", "raylib", "m"],
         },
         "OpenPNGStudio-windows-x64": {
             "type": "executable",

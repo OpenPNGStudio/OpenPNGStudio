@@ -7,16 +7,9 @@ build/
 repo/
 .flatpak-builder
 .build/
-build-mingw/
 subprojects/raylib/
-subprojects/libunuv/
-subprojects/libarchive-3.7.7/
-subprojects/zstd-1.5.6/
-subprojects/libuv-v1.49.1/
-subprojects/mman-win32/
-subprojects/wolfssl/
+subprojects/sqlite-amalgamation-3510200/
 subprojects/packagecache/
-subprojects/lua-5.4.6/
 .cache/
 CMakeSettings.json
 .vs/
