@@ -17,12 +17,15 @@ import std::math @public;
 
 import ev;
 
-extern fn int c_main(void *c3_ctx);
 extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
 
-fn int main() {
+fn int win_main() @export("WinMain") @if(env::WIN32) {
+    return main();
+}
+
+fn int main() @winmain {
     console::init(mem);
 
     Context ctx;

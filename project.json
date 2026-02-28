@@ -11,15 +11,11 @@
     "targets": {
         "OpenPNGStudio-linux-x64": {
             "type": "static-lib",
-            "name": "OpenPNGStudio",
+            "name": "libOpenPNGStudio"
         },
         "OpenPNGStudio-windows-x64": {
-            "type": "executable",
-            "name": "OpenPNGStudio",
-            "linker-search-paths": ["build\\miniroot\\lib"],
-            "linked-libraries": ["OpenPNGStudio", "raylib", 
-                "mman", "Advapi32", "Userenv", "Ole32", "Iphlpapi"],
-            "linker":  "builtin"
+            "type": "static-lib",
+            "name": "libOpenPNGStudio"
         },
         "opng": {
             "type": "executable",

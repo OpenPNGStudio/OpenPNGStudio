@@ -100,7 +100,7 @@ extern fn SqliteResult bind_blob(SqliteStmt stmt, CInt, void*, CInt n, void*) @c
 extern fn SqliteResult bind_blob64(SqliteStmt stmt, CInt, void*, CULong, void*) @cname("sqlite3_bind_blob64");
 extern fn SqliteResult bind_double(SqliteStmt stmt, CInt, double) @cname("sqlite3_bind_double");
 extern fn SqliteResult bind_int(SqliteStmt stmt, CInt, CInt) @cname("sqlite3_bind_int");
-extern fn SqliteResult bind_int64(SqliteStmt stmt, CInt, CLong) @cname("sqlite3_bind_int64");
+extern fn SqliteResult bind_int64(SqliteStmt stmt, CInt, usz) @cname("sqlite3_bind_int64");
 extern fn SqliteResult bind_null(SqliteStmt stmt, CInt) @cname("sqlite3_bind_null");
 extern fn SqliteResult bind_text(SqliteStmt stmt, CInt, ZString, CInt, void*) @cname("sqlite3_bind_text");
 extern fn SqliteResult bind_text16(SqliteStmt stmt, CInt, void*, CInt, void*) @cname("sqlite3_bind_text16");

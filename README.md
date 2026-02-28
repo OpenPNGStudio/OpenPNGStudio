@@ -62,7 +62,8 @@ chmod +x OpenPNGStudio
 ```bash
 git clone https://github.com/OpenPNGStudio/OpenPNGStudio.git
 cd OpenPNGStudio
-./build.sh
+meson setup build
+ninja -C build
 ```
 
 ## Quick Start

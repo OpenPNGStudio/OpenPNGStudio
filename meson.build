@@ -9,6 +9,7 @@ project(
     ],
     version: '0.3.0',
     meson_version: '>= 1.2.0',
+    default_options: ['c_std=c17']
 )
 
 # Modules
@@ -16,6 +17,7 @@ cmake = import('cmake')
 fs = import('fs')
 
 # Programs
+cc = meson.get_compiler('c')
 curl = find_program('curl')
 c3c = find_program('c3c')
 ascli = find_program('appstreamcli', required: false)
@@ -103,7 +105,7 @@ endif
 
 lib = custom_target(
     'OpenPNGStudio C3 library',
-    output: 'OpenPNGStudio.' + ext,
+    output: 'libOpenPNGStudio.' + ext,
     command: [c3c, 'build', target, '--warn-deprecation=no'],
     build_always_stale: true,
 )
@@ -112,15 +114,26 @@ opng = declare_dependency(link_with: lib)
 
 # C part
 src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c']
+extra_libs = []
+
+if host_machine.system() == 'windows'
+    add_project_arguments(['/wd5105', '/experimental:c11atomics'], language: 'c')
+    foreach winlib : ['Shlwapi', 'Dbghelp']
+        extra_libs += cc.find_library(winlib)
+    endforeach
+
+    windows = import('windows')
+    src += windows.compile_resources('data/win.rc')
+endif
 
 executable(
     'OpenPNGStudio',
     src,
-    c_args: ['-std=c17'],
-    dependencies: [raylib, sqlite, opng],
+    dependencies: [raylib, sqlite, opng, extra_libs],
     include_directories: ['include/', 'include/vendor/'],
     install: true,
     install_dir: 'bin',
+    win_subsystem: 'windows',
 )
 
 # Install

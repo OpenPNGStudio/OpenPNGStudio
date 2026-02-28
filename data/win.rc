@@ -1,0 +1,31 @@
+#include <windows.h>  // Required for versioning macros
+
+IDI_ICON1 ICON "../assets/logo.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 0,3,0,0
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"  // Language (English - United States)
+        BEGIN
+            VALUE "CompanyName", "OpenPNGStudio"
+            VALUE "FileDescription", "Create & stream PNGTuber models"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "OpenPNGStudio"
+            VALUE "OriginalFilename", "OpenPNGStudio.exe"
+            VALUE "ProductName", "OpenPNGStudio"
+            VALUE "ProductVersion", "0.3.0.0"
+            VALUE "LegalCopyright", "Copyright (C) 2024-2026 LowByteFox. Licensed under GPL‑3.0+"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200  // English (US)
+    END
+END
