@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module opng::info @if($feature(OPNG_STANDALONE));
-
+/*
 import std::io, std::os;
 import std::collections::map;
 import opng;
@@ -132,3 +132,4 @@ fn String fault.shortname(self)
     String name = self.nameof;
     return name[name.index_of("::") + 2..]!!;
 }
+*/

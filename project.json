@@ -19,8 +19,8 @@
         },
         "opng": {
             "type": "executable",
-            "dependencies-override": [],
-            "linked-libraries-override": [],
+            "dependencies-override": ["sqlite3"],
+            "linked-libraries-override": ["sqlite3"],
             "sources-override": ["src/opng/**"],
             "features": ["OPNG_STANDALONE"],
             "test-sources-override": ["test/opng/**"]

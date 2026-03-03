@@ -22,3 +22,5 @@ const SQLLayerData DATA = {
     77,
     false
 };
+
+const char[] IMG = "Hello, World";

@@ -59,7 +59,7 @@ enum ImageType : inline char {
     ANIMATED
 }
 
-struct ImagesDir {
+struct ImageEntry {
     ImageType type;
     uint id;
     usz uncompressed_size, size, offset;

@@ -1,40 +1,30 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module opng::pack @if($feature(OPNG_STANDALONE));
 
-import std::io, std::os, std::encoding::json;
-import std::collections::object;
-import std::collections::map;
+import std::io, std::os, std::encoding::json, std::io::path;
+import std::collections::object, std::collections::map, std::collections::list;
 
 import opng;
 
-struct ParsedAnim {
-    AnimationType type;
-    char easing;
-    ulong mask;
-    uint data_size;
-    char *data;
+struct Image {
+    uint id;
+    usz rc;
+    char[] buffer;
+    ImageType type;
 }
 
 struct ParsedLayer {
-    int x, y;
-    float rotation;
-    uint timeout;
-    bool toggle_mode;
-    ulong mask;
-    File image;
-    bool has_anim, is_gif;
-    ParsedAnim anim;
+    SQLLayerData data;
+    List{SQLAnimation} animations;
+    List{ParsedLayer} children;
+    Image *img; String img_name;
 }
 
-struct ParsedConfig {
-    usz mic_trigger;
-    uint sensitivity, bg_color;
+struct ParseContext @local {
+    HashMap{String, Image} images;
 }
 
-struct Model {
-    ParsedConfig cfg;
-    HashMap{String, ParsedLayer} layers;
-}
+uint id_counter @local = 1;
 
 fn int _main(int argc, ZString *argv)
 {
@@ -57,20 +47,19 @@ fn int _main(int argc, ZString *argv)
 
     if (argc < 2) usage();
 
-    if (verbose) io::printfn("Opening file '%s'", argv[1]);
-
-    Writer w = opng::write_file(mem, argv[1].str_view(), { 0x0003, NONE, NONE,
+    Writer wr = opng::write_file(mem, argv[1].str_view(), { 0x0003, NONE, NONE,
         NONE })!!;
-    defer w.free();
+    defer wr.free();
 
-    if (verbose) io::printfn("Parsing dir '%s'", argv[0]);
+    ParseContext ctx;
+    ctx.images.init(mem);
+    
+    ParsedLayer root = parse_dir(&ctx, argv[0].str_view())!!;
+    io::printn(ctx.images);
 
-    Model model = parse_dir(argv[0].str_view())!!;
+    print(&root);
 
-    if (verbose) io::printfn("Configuring");
-    w.start_configure({
-        model.cfg.mic_trigger, model.cfg.sensitivity, model.cfg.bg_color
-    })!!;
+    /*
 
     w.start_layers()!!;
     HashMap{String, IdPair} ids;
@@ -132,152 +121,149 @@ fn int _main(int argc, ZString *argv)
     };
 
     w.end_images()!!;
+    */
 
     return 0;
 }
 
-faultdef NOT_DIR, MISSING_IMAGES, EXPECTED_JSON, INCORRECT_DATA_SIZE;
-
-fn Model? parse_dir(String path) @local
+fn void print(ParsedLayer *layer) @local
 {
-    Model mod;
-    bool has_config, has_layers, has_images, has_animations;
+    io::printn(layer.data);
+    
+    foreach (&lay : layer.children) {
+        print(lay);
+    }
+}
 
-    Path cfg, layers, images, anims;
+faultdef EXPECTED_OBJECT, EXPECTED_ARRAY;
+
+fn ParsedLayer? parse_dir(ParseContext *ctx, String path) @local
+{
+    ParsedLayer root;
+    root.children.init(mem);
+    root.animations.init(mem);
 
     @pool() {
-        Path p = path.to_tpath()!;
+        Path dir = path::temp(path)!;
 
-        if (!path::is_dir(p)) return NOT_DIR?;
+        parse(ctx, &root, dir)!;
+    };
 
-        PathList files = path::ls(tmem, p)!;
+    return root;
+}
 
-        foreach (file : files) {
-            switch (file.str_view()) {
-            case "conf.json":
-                cfg = p.tappend("conf.json")!;
-                has_config = true;
-                break;
-            case "layers":
-                layers = p.tappend("layers")!;
-                has_layers = true;
-                break;
-            case "images":
-                images = p.tappend("images")!;
-                has_images = true;
-                break;
-            case "animations":
-                anims = p.tappend("animations")!;
-                has_animations = true;
-                break;
+fn bool? parse(ParseContext *self, ParsedLayer *target, Path file) @local
+{
+    /* is group */
+    if (path::is_dir(file)) {
+        @pool() {
+            PathList files = path::ls(tmem, file)!;
+
+            foreach (f : files) {
+                if (f.basename() == "root.json") {
+                    parse(self, target, file.tappend(f.basename())!)!;
+                } else {
+                    ParsedLayer tmp;
+                    tmp.children.init(mem);
+                    tmp.animations.init(mem);
+
+                    if (parse(self, &tmp, file.tappend(f.basename())!)!) {
+                        target.children.push(tmp);
+                    }
+                }
             }
-        }
-
-        File conf = file::open(cfg.str_view(), "r")!;
-        Object *root = json::tparse(&conf)!;
-
-        mod.cfg.mic_trigger = root.get_ulong("microphone_trigger")!;
-        mod.cfg.sensitivity = root.get_uint("microphone_sensitivity")!;
-        mod.cfg.bg_color = root.get_uint("background_color")!;
-
-        if (has_layers && !has_images) return MISSING_IMAGES?;
-
-        conf.close()!;
-
-        mod.layers = parse_layers(layers)!;
-        mod.layers.@each_entry(; Entry{String,ParsedLayer} *entry) {
-            @pool() {
-                bool gif = false;
-                Path img = images.tappend(entry.key.tconcat(".qoi"))!;
-                if (!path::exists(img)) {
-                    img = images.tappend(entry.key.tconcat(".gif"))!;
-                    gif = true;
-                }
-
-                entry.value.image = file::open(img.str_view(), "r")!;
-                entry.value.is_gif = gif;
-
-                Path anim = anims.tappend(entry.key.tconcat(".json"))!;
-                if (path::exists(anim)) {
-                    entry.value.has_anim = true;
-                    entry.value.anim = parse_anim(anim)!;
-                }
-            };
         };
-    };
+        
+        target.data.name = file.basename().zstr_copy(mem);
+    } else { /* is file */
+        @pool() {
+            String basename = file.basename();
+            if (basename.ends_with(".json")) {
+                usz index = basename.rindex_of(".")!;
+                target.data.name = basename[:index].zstr_copy(mem);
+                parse_json(self, target, file, basename == "root.json")!;
+            } else if (basename.ends_with(".qoi") || 
+                basename.ends_with(".gif")) {
+                if (self.images.has_key(basename)) return false;
 
-    return mod;
+                self.images[basename] = {
+                    id_counter++,
+                    1,
+                    file::load(mem, file.str_view())!,
+                    basename.ends_with(".gif") ? ANIMATED : STATIC,
+                };
+
+                return false;
+            }
+        };
+    }
+    
+    return true;
 }
 
-fn ParsedAnim? parse_anim(Path file) @local
+fn void? parse_json(ParseContext *self, ParsedLayer *target, Path file,
+    bool ignore_image) @local => @pool()
 {
-    ParsedAnim parsed;
+    File f = file::open(file.str_view(), "r")!;
+    Object *root = json::tparse(&f)!;
 
-    @pool() {
-        File f = file::open(file.str_view(), "r")!;
+    Object *data = root.get("data")!;
+    {
+        Object *pos = data.get("position")!;
+        if (!pos.is_map()) return EXPECTED_OBJECT~;
+        
+        target.data.position.x = (float) pos.get_float("x")!;
+        target.data.position.y = (float) pos.get_float("y")!;
 
-        Object *root = json::tparse(&f)!;
+        Object *scale = data.get("scale")!;
 
-        parsed.type = (AnimationType) root.get_char("type")!;
-        parsed.easing = root.get_char("easing")!;
-        parsed.mask = root.get_ulong("mask")!;
-        parsed.data_size = root.get_uint("data_size")!;
-        parsed.data = malloc(parsed.data_size);
+        target.data.scale.x = (float) pos.get_float("x")!;
+        target.data.scale.y = (float) pos.get_float("y")!;
 
-        Object *data = root.get("data")!;
-        if (data.get_len() != parsed.data_size) return INCORRECT_DATA_SIZE?;
+        target.data.rotation = (float) data.get_float("rotation")!;
+        target.data.tint = data.get_uint("tint")!;
+        target.data.timeout = data.get_ulong("timeout")!;
+        target.data.mask = data.get_ulong("mask")!;
+        target.data.toggle = data.get_bool("toggle_mode")!;
+    }
 
-        for (uint i = 0; i < parsed.data_size; i++) {
-            parsed.data[i] = data.get_integer_at(char, i)!;
+    if (!ignore_image) {
+        String img = root.get_string("image")!;
+        if (try Image *i = self.images.get_ref(img)) {
+            target.img = i;
+            target.img_name = "";
+            target.data.image_id = i.id;
+        } else {
+            target.img_name = img;
+            target.img = null;
         }
+    }
 
-        f.close()!;
-    };
+    if (try Object *animations = root.get("animations")) {
+        if (!animations.is_array() && !animations.is_empty()) return EXPECTED_ARRAY~;
 
-    return parsed;
-}
+        for (usz i = 0; i < animations.get_len(); i++) {
+            Object *anim = animations.get_at(i);
+            SQLAnimation a;
 
-fn HashMap{String, ParsedLayer}? parse_layers(Path layers_dir) @local
-{
-    HashMap{String, ParsedLayer} layers;
-    layers.init(mem);
-    @pool() {
-        PathList list = path::ls(tmem, layers_dir)!;
+            a.type = anim.get_int("type")!;
+            a.mask = anim.get_ulong("mask")!;
+            a.easing = anim.get_int("easing")!;
+            a.repeat = anim.get_bool("repeat")!;
 
-        foreach (lay : list) {
-            if (lay.extension()! != "json") return EXPECTED_JSON?;
-            String name = lay.name_no_extension()!;
+            Object *anim_data = anim.get("data")!;
+            if (!anim_data.is_array()) return EXPECTED_ARRAY~;
 
-            ParsedLayer layer;
-            @pool() {
-                Path file_path = layers_dir.tappend(lay.str_view())!;
-                File f = file::open(file_path.str_view(), "r")!;
+            a.data_size = anim_data.get_len();
+            a.data = malloc(a.data_size * char.sizeof);
 
-                Object *root = json::tparse(&f)!;
-                layer.x = root.get_int("x")!;
-                layer.y = root.get_int("y")!;
-                layer.rotation = (float) root.get_float("rotation")!;
-                layer.timeout = root.get_uint("timeout")!;
-                layer.toggle_mode = root.get_bool("toggle_mode")!;
-                layer.mask = root.get_ulong("mask")!;
+            for (int j = 0; j < a.data_size; j++) {
+                ((char*) a.data)[j] = anim_data.get_integer_at(char, i)!;
+            }
 
-                f.close()!;
-            };
-
-            layers[name] = layer;
+            target.animations.push(a);
         }
-    };
-
-    return layers;
-}
-
-fn String? Path.name_no_extension(&self)
-{
-    String basename = self.basename();
-    usz index = basename.rindex_of(".")!;
-
-    if (index == 0 || index == basename.len) return basename;
-    return basename[:index];
+    }
 }
 
 fn void usage() @local

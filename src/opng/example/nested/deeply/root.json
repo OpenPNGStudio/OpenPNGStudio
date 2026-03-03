@@ -1,0 +1,18 @@
+{
+    "data": {
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "scale": {
+            "x": 1,
+            "y": 1
+        },
+        "rotation": 0,
+        "tint": 0,
+        "timeout": 0,
+        "mask": 0,
+        "toggle_mode": false
+    },
+    "animations": []
+}

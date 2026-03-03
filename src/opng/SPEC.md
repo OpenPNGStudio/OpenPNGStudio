@@ -64,41 +64,41 @@ Directory info header:
 
 `Layers (1)`:
 
-| Name | Type |
-| ---- | ---- |
-| id   | INTEGER PRIMARY KEY |
-| nchildren | INTEGER |
-| data_id | INTEGER |
+| Name      | Type                |
+| --------- | ------------------- |
+| id        | INTEGER PRIMARY KEY |
+| nchildren | INTEGER             |
+| data_id   | INTEGER             |
 
 > If `Child_Count` is more than 0, it's a group.
 
 `Layer Data (1->1)`:
 
-| Name | Type |
-| ---- | ---- |
-| ID   | INTEGER PRIMARY KEY |
-| Name | TEXT |
-| X    | REAL |
-| Y    | REAL |
-| Scale_X  | REAL |
-| Scale_Y  | REAL |
-| Rotation | REAL |
-| Tint | INTEGER |
-| Timeout | INTEGER |
-| Image_ID | INTEGER |
-| Mask | BIGINT |
-| Toggle | BOOLEAN |
+| Name     | Type                |
+| -------- | ------------------- |
+| ID       | INTEGER PRIMARY KEY |
+| Name     | TEXT                |
+| X        | REAL                |
+| Y        | REAL                |
+| Scale_X  | REAL                |
+| Scale_Y  | REAL                |
+| Rotation | REAL                |
+| Tint     | INTEGER             |
+| Timeout  | INTEGER             |
+| Image_ID | INTEGER             |
+| Mask     | BIGINT              |
+| Toggle   | BOOLEAN             |
 
 `Animation Data (1->N)`:
 
-| Name | Type |
-| ---- | ---- |
-| ID   | INTEGER PRIMARY KEY |
-| Type | INTEGER |
-| Mask | BIGINT |
-| Easing | INTEGER |
-| Repeat | BOOLEAN |
-| Layer | INTEGER |
-| Data | BLOB |
+| Name   | Type                |
+| ------ | ------------------- |
+| ID     | INTEGER PRIMARY KEY |
+| Type   | INTEGER             |
+| Mask   | BIGINT              |
+| Easing | INTEGER             |
+| Repeat | BOOLEAN             |
+| Layer  | INTEGER             |
+| Data   | BLOB                |
 
 > `Layer` is the layer ID that owns the animation.

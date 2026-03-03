@@ -19,14 +19,102 @@ struct Writer {
     Stream stream;
     State state;
     SqliteHandle db;
-    usz dirs_start, sqlite_start;
+    usz dirs_start, sqlite_start, images_start;
     usz[DirType.COUNT] offsets;
+    HashMap{uint, char[]} images;
 }
 
 fn void Writer.free(&self)
 {
+    self.images.free();
     self.stream.free();
     sqlite3::close(self.db);
+}
+
+<*
+@require self.state == DEFAULT
+*>
+fn void? Writer.start_images(&self)
+{
+    self.state = IMAGES;
+    
+    usz offset = self.stream.offset()!;
+    self.images_start = offset;
+    
+    find_dir(self, IMAGES)!;
+    DirType t = IMAGES;
+    usz count = 0;
+    
+    self.stream.@write(t)!;
+    self.stream.@write(offset)!;
+    self.stream.@write(count)!;
+
+    self.stream.offset(true, offset)!;
+}
+
+<*
+@require self.state == IMAGES
+*>
+fn void? Writer.add_image(&self, ImageType type, uint id, char[] buffer)
+{
+    if (self.images.has_key(id)) return;
+    
+    self.stream.@write(type)!;
+    self.stream.@write(id)!;
+
+    usz size = 0;
+    self.stream.@write(size)!;
+    self.stream.@write(size)!;
+    self.stream.@write(size)!;
+
+    self.images[id] = buffer;
+}
+
+<*
+@require self.state == IMAGES
+*>
+fn void? Writer.end_images(&self)
+{
+    usz offset = self.stream.offset()!;
+
+    find_dir(self, IMAGES)!;
+    usz count = self.images.len();
+
+    self.stream.skip(0x9)!;
+    self.stream.@write(count)!;
+
+    self.stream.offset(true, self.images_start)!;
+
+    usz calculated_offset = offset;
+
+    @pool() {
+        List{char[]} queue;
+        queue.tinit();
+
+        for (usz i = 0; i < count; i++) {
+            self.stream.skip(0x1)!;
+            uint id = 0;
+            self.stream.@read(id)!;
+
+            char[] buf = self.images[id]!;
+            usz size = buf.len;
+            
+            self.stream.@write(size)!;
+            /* TODO compress */
+            queue.push(buf);
+            self.stream.@write(size)!;
+            self.stream.@write(calculated_offset)!;
+            calculated_offset += size;
+        }
+
+        self.stream.offset(true, offset)!;
+
+        foreach (buf : queue) {
+            self.stream.write(buf)!;
+        }
+    };
+    
+    self.state = DEFAULT;
 }
 
 <*
@@ -278,6 +366,8 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
     self.stream.@write(cfg.compression)!;
     self.stream.@write(cfg.kdf)!;
     self.stream.@write(cfg.encryption)!;
+
+    self.images.init(alloc);
 
     self.dirs_start = self.stream.offset()!;
     self.state = DEFAULT;

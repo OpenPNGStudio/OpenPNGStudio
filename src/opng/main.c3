@@ -18,7 +18,9 @@ extern int optind @builtin;
 extern fn int getopt(int argc, char** argv, char *optstring) @builtin;
 
 OpngCmd[] cmds @local = {
+/*
     {"info", &info::_main },
+*/
     {"pack", &pack::_main }
 };
 
