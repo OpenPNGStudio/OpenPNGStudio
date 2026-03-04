@@ -55,87 +55,50 @@ fn int _main(int argc, ZString *argv)
     ctx.images.init(mem);
     
     ParsedLayer root = parse_dir(&ctx, argv[0].str_view())!!;
-    io::printn(ctx.images);
 
-    print(&root);
+    wr.start_sqlite()!!;
+    root.pack(&ctx, &wr)!!;
+    wr.end_sqlite()!!;
 
-    /*
-
-    w.start_layers()!!;
-    HashMap{String, IdPair} ids;
-    ids.init(mem);
-    defer ids.free();
-
-    model.layers.@each(; String key, ParsedLayer layer) {
-        if (verbose) io::printfn("Writing layer info for '%s'", key);
-        IdPair id = w.add_layer({ layer.x, layer.y, layer.rotation,
-            layer.timeout, layer.toggle_mode, layer.mask, 0, 0 },
-            layer.has_anim)!!;
-
-        ids[key] = id;
+    wr.start_images()!!;
+    
+    ctx.images.@each(; String key, Image img) {
+        wr.add_image(img.type, img.id, img.buffer)!!;
     };
 
-    w.end_layers()!!;
-    w.start_animations()!!;
-
-    ids.@each(; String key, IdPair pair) {
-        if (pair.animation_id > 0) {
-            if (verbose) io::printfn("Writing layer animation info for '%s'", key);
-            ParsedLayer i = model.layers[key]!!;
-            w.add_animation({
-                i.anim.type, pair.animation_id, i.anim.easing, i.anim.mask,
-                i.anim.data_size
-            })!!;
-            w.add_animation_data(i.anim.data[:i.anim.data_size])!!;
-        }
-    };
-    w.end_animations()!!;
-
-    w.start_image_info()!!;
-
-    ids.@each(; String key, IdPair pair) {
-        if (verbose) io::printfn("Writing image info for '%s'", key);
-        ParsedLayer i = model.layers[key]!!;
-        w.add_image_info({
-            i.is_gif ? ANIMATED : STATIC,
-            pair.image_id, 0, 0, 0
-        })!!;
-    };
-
-    w.end_image_info()!!;
-    w.start_images()!!;
-
-    ids.@each(; String key, IdPair pair) {
-        if (verbose) io::printfn("Writing image for '%s'", key);
-        ParsedLayer i = model.layers[key]!!;
-        usz len = i.image.seek(0, END)!!;
-        i.image.seek(0, SET)!!;
-
-        char *data = malloc(len);
-        char[] buf = data[:len];
-        i.image.read(buf)!!;
-
-        w.add_image(pair.image_id, buf)!!;
-
-        free(data);
-    };
-
-    w.end_images()!!;
-    */
+    wr.end_images()!!;
 
     return 0;
 }
 
-fn void print(ParsedLayer *layer) @local
+faultdef EXPECTED_OBJECT, EXPECTED_ARRAY, IMAGE_NOT_FOUND;
+
+fn void? ParsedLayer.pack(&self, ParseContext *ctx, Writer *wr)
 {
-    io::printn(layer.data);
-    
-    foreach (&lay : layer.children) {
-        print(lay);
+    if (self.img == null && self.img_name != "") {
+        if (try Image *i = ctx.images.get_ref(self.img_name)) {
+            self.img = i;
+            self.data.image_id = i.id;
+        } else {
+            io::printn(*self);
+            return IMAGE_NOT_FOUND~;
+        }
+    }
+
+    uint layer_id = wr.add_layer_data(self.data)!;
+
+    foreach (anim : self.animations) {
+        anim.layer_id = layer_id;
+        wr.add_animation(anim)!;
+    }
+
+    wr.add_layer({self.children.len(), layer_id})!;
+
+    foreach (&child : self.children) {
+        child.pack(ctx, wr)!;
     }
 }
 
-faultdef EXPECTED_OBJECT, EXPECTED_ARRAY;
 
 fn ParsedLayer? parse_dir(ParseContext *ctx, String path) @local
 {
@@ -234,7 +197,7 @@ fn void? parse_json(ParseContext *self, ParsedLayer *target, Path file,
             target.img_name = "";
             target.data.image_id = i.id;
         } else {
-            target.img_name = img;
+            target.img_name = img.copy(mem);
             target.img = null;
         }
     }

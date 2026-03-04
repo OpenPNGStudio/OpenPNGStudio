@@ -58,7 +58,7 @@ fn void? Writer.start_images(&self)
 fn void? Writer.add_image(&self, ImageType type, uint id, char[] buffer)
 {
     if (self.images.has_key(id)) return;
-    
+
     self.stream.@write(type)!;
     self.stream.@write(id)!;
 
@@ -95,7 +95,7 @@ fn void? Writer.end_images(&self)
             self.stream.skip(0x1)!;
             uint id = 0;
             self.stream.@read(id)!;
-
+            
             char[] buf = self.images[id]!;
             usz size = buf.len;
             
@@ -347,13 +347,15 @@ fn Writer? write_file(Allocator alloc, String path, WriterConfig cfg)
 {
     Writer w;
     FileStream *s = calloc(FileStream.sizeof);
-    s.file = file::open(path, "w")!;
+    s.file = file::open(path, "w+")!;
     w.stream = s;
 
     init_writer(&w, alloc, cfg)!;
 
     return w;
 }
+
+extern fn ushort htons(ushort in);
 
 fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
 {
@@ -362,6 +364,7 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
     populate_database(self)!;
     
     self.stream.write("OPNG")!;
+    cfg.version = htons(cfg.version);
     self.stream.@write(cfg.version)!;
     self.stream.@write(cfg.compression)!;
     self.stream.@write(cfg.kdf)!;
@@ -375,7 +378,6 @@ fn void? init_writer(Writer *self, Allocator alloc, WriterConfig cfg) @local
     char[DirType.COUNT * types::DIR_SIZE] empty;
     self.stream.write(&empty)!;
 }
-
 
 fn void? populate_database(Writer *self) @local
 {

@@ -1,0 +1,14 @@
+# OpenPNGStudio (OPNG) magic entry
+0       string      OPNG            OpenPNGStudio file format,
+>4      byte        x               version %u.
+>5      byte        x               \b%u,
+>6      byte        0               compression: none,
+>6      byte        1               compression: LZF,
+>6      byte        2               compression: LZ4,
+>6      byte        3               compression: ZSTD,
+>6      byte        4               compression: XZ,
+>7      byte        0               KDF: none,
+>7      byte        1               KDF: Argon2id,
+>8      byte        0               encryption: none
+>8      byte        1               encryption: XChaCha20 Poly1305
+!:mime  application/x-openpngstudio
