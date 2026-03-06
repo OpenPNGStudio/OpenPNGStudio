@@ -56,7 +56,9 @@ struct SQLiteDir {
 
 enum ImageType : inline char {
     STATIC,
-    ANIMATED
+    ANIMATED,
+
+    LIMIT
 }
 
 struct ImageEntry {

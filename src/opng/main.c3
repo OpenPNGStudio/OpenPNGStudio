@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module opng @if($feature(OPNG_STANDALONE));
 
-import std::io, std::os, std::core::env;
+import std::io, std::os;
 
-import opng::info, opng::pack;
+import opng::info, opng::pack, opng::dump;
 
 alias OpngCmdFn = fn int(int argc, ZString *argv);
 alias OpngCmdUsageFn = fn void();
@@ -21,7 +21,8 @@ OpngCmd[] cmds @local = {
 /*
     {"info", &info::_main },
 */
-    {"pack", &pack::_main }
+    {"pack", &pack::_main },
+    {"dump", &dump::_main}
 };
 
 fn int main(int argc, ZString *argv)
@@ -62,7 +63,12 @@ fn void usage(bool help) @noreturn
 {
     io::fprintf(io::stderr(), "usage: opng [-hV] command [arg ...]\n")!!;
     if (help) {
-        io::fprintf(io::stderr(), "commands: list pack extract\n")!!;
+        io::fprintf(io::stderr(), "commands:")!!;
+        foreach (cmd : cmds) {
+            io::fprintf(io::stderr(), " %s", cmd.name)!!;
+        }
+        
+        io::fprintn(io::stderr(), "")!!;
     }
     os::exit(1);
 }

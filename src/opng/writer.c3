@@ -43,7 +43,7 @@ fn void? Writer.start_images(&self)
     
     find_dir(self, IMAGES)!;
     DirType t = IMAGES;
-    usz count = 0;
+    uint count = 0;
     
     self.stream.@write(t)!;
     self.stream.@write(offset)!;
@@ -78,7 +78,7 @@ fn void? Writer.end_images(&self)
     usz offset = self.stream.offset()!;
 
     find_dir(self, IMAGES)!;
-    usz count = self.images.len();
+    uint count = (uint) self.images.len();
 
     self.stream.skip(0x9)!;
     self.stream.@write(count)!;

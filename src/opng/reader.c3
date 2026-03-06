@@ -10,41 +10,32 @@ faultdef NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
     ENCRYPTION_METHOD_MISMATCH, NO_MORE_DIRS, DIR_TYPE_MISMATCH,
     IMAGE_TYPE_MISMATCH, ANIMATION_TYPE_MISMATCH;
 
-/*
+
 struct DirResult {
     DirType type;
     union value {
-        Configuration cfg;
-        LayerInfo[] layers;
-        Image[] images;
-        Animation[] animations;
+        SQLiteDir sqlite;
+        ImageEntry[] images;
     }
 }
-*/
+
 
 struct Reader {
     Allocator alloc;
     Stream stream;
 
     Header header;
-    usz next_dir;
+    usz next_dir_off;
     usz dir_count;
-
-    HashMap{uint,usz} animation_data_offsets;
 }
 
-fn void Reader.free(&self)
-{
-    self.stream.free();
-    self.animation_data_offsets.free();
-}
+fn void Reader.free(&self) => self.stream.free();
 
-/*
-fn DirResult? Reader.read_dir(&self)
+fn DirResult? Reader.next_dir(&self)
 {
     if (self.dir_count >= DirType.COUNT) return NO_MORE_DIRS?;
 
-    self.stream.offset(true, self.next_dir)!;
+    self.stream.offset(true, self.next_dir_off)!;
     DirResult res;
     usz offset;
     uint nentries;
@@ -60,34 +51,51 @@ fn DirResult? Reader.read_dir(&self)
     self.stream.offset(true, offset)!;
 
     switch (res.type) {
-    case CONFIGURATION:
-        read_conf(self, &res)!;
-        break;
-    case LAYER_INFO:
-        res.value.layers = allocator::alloc_array(self.alloc, LayerInfo,
-            nentries);
-        read_layers(self, &res)!;
+    case SQLITE:
+        read_sqlite(self, &res)!;
         break;
     case IMAGES:
-        res.value.images = allocator::alloc_array(self.alloc, Image,
+        res.value.images = allocator::alloc_array(self.alloc, ImageEntry,
             nentries);
         read_images(self, &res)!;
-        break;
-    case ANIMATIONS:
-        res.value.animations = allocator::alloc_array(self.alloc, Animation,
-            nentries);
-        read_animations(self, &res)!;
         break;
     default:
         unreachable("NOT IMPLEMENTED");
     }
 
-    self.next_dir += types::DIR_SIZE;
+    self.next_dir_off += types::DIR_SIZE;
     self.dir_count++;
 
     return res;
 }
 
+fn void? read_sqlite(Reader *self, DirResult *res)
+{
+    self.stream.@read(res.value.sqlite.uncompressed_size)!;
+    self.stream.@read(res.value.sqlite.size)!;
+    self.stream.@read(res.value.sqlite.offset)!;
+}
+
+fn void? read_images(Reader *self, DirResult *res)
+{
+    foreach (&image : res.value.images) {
+        self.stream.@read(image.type)!;
+        if (image.type >= LIMIT) return IMAGE_TYPE_MISMATCH?;
+
+        self.stream.@read(image.id)!;
+        self.stream.@read(image.uncompressed_size)!;
+        self.stream.@read(image.size)!;
+        self.stream.@read(image.offset)!;
+    }
+}
+
+fn void? Reader.read_into(&self, usz offset, char[] buffer)
+{
+    self.stream.offset(true, offset)!;
+    self.stream.read(buffer)!;
+}
+
+/*
 fn void? Reader.read_image(&self, Image info, char[] out)
 {
     self.stream.offset(true, info.offset)!;
@@ -121,19 +129,6 @@ fn void? read_layers(Reader *self, DirResult *res)
         self.stream.@read(layer.mask)!;
         self.stream.@read(layer.image_id)!;
         self.stream.@read(layer.animation_id)!;
-    }
-}
-
-fn void? read_images(Reader *self, DirResult *res)
-{
-    foreach (&image : res.value.images) {
-        self.stream.@read(image.type)!;
-        if (image.type >= LIMIT) return IMAGE_TYPE_MISMATCH?;
-
-        self.stream.@read(image.id)!;
-        self.stream.@read(image.uncompressed_size)!;
-        self.stream.@read(image.size)!;
-        self.stream.@read(image.offset)!;
     }
 }
 
@@ -194,6 +189,10 @@ fn Reader? read_file(Allocator alloc, String path, ReaderConfig cfg)
     return r;
 }
 
+import libc;
+
+extern fn ushort ntohs(ushort in);
+
 fn void? init_reader(Reader *self, ReaderConfig cfg)
 {
     self.stream.@read(self.header.magic)!;
@@ -201,6 +200,7 @@ fn void? init_reader(Reader *self, ReaderConfig cfg)
     if (&self.header.magic != "OPNG") return reader::NOT_OPNG_FILE?;
 
     self.stream.@read(self.header.version)!;
+    self.header.version = ntohs(self.header.version);
 
     ushort header_major = self.header.version & 0xFF00;
     header_major >>= char.sizeof * 8;
@@ -227,7 +227,6 @@ fn void? init_reader(Reader *self, ReaderConfig cfg)
     if (self.header.encryption_method >= LIMIT) return
         reader::ENCRYPTION_METHOD_MISMATCH?;
 
-    self.next_dir = self.stream.offset()!;
+    self.next_dir_off = self.stream.offset()!;
     self.dir_count = 0;
-    self.animation_data_offsets.init(self.alloc);
 }
