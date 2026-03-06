@@ -18,9 +18,7 @@ extern int optind @builtin;
 extern fn int getopt(int argc, char** argv, char *optstring) @builtin;
 
 OpngCmd[] cmds @local = {
-/*
     {"info", &info::_main },
-*/
     {"pack", &pack::_main },
     {"dump", &dump::_main}
 };
@@ -71,4 +69,10 @@ fn void usage(bool help) @noreturn
         io::fprintn(io::stderr(), "")!!;
     }
     os::exit(1);
+}
+
+fn String fault.shortname(self)
+{
+    String name = self.nameof;
+    return name[name.index_of("::") + 2..]!!;
 }

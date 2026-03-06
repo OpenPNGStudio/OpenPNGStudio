@@ -180,8 +180,8 @@ fn void? parse_json(ParseContext *self, ParsedLayer *target, Path file,
 
         Object *scale = data.get("scale")!;
 
-        target.data.scale.x = (float) pos.get_float("x")!;
-        target.data.scale.y = (float) pos.get_float("y")!;
+        target.data.scale.x = (float) scale.get_float("x")!;
+        target.data.scale.y = (float) scale.get_float("y")!;
 
         target.data.rotation = (float) data.get_float("rotation")!;
         target.data.tint = data.get_uint("tint")!;

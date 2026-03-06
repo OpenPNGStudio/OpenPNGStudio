@@ -4,8 +4,9 @@ module opng::reader;
 import std::core::mem, std::core::mem::allocator;
 import std::collections::map;
 import opng::types, opng::stream;
+import sqlite3;
 
-faultdef NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
+faultdef SQLITE_FAILED, NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
     COMPRESSION_METHOD_MISMATCH, KDF_METHOD_MISMATCH,
     ENCRYPTION_METHOD_MISMATCH, NO_MORE_DIRS, DIR_TYPE_MISMATCH,
     IMAGE_TYPE_MISMATCH, ANIMATION_TYPE_MISMATCH;
@@ -19,17 +20,23 @@ struct DirResult {
     }
 }
 
-
 struct Reader {
     Allocator alloc;
     Stream stream;
+    SqliteHandle db;
+
+    usz next_layer_id;
 
     Header header;
     usz next_dir_off;
     usz dir_count;
 }
 
-fn void Reader.free(&self) => self.stream.free();
+fn void Reader.free(&self)
+{
+    self.stream.free();
+    sqlite3::close(self.db);
+}
 
 fn DirResult? Reader.next_dir(&self)
 {
@@ -95,6 +102,88 @@ fn void? Reader.read_into(&self, usz offset, char[] buffer)
     self.stream.read(buffer)!;
 }
 
+fn void? Reader.load_sqlite(&self, SQLiteDir sqlite)
+{
+    /* TODO compression */
+    self.stream.offset(true, sqlite.offset)!;
+    char *dat = sqlite3::malloc64(sqlite.uncompressed_size);
+    char[] data = dat[:sqlite.uncompressed_size];
+
+    self.stream.read(data)!;
+    
+    sqlite3::deserialize(self.db, null, dat, data.len, data.len,
+        SqliteDeserialize.FREEONCLOSE | SqliteDeserialize.RESIZEABLE);
+}
+
+fn SQLLayer? Reader.next_layer(&self)
+{
+    @pool() {
+        SqliteStmt stmt;
+        String code = `
+SELECT * FROM layers WHERE id = ?;
+`;
+        code = code.trim();
+
+        SqliteResult res = sqlite3::prepare_v2(self.db, code.zstr_tcopy(), -1, 
+            &stmt, null);
+            
+        if (res != OK) return SQLITE_FAILED~;
+
+        res = sqlite3::bind_int64(stmt, 1, self.next_layer_id++);
+        if (res != OK) return SQLITE_FAILED~;
+        
+        res = sqlite3::step(stmt);
+        if (res != ROW) return SQLITE_FAILED~;
+        defer sqlite3::finalize(stmt);
+
+        return {
+            sqlite3::column_int64(stmt, 1),
+            sqlite3::column_int(stmt, 2)
+        };
+    };
+}
+
+fn SQLLayerData? Reader.get_layer_data(&self, uint id)
+{
+    @pool() {
+        SqliteStmt stmt;
+        String code = `
+SELECT * FROM layer_data WHERE id = ?;
+`;
+        code = code.trim();
+
+        SqliteResult res = sqlite3::prepare_v2(self.db, code.zstr_tcopy(), -1, 
+            &stmt, null);
+            
+        if (res != OK) return SQLITE_FAILED~;
+
+        res = sqlite3::bind_int(stmt, 1, id);
+        if (res != OK) return SQLITE_FAILED~;
+        
+        res = sqlite3::step(stmt);
+        if (res != ROW) return SQLITE_FAILED~;
+        defer sqlite3::finalize(stmt);
+
+        return {
+            sqlite3::column_text(stmt, 1).str_view().zstr_copy(mem),
+            {
+                (float) sqlite3::column_double(stmt, 2),
+                (float) sqlite3::column_double(stmt, 3)
+            },
+            {
+                (float) sqlite3::column_double(stmt, 4),
+                (float) sqlite3::column_double(stmt, 5)
+            },
+            (float) sqlite3::column_double(stmt, 6),
+            sqlite3::column_int(stmt, 7),
+            sqlite3::column_int64(stmt, 8),
+            sqlite3::column_int(stmt, 9),
+            sqlite3::column_int64(stmt, 10),
+            sqlite3::column_int(stmt, 11) == 1
+        };
+    };
+}
+
 /*
 fn void? Reader.read_image(&self, Image info, char[] out)
 {
@@ -153,6 +242,7 @@ module opng;
 
 import std::io, std::io::file;
 import std::core::mem;
+import sqlite3;
 
 struct ReaderConfig {
     ushort version;
@@ -195,6 +285,9 @@ extern fn ushort ntohs(ushort in);
 
 fn void? init_reader(Reader *self, ReaderConfig cfg)
 {
+    SqliteResult res = sqlite3::open(":memory:", &self.db);
+    if (res != OK) return writer::SQLITE_FAILED~;
+    
     self.stream.@read(self.header.magic)!;
 
     if (&self.header.magic != "OPNG") return reader::NOT_OPNG_FILE?;
@@ -229,4 +322,5 @@ fn void? init_reader(Reader *self, ReaderConfig cfg)
 
     self.next_dir_off = self.stream.offset()!;
     self.dir_count = 0;
+    self.next_layer_id = 1;
 }

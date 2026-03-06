@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module opng::info @if($feature(OPNG_STANDALONE));
-/*
+
 import std::io, std::os;
 import std::collections::map;
 import opng;
+import std::core::string::ansi;
 
 import std::compression::qoi;
 
@@ -24,7 +25,30 @@ fn int _main(int argc, ZString *argv)
 
     if (argc < 1) usage();
 
+    Reader? rd = opng::read_file(mem, argv[0].str_view(), { 0x0003 });
+    if (catch excuse = rd) {
+        io::fprint(io::stderr(), "opng info: ")!!;
+        io::fprintn(io::stderr(), excuse.shortname())!!;
+        return 1;
+    }
+    defer rd.free();
 
+    while (try DirResult res = rd.next_dir()) {
+        switch (res.type) {
+        case SQLITE:
+            rd.load_sqlite(res.value.sqlite)!!;
+            
+            io::printn("Model Layers:");
+            (void) layer_info(&rd);
+        case IMAGES:
+            foreach (img : res.value.images) {
+                io::printn(img);
+            }
+        default:
+        }
+    }
+
+/*
     Reader? r = opng::read_file(mem, argv[0].str_view(), { 0x0003 });
 
     if (catch excuse = r) {
@@ -117,8 +141,150 @@ fn int _main(int argc, ZString *argv)
             break;
         }
     }
+    */
 
     return 0;
+}
+
+fn void? layer_info(Reader *rd, int depth = 2) @local @maydiscard
+{
+    SQLLayer layer = rd.next_layer()!;
+    SQLLayerData data = rd.get_layer_data(layer.data_id)!;
+
+    /* data */
+    if (depth > 2) {
+        @string(data.name);
+        io::printn();
+    }
+    
+    if (layer.nchildren > 0) {
+        @ident("children", depth);
+        io::print(" = ");
+        @integer(layer.nchildren);
+        io::printn();
+    }
+
+    @ident("position", depth);
+    io::print("(");
+    @ident("x", 0);
+    io::print(", ");
+    @ident("y", 0);
+    io::print(") = ");
+    io::print("(");
+    @decimal(data.position.x);
+    io::print(", ");
+    @decimal(data.position.y);
+    io::printn(")");
+
+    @ident("scale", depth);
+    io::print("(");
+    @ident("w", 0);
+    io::print(", ");
+    @ident("h", 0);
+    io::print(") = ");
+    io::print("(");
+    @decimal(data.scale.x);
+    io::print(", ");
+    @decimal(data.scale.y);
+    io::printn(")");
+
+    @ident("rotation", depth);
+    io::print(" = ");
+    @decimal(data.rotation);
+    io::printn();
+
+    @ident("tint", depth);
+    io::print(" = ");
+    @tint(data.tint);
+    io::printn();
+
+    @ident("timeout", depth);
+    io::print(" = ");
+    @integer(data.timeout);
+    io::printn("ms");
+
+    @ident("mask", depth);
+    io::print(" = ");
+    @mask(data.mask);
+    io::printn();
+
+    @ident("toggle", depth);
+    io::print(" = ");
+    @boolean(data.toggle);
+    io::printn("\n");
+
+    for (int i = 0; i < layer.nchildren; i++) {
+        padding(depth);
+        io::print(Ansi.BRIGHT_BLUE);
+        io::print("child layer");
+        io::print(Ansi.RESET);
+        io::print(" = ");
+        layer_info(rd, depth + 2);
+    }
+}
+
+macro void @ident($str, #d) @local
+{
+    padding(#d);
+    io::print(Ansi.BRIGHT_CYAN);
+    io::print($str);
+    io::print(Ansi.RESET);
+}
+
+macro void @integer(#val) @local
+{
+    io::print(Ansi.BRIGHT_MAGENTA);
+    io::printf("%d", #val);
+    io::print(Ansi.RESET);
+}
+
+macro void @decimal(#val) @local
+{
+    io::print(Ansi.BRIGHT_MAGENTA);
+    io::printf("%.2f", #val);
+    io::print(Ansi.RESET);
+}
+
+macro void @string(#val) @local
+{
+    io::print(Ansi.BRIGHT_GREEN);
+    io::printf("\"%s\"", #val);
+    io::print(Ansi.RESET);
+}
+
+macro void @tint(#val) @local
+{
+    AnsiColor bg = {
+        (char) (#val >> 24) & 0xFF,
+        (char) (#val >> 16) & 0xFF,
+        (char) (#val >> 8) & 0xFF,
+        true
+    };
+    
+    io::print(bg);
+    bg.bg = false;
+    io::print(bg);
+    io::printf("#%08x ", #val);
+    io::print(Ansi.RESET);
+}
+
+macro void @mask(#val) @local
+{
+    io::print(Ansi.BRIGHT_YELLOW);
+    io::printf("0b%033b", #val);
+    io::print(Ansi.RESET);
+}
+
+macro void @boolean(#val) @local
+{
+    io::print(Ansi.BRIGHT_RED);
+    io::printf("%s", #val == true ? "yes" : "no");
+    io::print(Ansi.RESET);
+}
+
+fn void padding(int depth) @local
+{
+    for (int i = 0; i < depth; i++) io::print(" ");
 }
 
 fn void usage() @local
@@ -126,10 +292,3 @@ fn void usage() @local
     io::fprintf(io::stderr(), "usage: opng info [-h] file\n")!!;
     os::exit(1);
 }
-
-fn String fault.shortname(self)
-{
-    String name = self.nameof;
-    return name[name.index_of("::") + 2..]!!;
-}
-*/

@@ -73,9 +73,3 @@ fn void usage() @local
     io::fprintf(io::stderr(), "usage: opng dump [-h] infile dir\n")!!;
     os::exit(1);
 }
-
-fn String fault.shortname(self)
-{
-    String name = self.nameof;
-    return name[name.index_of("::") + 2..]!!;
-}
