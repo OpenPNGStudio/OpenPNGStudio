@@ -33,6 +33,53 @@ fn int _main(int argc, ZString *argv)
     }
     defer rd.free();
 
+    io::printn("Model Info:");
+    @ident("version", 2);
+    io::print(" = ");
+    @integer((rd.header.version & 0xFF00) >> 8);
+    io::print(".");
+    @integer(rd.header.version & 0xFF);
+    io::printn();
+
+    @ident("compression", 2);
+    io::print(" = ");
+    switch (rd.header.compression_method) {
+    case NONE:
+        @string("none");
+    case LZF:
+        @string("lzf");
+    case LZ4:
+        @string("lz4");
+    case ZSTD:
+        @string("zstd");
+    case XZ:
+        @string("xz");
+    default:
+    }
+    io::printn();
+    
+    @ident("password method", 2);
+    io::print(" = ");
+    switch (rd.header.password_encryption_method) {
+    case NONE:
+        @string("none");
+    case ARGON2ID:
+        @string("argon2id");
+    default:
+    }
+    io::printn();
+
+    @ident("encryption", 2);
+    io::print(" = ");
+    switch (rd.header.encryption_method) {
+    case NONE:
+        @string("none");
+    case XCHACHA20_POLY1305:
+        @string("xchacha20_poly1305");
+    default:
+    }
+    io::printn("\n");
+
     while (try DirResult res = rd.next_dir()) {
         switch (res.type) {
         case SQLITE:
