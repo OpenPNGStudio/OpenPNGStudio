@@ -2,9 +2,10 @@
 module opng::reader;
 
 import std::core::mem, std::core::mem::allocator;
-import std::collections::map;
+import std::collections::list;
 import opng::types, opng::stream;
 import sqlite3;
+import libc;
 
 faultdef SQLITE_FAILED, NOT_OPNG_FILE, MAJOR_VERSION_MISMATCH, MINOR_VERSION_MISMATCH,
     COMPRESSION_METHOD_MISMATCH, KDF_METHOD_MISMATCH,
@@ -182,6 +183,51 @@ SELECT * FROM layer_data WHERE id = ?;
             sqlite3::column_int(stmt, 11) == 1
         };
     };
+}
+
+fn SQLAnimation[]? Reader.get_layer_animations(&self, Allocator alloc, uint id)
+{
+    @pool() {
+        SqliteStmt stmt;
+        String code = `
+SELECT * FROM animations WHERE layer = ?;
+`;
+        code = code.trim();
+
+        SqliteResult res = sqlite3::prepare_v2(self.db, code.zstr_tcopy(), -1, 
+            &stmt, null);
+            
+        if (res != OK) return SQLITE_FAILED~;
+
+        res = sqlite3::bind_int(stmt, 1, id);
+        if (res != OK) return SQLITE_FAILED~;
+
+        List{SQLAnimation} anims;
+        anims.tinit();
+        
+        res = sqlite3::step(stmt);
+        while (res == ROW) {
+            SQLAnimation anim = {
+                sqlite3::column_int(stmt, 1),
+                sqlite3::column_int64(stmt, 2),
+                sqlite3::column_int(stmt, 3),
+                sqlite3::column_int(stmt, 4) == 1,
+                id,
+                null, 0 /* blob */
+            };
+
+            void *blob = sqlite3::column_blob(stmt, 6);
+            anim.data_size = sqlite3::column_bytes(stmt, 6);
+            anim.data = malloc(anim.data_size);
+            libc::memcpy(anim.data, blob, anim.data_size);
+            anims.push(anim);
+            
+            res = sqlite3::step(stmt);
+        }
+        defer sqlite3::finalize(stmt);
+
+        return anims.to_array(alloc);
+    };    
 }
 
 /*

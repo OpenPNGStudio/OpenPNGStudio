@@ -41,107 +41,13 @@ fn int _main(int argc, ZString *argv)
             io::printn("Model Layers:");
             (void) layer_info(&rd);
         case IMAGES:
+            io::printn("Model Images:");
             foreach (img : res.value.images) {
-                io::printn(img);
+                (void) image_info(&rd, img);
             }
         default:
         }
     }
-
-/*
-    Reader? r = opng::read_file(mem, argv[0].str_view(), { 0x0003 });
-
-    if (catch excuse = r) {
-        io::fprint(io::stderr(), "opng info: ")!!;
-        io::fprintn(io::stderr(), excuse.shortname())!!;
-        return 1;
-    }
-
-    defer r.free();
-
-    while (try DirResult res = r.read_dir()) {
-        switch (res.type) {
-        case CONFIGURATION:
-            io::printn("Model Configuration:");
-            io::printfn("microphone trigger = %d",
-                res.value.cfg.microphone_trigger);
-            io::printfn("microphone sensitivity = %d",
-                res.value.cfg.microphone_sensitivity);
-            io::printfn("background color (RGBA) = %X",
-                res.value.cfg.background_color);
-            break;
-        case LAYER_INFO:
-            io::printn("Model Layers:");
-            foreach (&layer : res.value.layers) {
-                io::printfn("\tid = %d", layer.image_id);
-                io::printfn("\t(x,y) = (%d,%d)", layer.x, layer.y);
-                io::printfn("\trotation = %f", layer.rotation);
-                io::printfn("\ttimeout = %dms", layer.timeout);
-                io::printfn("\thas toggle? %s", layer.toggle_mode ? "yes" :
-                    "no");
-                io::printfn("\tmask = %033b", layer.mask);
-
-                io::printfn("\thas animation? %s", layer.animation_id > 0 ?
-                    "yes" : "no");
-
-                if (layer.animation_id > 0) {
-                    io::printfn("\tanimation id = %d", layer.animation_id);
-                }
-            }
-            free(res.value.layers.ptr);
-            break;
-        case IMAGES:
-            io::printn("Layer Images:");
-            foreach (image : res.value.images) {
-                io::printfn("\tid = %d", image.id);
-                io::printfn("\ttype = %s", image.type);
-                io::printfn("\tuncompressed size = %d",
-                    image.uncompressed_size);
-                io::printfn("\tsize = %d", image.size);
-
-                char *buf = malloc(image.uncompressed_size);
-                defer free(buf);
-                r.read_image(image, buf[:image.uncompressed_size])!!;
-                QOIDesc desc;
-
-                @pool() {
-                    char[] useless = qoi::decode(tmem,
-                        buf[:image.uncompressed_size], &desc)!!;
-
-                };
-
-                io::printfn("\t(width,height) = (%d,%d)", desc.width,
-                    desc.height);
-            }
-            free(res.value.images.ptr);
-            break;
-        case ANIMATIONS:
-            io::printn("Layer Animations:");
-            foreach (anim : res.value.animations) {
-                io::printfn("\tid = %d", anim.id);
-                io::printfn("\ttype = %s", anim.type);
-                io::printfn("\teasing = %d", anim.easing);
-                io::printfn("\tmask = %033b", anim.mask);
-                io::printfn("\tdata size = %d", anim.data_size);
-
-                io::printf("\tanimation data = [");
-                char *buf = malloc(anim.data_size);
-                defer free(buf);
-                r.read_animation_data(anim, buf[:anim.data_size])!!;
-
-                foreach (i, byte : buf[:anim.data_size]) {
-                    io::printf("%x", byte);
-                    if (i + 1 < anim.data_size) io::print(", ");
-                }
-                io::printn("]");
-            }
-            free(res.value.animations.ptr);
-            break;
-        default:
-            break;
-        }
-    }
-    */
 
     return 0;
 }
@@ -154,7 +60,7 @@ fn void? layer_info(Reader *rd, int depth = 2) @local @maydiscard
     /* data */
     if (depth > 2) {
         @string(data.name);
-        io::printn();
+        io::printn(":");
     }
     
     if (layer.nchildren > 0) {
@@ -211,7 +117,40 @@ fn void? layer_info(Reader *rd, int depth = 2) @local @maydiscard
     @ident("toggle", depth);
     io::print(" = ");
     @boolean(data.toggle);
-    io::printn("\n");
+
+    if (data.image_id > 0) {
+        io::printn();
+        @ident("image id", depth);
+        io::print(" = ");
+        @integer(data.image_id);
+    }
+
+    @pool() {
+        SQLAnimation[] anims = rd.get_layer_animations(tmem, layer.data_id)!!;
+
+        if (anims.len > 0) {
+            io::printn();
+            padding(depth);
+            io::print(Ansi.BRIGHT_BLUE);
+            io::print("animations");
+            io::print(Ansi.RESET);
+            io::print(" = ");
+            @integer(anims.len);
+            io::print(":");
+        }
+
+        foreach (i, anim : anims) {
+            io::printn();
+            anim_info(anim, depth + 2);
+            if (i + 1 != anims.len) {
+                io::printn();
+                padding(depth + 2);
+                io::print("===");
+            }
+        }
+        
+        io::printn("\n");
+    };
 
     for (int i = 0; i < layer.nchildren; i++) {
         padding(depth);
@@ -221,6 +160,93 @@ fn void? layer_info(Reader *rd, int depth = 2) @local @maydiscard
         io::print(" = ");
         layer_info(rd, depth + 2);
     }
+}
+
+fn void anim_info(SQLAnimation self, int depth) @local
+{
+    @ident("type", depth);
+    io::print(" = ");
+    @integer(self.type);
+    io::printn();
+
+    @ident("easing", depth);
+    io::print(" = ");
+    @integer(self.type);
+    io::printn();
+    
+    @ident("mask", depth);
+    io::print(" = ");
+    @mask(self.mask);
+    io::printn();
+    
+    @ident("repeat", depth);
+    io::print(" = ");
+    @boolean(self.repeat);
+    io::printn();
+
+    @ident("data", depth);
+    io::print(" = [");
+    char *ptr = self.data;
+    
+    for (usz i = 0; i < self.data_size; i++) {
+        @integer(ptr[i]);
+        if (i + 1 != self.data_size) io::print(", ");
+    }
+
+    io::print("]");
+}
+
+fn void? image_info(Reader *rd, ImageEntry img) @local @maydiscard
+{
+    @pool() {
+        char[] data = mem::temp_array(char, img.uncompressed_size);
+        
+        rd.read_into(img.offset, data)!;
+        QOIDesc desc;
+
+        @pool() {
+            char[] useless = qoi::decode(tmem, data[:img.uncompressed_size],
+                &desc)!;
+        };
+
+        @ident("id", 2);
+        io::print(" = ");
+        @integer(img.id);
+        io::printn();
+
+        @ident("type", 2);
+        io::print(" = ");
+        switch (img.type) {
+        case STATIC:
+            @string("static");
+        case ANIMATED:
+            @string("animated");
+        default:
+        }
+        io::printn();
+
+        @ident("uncompressed size", 2);
+        io::print(" = ");
+        @integer(img.uncompressed_size);
+        io::printn();
+
+        @ident("size", 2);
+        io::print(" = ");
+        @integer(img.size);
+        io::printn();
+
+        @ident("dimensions", 2);
+        io::print("(");
+        @ident("w", 0);
+        io::print(", ");
+        @ident("h", 0);
+        io::print(") = ");
+        io::print("(");
+        @decimal(desc.width);
+        io::print(", ");
+        @decimal(desc.height);
+        io::printn(")");
+    };
 }
 
 macro void @ident($str, #d) @local

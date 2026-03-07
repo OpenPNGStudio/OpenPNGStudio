@@ -221,7 +221,7 @@ fn void? parse_json(ParseContext *self, ParsedLayer *target, Path file,
             a.data = malloc(a.data_size * char.sizeof);
 
             for (int j = 0; j < a.data_size; j++) {
-                ((char*) a.data)[j] = anim_data.get_integer_at(char, i)!;
+                ((char*) a.data)[j] = anim_data.get_integer_at(char, j)!;
             }
 
             target.animations.push(a);

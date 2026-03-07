@@ -71,6 +71,8 @@ fn void usage(bool help) @noreturn
     os::exit(1);
 }
 
+/* Utilities */
+
 fn String fault.shortname(self)
 {
     String name = self.nameof;
