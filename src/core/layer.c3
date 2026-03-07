@@ -3,6 +3,7 @@ module openpngstudio::layer;
 
 import raylib5::rl;
 import nk;
+import opng::writer;
 
 struct Origin {
     rl::Vector2 position, scale;
@@ -29,4 +30,6 @@ interface Layer {
     fn void config(nk::Context *ctx);
     fn void free();
     fn bool can_cleanup();
+
+    fn void? pack(Writer *wr);
 }

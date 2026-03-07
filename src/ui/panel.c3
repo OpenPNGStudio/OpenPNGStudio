@@ -99,8 +99,23 @@ fn void Panel.ui(&self, nk::Context *ctx)
         btn.hover = btn.normal;
 
         foreach (&entry : self.left_entries[idx]) {
-            if (nk::button_image_styled(ctx, &btn, icons::get(entry.icon))) {
-                entry.action(entry.ctx);
+            bool layer_op = entry.icon == OPEN || entry.icon == SAVE || 
+                entry.icon == LAYERS;
+
+            nk::Image icon = icons::get(entry.icon);
+
+            if (layer_op && app_ctx.file_lock) {
+                btn.color_factor_background = 0.7f;
+            }
+            
+            if (nk::button_image_styled(ctx, &btn, icon)) {
+                if (!(layer_op && app_ctx.file_lock)) {
+                    entry.action(entry.ctx);
+                }
+            }
+
+            if (layer_op && app_ctx.file_lock) {
+                btn.color_factor_background = 1f;
             }
         }
         nk::spacer(ctx);

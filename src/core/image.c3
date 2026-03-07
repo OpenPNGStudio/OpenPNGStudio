@@ -11,8 +11,11 @@ import std::hash::sha256;
 import std::io;
 import libc;
 
+uint last_id @local = 1;
+
 struct Image {
     usz ref;
+    uint id;
     char[] file_content; /* only used for GIFs */
     char[sha256::HASH_SIZE] checksum;
 
@@ -90,6 +93,7 @@ fn Image *Manager.get(&self, Image *img)
         return res;
     }
 
+    img.id = last_id++;
     self.images.add(img);
     img.ref++;
     return img;

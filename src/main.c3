@@ -245,6 +245,7 @@ fn void load_file(Context *ctx) @local
     }
 }
 
+/* TODO save config dialog */
 fn void write_model(Context *ctx) @local
 {
     List{ZString} selection = ctx.file_dialog.get_selection();
@@ -252,7 +253,7 @@ fn void write_model(Context *ctx) @local
     if (ctx.model_output == null) ctx.model_output = selection[0];
     ctx.override_save = false;
 
-    io::printf("%s\n", ctx.model_output);
+    ctx.model.save(ctx.model_output.str_view())!!;
 }
 
 fn void draw_grid(int line_width, int spacing, rl::Color color) @local

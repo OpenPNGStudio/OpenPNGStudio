@@ -48,6 +48,13 @@ enum SqliteColumnType : const int
 	TEXT     = 3,
 }
 
+constdef SqliteDeserialize : uint
+{
+    FREEONCLOSE = 1,
+    RESIZEABLE = 2,
+    READONLY = 4
+}
+
 
 alias SqliteHandle = void*;
 alias SqliteStmt = void*;
@@ -75,8 +82,19 @@ extern fn SqliteResult prepare_v2(
 extern fn char *serialize(SqliteHandle handle,
     ZString zSchema,
     long *size,
-    uint flags
+    CUInt flags
 ) @cname("sqlite3_serialize");
+
+extern fn int deserialize(SqliteHandle handle,
+    ZString zSchema,
+    char *pData,
+    isz szDb,
+    isz szBuf,
+    SqliteDeserialize flags
+) @cname("sqlite3_deserialize");
+
+extern fn void *malloc(CInt size) @cname("sqlite3_malloc");
+extern fn void *malloc64(usz size) @cname("sqlite3_malloc64");
 
 extern fn long last_insert_rowid(SqliteHandle handle) @cname("sqlite3_last_insert_rowid");
 
@@ -88,7 +106,7 @@ extern fn CInt column_count(SqliteStmt pStmt) @cname("sqlite3_column_count");
 extern fn void* column_blob(SqliteStmt stmt, int iCol) @cname("sqlite3_column_blob");
 extern fn double column_double(SqliteStmt stmt, int iCol) @cname("sqlite3_column_double");
 extern fn CInt column_int(SqliteStmt stmt, int iCol) @cname("sqlite3_column_int");
-extern fn CLong column_int64(SqliteStmt stmt, int iCol) @cname("sqlite3_column_int64");
+extern fn isz column_int64(SqliteStmt stmt, int iCol) @cname("sqlite3_column_int64");
 extern fn ZString column_text(SqliteStmt stmt, int iCol) @cname("sqlite3_column_text");
 extern fn void* column_text16(SqliteStmt stmt, int iCol) @cname("sqlite3_column_text16");
 extern fn void* column_value(SqliteStmt stmt, int iCol) @cname("sqlite3_column_value");
@@ -100,7 +118,7 @@ extern fn SqliteResult bind_blob(SqliteStmt stmt, CInt, void*, CInt n, void*) @c
 extern fn SqliteResult bind_blob64(SqliteStmt stmt, CInt, void*, CULong, void*) @cname("sqlite3_bind_blob64");
 extern fn SqliteResult bind_double(SqliteStmt stmt, CInt, double) @cname("sqlite3_bind_double");
 extern fn SqliteResult bind_int(SqliteStmt stmt, CInt, CInt) @cname("sqlite3_bind_int");
-extern fn SqliteResult bind_int64(SqliteStmt stmt, CInt, usz) @cname("sqlite3_bind_int64");
+extern fn SqliteResult bind_int64(SqliteStmt stmt, CInt, isz) @cname("sqlite3_bind_int64");
 extern fn SqliteResult bind_null(SqliteStmt stmt, CInt) @cname("sqlite3_bind_null");
 extern fn SqliteResult bind_text(SqliteStmt stmt, CInt, ZString, CInt, void*) @cname("sqlite3_bind_text");
 extern fn SqliteResult bind_text16(SqliteStmt stmt, CInt, void*, CInt, void*) @cname("sqlite3_bind_text16");

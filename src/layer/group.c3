@@ -6,6 +6,7 @@ import openpngstudio::layer;
 import openpngstudio::core::mask;
 import openpngstudio::animation;
 import std::collections::list, std::io;
+import opng;
 import nk;
 
 struct LayerGroup (Layer) {
@@ -210,4 +211,25 @@ fn void? LayerGroup.down(&self, layer::Command *sel) @maydiscard
     }
 
     self.layers.swap(index, index + 1);
+}
+
+fn void? LayerGroup.pack(&self, Writer *wr) @dynamic
+{
+    SQLLayerData data = static_layer::prepare_data(&self.base);
+
+    uint layer_id = wr.add_layer_data(data)!;
+
+    foreach (anim : self.base.animations) {
+        unreachable("UNIMPLEMENTED");
+        /*
+        anim.layer_id = layer_id;
+        wr.add_animation(anim)!;
+        */
+    }
+
+    wr.add_layer({self.layers.len(), layer_id})!;
+
+    foreach (layer : self.layers) {
+        layer.pack(wr)!;
+    }
 }

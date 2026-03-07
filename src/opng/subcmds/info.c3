@@ -90,7 +90,7 @@ fn int _main(int argc, ZString *argv)
         case IMAGES:
             io::printn("Model Images:");
             foreach (img : res.value.images) {
-                (void) image_info(&rd, img);
+                image_info(&rd, img)!!;
             }
         default:
         }

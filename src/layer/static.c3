@@ -12,6 +12,7 @@ import ev;
 import std::math;
 import raylib5::rl;
 import nk;
+import opng;
 
 struct StaticLayer (Layer) {
     LineEdit name;
@@ -75,6 +76,24 @@ fn void StaticLayer.config(&self, nk::Context *ctx) @dynamic =>
     config(self, ctx);
 fn bool StaticLayer.can_cleanup(&self) @dynamic => !(self.is_toggle_running ||
     self.is_timeout_running);
+fn void? StaticLayer.pack(&self, Writer *wr) @dynamic => pack(self, wr);
+
+fn void? pack(StaticLayer *self, Writer *wr)
+{
+    SQLLayerData data = static_layer::prepare_data(self);
+
+    uint layer_id = wr.add_layer_data(data)!;
+    
+    foreach (anim : self.animations) {
+        unreachable("UNIMPLEMENTED");
+        /*
+        anim.layer_id = layer_id;
+        wr.add_animation(anim)!;
+        */
+    }
+
+    wr.add_layer({0, layer_id})!;
+}
 
 fn bool draw(StaticLayer *self, Origin origin)
 {
@@ -311,6 +330,36 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     }
 
     nk::spacer(ctx);
+}
+
+fn SQLLayerData prepare_data(StaticLayer *self) => {
+    self.name.buffer,
+    {
+        self.position.x,
+        self.position.y
+    },
+    {
+        self.scale.x,
+        self.scale.y
+    },
+    self.rotation,
+    color_to_uint(self.tint),
+    self.timeout,
+    self.image == null ? 0 : self.image.id,
+    self.mask,
+    self.toggle
+};
+
+fn uint color_to_uint(rl::Color color) @local
+{
+    uint res = 0;
+
+    res |= ((uint) color.r) << 24;
+    res |= ((uint) color.g) << 16;
+    res |= ((uint) color.b) << 8;
+    res |= color.a;
+
+    return res;
 }
 
 alias LayerTimer = Timer{StaticLayer*};

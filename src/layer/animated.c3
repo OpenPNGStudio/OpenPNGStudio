@@ -10,6 +10,7 @@ import raylib5::rl;
 import openpngstudio::animation;
 import openpngstudio::image;
 import openpngstudio::layer::static_layer;
+import opng;
 
 struct AnimatedLayer (Layer) {
     StaticLayer base;
@@ -90,6 +91,8 @@ fn layer::Command AnimatedLayer.layer_entry(&self, nk::Context *ctx) @dynamic
 
 fn void AnimatedLayer.config(&self, nk::Context *ctx) @dynamic =>
     static_layer::config(&self.base, ctx);
+fn void? AnimatedLayer.pack(&self, Writer *wr) @dynamic => 
+    static_layer::pack(&self.base, wr);
 
 fn bool AnimatedLayer.can_cleanup(&self) @dynamic
 {
