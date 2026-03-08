@@ -7,7 +7,7 @@ import raylib5::rl;
 
 struct Outline {
     Shader shader;
-    int color_loc, size_loc;
+    int color_loc, size_loc, time_loc;
     bool we_shading;
 }
 
@@ -17,6 +17,7 @@ fn void Outline.init(&self, String path)
 
     self.color_loc = rl::getShaderLocation(self.shader, "outline_color");
     self.size_loc = rl::getShaderLocation(self.shader, "texture_size");
+    self.time_loc = rl::getShaderLocation(self.shader, "time");
 }
 
 fn void Outline.set_color(&self, rl::Color color)
@@ -39,18 +40,17 @@ fn bool is_selected(Layer layer) => openpngstudio::get_ctx().model.mgr.selected.
 
 fn void shading_time()
 {
-    openpngstudio::get_ctx().outline.we_shading = true;
-
-    // rl::endMode2D();
+    Context *ctx = openpngstudio::get_ctx();
+    
+    float time = (float) rl::getTime();
+    rl::setShaderValue(ctx.outline.shader, ctx.outline.time_loc, &time, FLOAT);
+    
+    ctx.outline.we_shading = true;
 }
 
 fn void no_shading_time()
 {
-    Context *ctx = openpngstudio::get_ctx();
-
-    ctx.outline.we_shading = false;
-
-    // rl::beginMode2D(ctx.camera);
+    openpngstudio::get_ctx().outline.we_shading = false;
 }
 
 fn void draw_texture(Texture2D texture, Rectangle source, Rectangle dest, 

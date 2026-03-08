@@ -179,7 +179,7 @@ fn void Context.load_layer(&self, ZString path)
             rl::genTextureMipmaps(&img.texture);
             rl::setTextureWrap(img.texture, TextureWrap.CLAMP.ordinal);
         }
-
+        
         if (!self.ctx.animated) {
             StaticLayer *slay = malloc(StaticLayer.sizeof);
             slay.init(mem, self.ctx.name, self.ctx.loaded);

@@ -11,7 +11,16 @@ uniform vec4 col_diffuse;
 uniform vec2 texture_size;
 uniform vec4 outline_color;
 
+uniform float time;
+
 out vec4 final_color;
+
+vec4 color(float x, float y, float count) {
+    if (sin(count * (y - x) + (time * 10.0)) < 0)
+        return vec4(1, 1, 0, 1);
+    else
+        return vec4(0, 0, 0, 1);
+}
 
 void main()
 {
@@ -34,6 +43,6 @@ void main()
     corners.w = texture(texture0, shrunk_tex_coord + vec2(-texel_scale.x, -texel_scale.y)).a;
 
     float outline = min(dot(corners, vec4(1.0)), 1.0);
-    vec4 color = mix(vec4(0.0), outline_color, outline);
-    final_color = mix(color, texel, texel.a);
+    vec4 mixed = mix(vec4(0.0), color(shrunk_tex_coord.x, shrunk_tex_coord.y, texture_size.y / 8.0f), outline);
+    final_color = mix(mixed, texel, texel.a);
 }
