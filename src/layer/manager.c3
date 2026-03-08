@@ -138,12 +138,12 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 fn void Manager.render(&self)
 {
     Origin origin = {
-        .position = {
+        .position = rl::vector2Add({
             rl::getScreenWidth() / 2.0f,
             rl::getScreenHeight() / 2.0f
-        },
-        .scale = {1, 1},
-        .rotation = 0,
+        }, self.root.base.position),
+        .scale = self.root.base.scale,
+        .rotation = self.root.base.rotation,
         .tint = { 0xFF, 0xFF, 0xFF, 0xFF }
     };
         

@@ -10,6 +10,7 @@ import opng;
 import raylib5::rl;
 import ev, ev::work;
 import std::io;
+import std::compression::qoi;
 
 struct Model {
     layer::Manager mgr;
@@ -57,13 +58,14 @@ struct ModelSave @local {
     ModelSaveState state;
     Work{ModelSave*} worker;
 }
-
+/*
 struct QOIDesc {
 	uint width;
 	uint height;
 	char channels;
 	char colorspace;
 }
+*/
 
 extern fn void *qoi_encode(void *data, QOIDesc *desc, int *out_len);
 
@@ -92,7 +94,19 @@ fn void write_layers(Work{ModelSave*} *work) @local
                 }
 
                 usz size = (usz) img.image.width * img.image.height * 4;
+                
+                QOIDesc desc = {
+                    img.image.width,
+                    img.image.height,
+                    RGBA,
+                    LINEAR
+                };
 
+                @pool() {
+                    char[] encoded = qoi::encode(tmem, img.image.data[:size], &desc)!!;
+                    self.wr.add_image(STATIC, img.id, encoded)!!;
+                };
+/*
                 QOIDesc desc = {
                     img.image.width,
                     img.image.height,
@@ -106,6 +120,7 @@ fn void write_layers(Work{ModelSave*} *work) @local
 
                     self.wr.add_image(STATIC, img.id, encoded[:len])!!;
                 };
+                */
             };
 
             self.wr.end_images()!!;

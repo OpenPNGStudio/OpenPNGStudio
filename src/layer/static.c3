@@ -102,15 +102,23 @@ fn bool draw(StaticLayer *self, Origin origin)
     bool mask_test = mask::cmp(mask::get(), self.mask);
 
     if ((self.active || self.is_toggled) || mask_test) {
-        origin.position.x += self.position.x;
-        origin.position.y += -self.position.y;
+        rl::Vector2 orig_pos = origin.position;
+        
+        rl::Vector2 fixed_pos = { self.position.x, -self.position.y };
+        rl::Vector2 scaled = rl::vector2Multiply(fixed_pos, origin.scale);
+        rl::Vector2 rotated = rl::vector2Rotate(scaled, origin.rotation * 
+            rl::DEG2RAD);
 
-        origin.scale.x += self.scale.x - 1;
-        origin.scale.y += self.scale.y - 1;
+        origin.position = rl::vector2Add(origin.position, rotated);
+
+        origin.scale = rl::vector2Add(origin.scale, {
+            self.scale.x - 1, self.scale.y - 1
+        });
 
         origin.rotation += self.rotation;
-
         origin.tint = self.tint;
+
+        rl::drawLineEx(orig_pos, origin.position, 5, rl::LIME);
 
         foreach (&a : self.animations) {
             if (a.a == null) continue;

@@ -1,5 +1,4 @@
-
-
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::layer::group;
 
 import openpngstudio::layer;
@@ -8,6 +7,7 @@ import openpngstudio::animation;
 import std::collections::list, std::io;
 import opng;
 import nk;
+import raylib5::rl;
 
 struct LayerGroup (Layer) {
     StaticLayer base;
@@ -42,16 +42,23 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
     bool mask_test = mask::cmp(mask::get(), self.base.mask);
 
     if ((self.base.active || self.base.is_toggled) || mask_test) {
-        origin.position.x += self.base.position.x;
-        origin.position.y += -self.base.position.y;
+        rl::Vector2 orig_pos = origin.position;
 
-        origin.scale.x += self.base.scale.x - 1;
-        origin.scale.y += self.base.scale.y - 1;
+        rl::Vector2 fixed_pos = { self.base.position.x, -self.base.position.y };
+        rl::Vector2 scaled = rl::vector2Multiply(fixed_pos, origin.scale);
+        rl::Vector2 rotated = rl::vector2Rotate(scaled, origin.rotation * 
+            rl::DEG2RAD);
+
+        origin.position = rl::vector2Add(origin.position, rotated);
+
+        origin.scale = rl::vector2Add(origin.scale, {
+            self.base.scale.x - 1, self.base.scale.y - 1
+        });
 
         origin.rotation += self.base.rotation;
-
         origin.tint = self.base.tint;
 
+        rl::drawLineEx(orig_pos, origin.position, 5, rl::RED);
         foreach (a : self.base.animations) {
             if (a.a == null) continue;
 
