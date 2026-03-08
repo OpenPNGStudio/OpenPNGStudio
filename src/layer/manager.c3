@@ -137,6 +137,8 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 
 fn void Manager.render(&self)
 {
+    openpngstudio::Context *ctx = openpngstudio::get_ctx();
+    
     Origin origin = {
         .position = rl::vector2Add({
             rl::getScreenWidth() / 2.0f,

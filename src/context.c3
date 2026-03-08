@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio;
 
 import openpngstudio::core;
@@ -40,6 +41,7 @@ struct Context {
 
     /* State */
     FileLoadState loading_state;
+    bool file_lock;
     float width, height;
     Microphone microphone;
 
@@ -59,7 +61,7 @@ struct Context {
 
     rl::Image icon;
 
-    bool file_lock;
+    Outline outline;
 }
 
 Context *instance @local = null;
@@ -197,6 +199,9 @@ fn void Context.load_layer(&self, ZString path)
     self.loop.add(&ref.work);
 }
 
+fn bool Context.is_layer_selected(&self, Layer layer) => 
+    self.model.mgr.selected.layer == layer;
+
 extern fn nk::Context *init_nuklear_ex(rl::Font font, float size)
     @cname("InitNuklearEx");
 extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
@@ -309,6 +314,12 @@ fn void? load_icons2(Path exe_path) @local
             instance.icon = rl::loadImage(tmp.str_view().zstr_tcopy());
 
             rl::setWindowIcon(instance.icon);
+        };
+
+        @pool() {
+            Path tmp = dir.tappend("shaders/outline.glsl")!;
+            instance.outline.init(tmp.str_view());
+            // instance.outline = rl::loadShader(null, tmp.str_view().zstr_tcopy());
         };
     };
 }
