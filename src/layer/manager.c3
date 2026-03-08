@@ -6,7 +6,7 @@ import std::core::mem;
 import std::collections::list;
 import openpngstudio::layer::static_layer;
 import openpngstudio::layer::animated;
-import openpngstudio::animation;
+import openpngstudio::animation, openpngstudio::outline;
 import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::line_edit;
@@ -158,6 +158,13 @@ fn void Manager.render(&self)
     }
 
     foreach (layer : self.root.layers) {
-        layer.draw(origin);
+        if (outline::is_selected(layer)) {
+            outline::shading_time();
+            defer outline::no_shading_time();
+
+            layer.draw(origin);
+        } else {
+            layer.draw(origin);
+        }
     }
 }

@@ -34,12 +34,14 @@ fn void Outline.set_size(&self, rl::Vector2 size)
     rl::setShaderValue(self.shader, self.size_loc, &arr, VEC2);
 }
 
+fn bool is_selected(Layer layer) => openpngstudio::get_ctx().model.mgr.selected.
+    layer == layer;
 
 fn void shading_time()
 {
     openpngstudio::get_ctx().outline.we_shading = true;
 
-    rl::endMode2D();
+    // rl::endMode2D();
 }
 
 fn void no_shading_time()
@@ -48,5 +50,22 @@ fn void no_shading_time()
 
     ctx.outline.we_shading = false;
 
-    rl::beginMode2D(ctx.camera);
+    // rl::beginMode2D(ctx.camera);
+}
+
+fn void draw_texture(Texture2D texture, Rectangle source, Rectangle dest, 
+    Vector2 origin, float rotation, Color tint)
+{
+    Context *ctx = openpngstudio::get_ctx();
+
+    if (ctx.outline.we_shading) {
+        ctx.outline.set_size({texture.width, texture.height});
+        rl::beginShaderMode(ctx.outline.shader);
+    }
+
+    rl::drawTexturePro(texture, source, dest, origin, rotation, tint);
+
+    if (ctx.outline.we_shading) {
+        rl::endShaderMode();
+    }
 }

@@ -3,7 +3,7 @@ module openpngstudio::layer::group;
 
 import openpngstudio::layer;
 import openpngstudio::core::mask;
-import openpngstudio::animation;
+import openpngstudio::animation, openpngstudio::outline;
 import std::collections::list, std::io;
 import opng;
 import nk;
@@ -68,7 +68,14 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
         }
 
         foreach (layer : self.layers) {
-            layer.draw(origin);
+            if (outline::is_selected(layer)) {
+                outline::shading_time();
+                defer outline::no_shading_time();
+
+                layer.draw(origin);
+            } else {
+                layer.draw(origin);
+            }
         }
 
         if (!self.base.toggle) {

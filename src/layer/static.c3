@@ -3,7 +3,7 @@ module openpngstudio::layer::static_layer;
 
 import std::collections::list;
 import openpngstudio::image;
-import openpngstudio::layer;
+import openpngstudio::layer, openpngstudio::outline;
 import openpngstudio::animation;
 import openpngstudio::core::mask;
 import openpngstudio::ui::line_edit;
@@ -131,7 +131,7 @@ fn bool draw(StaticLayer *self, Origin origin)
         float scaled_width = texture.width * origin.scale.x;
         float scaled_height = texture.height * origin.scale.y;
 
-        rl::drawTexturePro(texture, {
+        outline::draw_texture(texture, {
             .x = 0, .y = 0, .width = texture.width, .height = texture.height,
         }, {
             .x = origin.position.x,
