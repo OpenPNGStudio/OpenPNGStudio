@@ -138,6 +138,7 @@ fn void Context.load_layer(&self, ZString path)
         /* work, separate thread */
         String path = self.ctx.path.str_view();
         image::Image *img = malloc(image::Image.sizeof);
+        img.ref = 0;
         img.file_content = file::load(mem, path)!!;
         img.checksum = sha256::hash(img.file_content);
 
@@ -156,7 +157,7 @@ fn void Context.load_layer(&self, ZString path)
                     img.file_content.ptr, img.file_content.len);
                 free(zext);
                 free(res.file_content.ptr); /* stays only for GIFs */
-                res.file_content = {};
+                res.file_content = "";
             }
         }
 

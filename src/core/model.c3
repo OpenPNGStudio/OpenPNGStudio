@@ -75,56 +75,52 @@ fn void write_layers(Work{ModelSave*} *work) @local
 
     switch (self.state) {
     case WRITING_LAYERS:
-        @pool_init(mem, 4096) {
-            self.wr.start_sqlite()!!;
-            self.model.mgr.root.pack(&self.wr)!!;
-            self.wr.end_sqlite()!!;
-        };
+        self.wr.start_sqlite()!!;
+        self.model.mgr.root.pack(&self.wr)!!;
+        self.wr.end_sqlite()!!;
     case WRITING_IMAGES:
         Context *app_ctx = openpngstudio::get_ctx();
         
-        @pool_init(mem, 4096) {
-            self.wr.start_images()!!;
+        self.wr.start_images()!!;
 
-            app_ctx.image_manager.images.@each(; image::Image* img) {
-                if (img.file_content.len > 0) unreachable("GIF not yet");
+        app_ctx.image_manager.images.@each(; image::Image* img) {
+            if (img.file_content.len > 0) unreachable("GIF not yet");
+        
+            if (img.image.format != UNCOMPRESSED_R8G8B8A8) {
+                rl::imageFormat(&img.image, UNCOMPRESSED_R8G8B8A8);
+            }
+
+            usz size = (usz) img.image.width * img.image.height * 4;
             
-                if (img.image.format != UNCOMPRESSED_R8G8B8A8) {
-                    rl::imageFormat(&img.image, UNCOMPRESSED_R8G8B8A8);
-                }
-
-                usz size = (usz) img.image.width * img.image.height * 4;
-                
-                QOIDesc desc = {
-                    img.image.width,
-                    img.image.height,
-                    RGBA,
-                    LINEAR
-                };
-
-                @pool() {
-                    char[] encoded = qoi::encode(tmem, img.image.data[:size], &desc)!!;
-                    self.wr.add_image(STATIC, img.id, encoded)!!;
-                };
-/*
-                QOIDesc desc = {
-                    img.image.width,
-                    img.image.height,
-                    4,
-                    1
-                };
-
-                @pool() {
-                    int len;
-                    void *encoded = qoi_encode(img.image.data, &desc, &len);
-
-                    self.wr.add_image(STATIC, img.id, encoded[:len])!!;
-                };
-                */
+            QOIDesc desc = {
+                img.image.width,
+                img.image.height,
+                RGBA,
+                LINEAR
             };
 
-            self.wr.end_images()!!;
+            @pool() {
+                char[] encoded = qoi::encode(mem, img.image.data[:size], &desc)!!;
+                self.wr.add_image(STATIC, img.id, encoded)!!;
+            };
+/*
+            QOIDesc desc = {
+                img.image.width,
+                img.image.height,
+                4,
+                1
+            };
+
+            @pool() {
+                int len;
+                void *encoded = qoi_encode(img.image.data, &desc, &len);
+
+                self.wr.add_image(STATIC, img.id, encoded[:len])!!;
+            };
+            */
         };
+
+        self.wr.end_images()!!;
         break;
     }
 }

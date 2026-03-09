@@ -57,7 +57,12 @@ fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 
     float line_width = 0.4 * win_width + self.max_width;
 
-    nk::layout_row_static(ctx, 2, (int) line_width, 1);
+    if (line_width > win_width) {
+        nk::layout_row_static(ctx, 2, (int) line_width, 1);
+    } else {
+        nk::layout_row_dynamic(ctx, 2, 1);
+    }
+    
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
     LinkedListArrayView{Record} logs = c.record.array_view();
