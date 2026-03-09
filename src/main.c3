@@ -176,6 +176,8 @@ fn Action update(Idle{Context*} *idle)
 
 extern fn void draw_nuklear(nk::Context *ctx) @cname("DrawNuklear");
 
+const BACK_BTN_PADDING = 15;
+
 fn Action draw(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
@@ -198,6 +200,39 @@ fn Action draw(Idle{Context*} *idle)
     rl::endMode2D();
 
     draw_nuklear(ctx.nk_ctx);
+    
+    if (ctx.wm.show_bring_back) {
+        rl::Rectangle size = { 0, 0, ctx.restore_icon.width / 2.0f,
+            ctx.restore_icon.height / 2.0f };
+
+        rl::Vector2 pos = {
+            ctx.width - BACK_BTN_PADDING - size.width, 
+            ctx.height - BACK_BTN_PADDING -size.height
+        };
+        
+        rl::Rectangle bounds = { pos.x, pos.y, size.width, size.height };
+            
+        rl::Vector2 mouse_pos = rl::getMousePosition();
+
+        if (rl::checkCollisionPointRec(mouse_pos, bounds)) {
+            if (rl::isMouseButtonPressed(LEFT)) ctx.wm.bring_windows_back(
+                ctx.nk_ctx,
+                ctx.width, ctx.height
+            );
+        }
+
+        rl::Color btn_bg = rl::BLACK;
+        btn_bg.a = 0x77;
+
+        rl::drawRectangleRounded({
+            pos.x - 3, pos.y - 3, size.width + 6, size.height + 6
+        }, 0.5f, 16, btn_bg);
+
+        btn_bg = rl::WHITE;
+        btn_bg.a = 0xAA;
+        rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
+    }
+    
     rl::endDrawing();
 
     if (rl::windowShouldClose()) ctx.loop.stop();

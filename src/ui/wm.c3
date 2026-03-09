@@ -89,11 +89,23 @@ fn void WindowManager.set_title(&self, Window win, ZString title)
     }
 }
 
-enum Corner @local {
-    UPPER_LEFT,
-    UPPER_RIGHT,
-    LOWER_LEFT,
-    LOWER_RIGHT,
+fn void WindowManager.bring_windows_back(&self, nk::Context *ctx, float width, 
+    float height)
+{
+    foreach (&managed : self.windows) {
+        /* check if header is not reachable */
+        if (managed.header_height != -1 && managed.show) {
+            if (is_window_lost(managed, width, height)) {
+                float w = width / 100.0f * 80.0f;
+                float h = height / 100.0f * 80.0f;
+                float x = (width - w) / 2.0f;
+                float y = (height - h) / 2.0f;
+    
+                managed.geometry = nk::rect(x, y, w, h);
+                nk::window_set_bounds(ctx, (CChar*) managed.title, managed.geometry);
+            }
+        }
+    }
 }
 
 fn void WindowManager.update(&self, float width, float height)
@@ -103,46 +115,7 @@ fn void WindowManager.update(&self, float width, float height)
     foreach (&managed : self.windows) {
         /* check if header is not reachable */
         if (all_showing && managed.header_height != -1 && managed.show) {
-            Corner c;
-
-            if (managed.geometry.x < width / 2.0f) {
-                if (managed.geometry.y < height / 2.0f) { c = UPPER_LEFT; }
-                else { c = LOWER_LEFT; }
-            } else {
-                if (managed.geometry.y < height / 2.0f) { c = UPPER_RIGHT; }
-                else { c = LOWER_RIGHT; }
-            }
-
-            float corner_x, corner_y;
-
-            switch (c) {
-            case UPPER_LEFT:
-                corner_x = managed.geometry.x + managed.geometry.w;
-                corner_y = managed.geometry.y + managed.header_height;
-
-                if (corner_x <= 0 || corner_y <= 0) all_showing = false;
-                break;
-            case UPPER_RIGHT:
-                corner_x = managed.geometry.x;
-                corner_y = managed.geometry.y + managed.header_height;
-
-                if (corner_x >= width || corner_y <= 0) all_showing = false;
-                break;
-            case LOWER_LEFT:
-                corner_x = managed.geometry.x + managed.geometry.w;
-                corner_y = managed.geometry.y;
-
-                if (corner_x <= 0 || corner_y >= height) all_showing = false;
-                break;
-            case LOWER_RIGHT:
-                corner_x = managed.geometry.x;
-                corner_y = managed.geometry.y;
-
-                if (corner_x >= width || corner_y >= height) {
-                    all_showing = false;
-                }
-                break;
-            }
+            if (is_window_lost(managed, width, height)) all_showing = false;
         }
 
         if (managed.state == SHOW) {
@@ -151,6 +124,61 @@ fn void WindowManager.update(&self, float width, float height)
     }
 
     self.show_bring_back = !all_showing;
+}
+
+enum Corner @local {
+    UPPER_LEFT,
+    UPPER_RIGHT,
+    LOWER_LEFT,
+    LOWER_RIGHT,
+}
+
+fn bool is_window_lost(ManagedWindow *managed, float width, float height) @local
+{
+    Corner c;
+
+    if (managed.geometry.x < width / 2.0f) {
+        if (managed.geometry.y < height / 2.0f) { c = UPPER_LEFT; }
+        else { c = LOWER_LEFT; }
+    } else {
+        if (managed.geometry.y < height / 2.0f) { c = UPPER_RIGHT; }
+        else { c = LOWER_RIGHT; }
+    }
+
+    float corner_x, corner_y;
+
+    switch (c) {
+    case UPPER_LEFT:
+        corner_x = managed.geometry.x + managed.geometry.w;
+        corner_y = managed.geometry.y + managed.header_height;
+
+        if (corner_x <= 0 || corner_y <= 0) {
+            return true;
+        }
+    case UPPER_RIGHT:
+        corner_x = managed.geometry.x;
+        corner_y = managed.geometry.y + managed.header_height;
+
+        if (corner_x >= width || corner_y <= 0) {
+            return true;
+        }
+    case LOWER_LEFT:
+        corner_x = managed.geometry.x + managed.geometry.w;
+        corner_y = managed.geometry.y;
+
+        if (corner_x <= 0 || corner_y >= height) {
+            return true;
+        }
+    case LOWER_RIGHT:
+        corner_x = managed.geometry.x;
+        corner_y = managed.geometry.y;
+
+        if (corner_x >= width || corner_y >= height) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 fn void WindowManager.ui(&self, nk::Context *ctx, float width, float height)

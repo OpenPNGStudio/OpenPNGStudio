@@ -23,7 +23,6 @@ enum FileLoadState {
     LOADING_MODEL,
 }
 
-/* NOT C context !! */
 struct Context {
     Loop loop;
     Camera2D camera;
@@ -60,6 +59,7 @@ struct Context {
     Path exe_path;
 
     rl::Image icon;
+    rl::Texture2D restore_icon;
 
     Outline outline;
 }
@@ -314,10 +314,18 @@ fn void? load_icons2(Path exe_path) @local
         };
 
         @pool() {
+            Path tmp = dir.tappend("icons/restore.png")!;
+
+            rl::Image img = rl::loadImage(tmp.str_view().zstr_tcopy());
+            instance.restore_icon = rl::loadTextureFromImage(img);
+
+            rl::unloadImage(img);
+        };
+
+        @pool() {
             Path tmp = dir.tappend("shaders/outline.glsl")!;
             instance.outline.init(tmp.str_view());
             instance.outline.set_color(instance.ambient);
-            // instance.outline = rl::loadShader(null, tmp.str_view().zstr_tcopy());
         };
     };
 }
