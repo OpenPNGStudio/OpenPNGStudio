@@ -49,3 +49,10 @@ struct nk_vec2 winabi_panel_get_padding(struct nk_context* ctx)
 {
     return winabi_panel_get_padding2(&ctx->style, ctx->current->layout->type);
 }
+
+#ifdef _WIN32
+uint16_t htons(uint16_t x)
+{
+    return (uint16_t)((x << 8) | (x >> 8));
+}
+#endif
