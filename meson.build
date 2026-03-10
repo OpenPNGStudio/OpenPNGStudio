@@ -1,6 +1,6 @@
 project(
     'OpenPNGStudio',
-    'c',
+    'c', 'cpp',
     license: ['GPL-3.0-or-later', 'CC-BY-NC-SA-4.0'],
     license_files: [
         'COPYING',
@@ -21,39 +21,84 @@ cc = meson.get_compiler('c')
 curl = find_program('curl')
 c3c = find_program('c3c')
 ascli = find_program('appstreamcli', required: false)
+nasm = find_program('nasm', required: false)
 
 # Dependencies
 raylib_o = cmake.subproject_options()
-raylib_o.add_cmake_defines(
-    {
-        'BUILD_EXAMPLES': false,
-        'CUSTOMIZE_BUILD': true,
-        'SUPPORT_MODULE_RMODELS': false,
-        'SUPPORT_MODULE_RAUDIO': false,
-        'SUPPORT_GESTURE_SYSTEM': false,
-        'SUPPORT_RPRAND_GENERATOR': false,
-        'SUPPORT_MOUSE_GESTURES': false,
-        'SUPPORT_SSH_KEYBOARD_RPI': false,
-        'SUPPORT_FILEFORMAT_BMP': true,
-        'SUPPORT_FILEFORMAT_JPG': true,
-        'SUPPORT_FILEFORMAT_PNG': true,
-        'SUPPORT_FILEFORMAT_TGA': true,
-        'SUPPORT_FILEFORMAT_GIF': true,
-        'SUPPORT_FILEFORMAT_QOI': true,
-        'SUPPORT_FILEFORMAT_PSD': true,
-        'SUPPORT_FILEFORMAT_DDS': true,
-        'SUPPORT_GIF_RECORDING': false,
-        'SUPPORT_SCREEN_CAPTURE': false,
-        'CMAKE_SKIP_INSTALL_RULES': true,
-    },
-)
+raylib_o.add_cmake_defines({
+    'BUILD_EXAMPLES': false,
+    'CUSTOMIZE_BUILD': true,
+    'SUPPORT_MODULE_RMODELS': false,
+    'SUPPORT_MODULE_RAUDIO': false,
+    'SUPPORT_GESTURE_SYSTEM': false,
+    'SUPPORT_RPRAND_GENERATOR': false,
+    'SUPPORT_MOUSE_GESTURES': false,
+    'SUPPORT_SSH_KEYBOARD_RPI': false,
+    'SUPPORT_FILEFORMAT_BMP': true,
+    'SUPPORT_FILEFORMAT_JPG': true,
+    'SUPPORT_FILEFORMAT_PNG': true,
+    'SUPPORT_FILEFORMAT_TGA': true,
+    'SUPPORT_FILEFORMAT_GIF': true,
+    'SUPPORT_FILEFORMAT_QOI': true,
+    'SUPPORT_FILEFORMAT_PSD': true,
+    'SUPPORT_FILEFORMAT_DDS': true,
+    'SUPPORT_GIF_RECORDING': false,
+    'SUPPORT_SCREEN_CAPTURE': false,
+    'CMAKE_SKIP_INSTALL_RULES': true,
+})
+
+libavif_o = cmake.subproject_options()
+libavif_o.add_cmake_defines({
+    'AVIF_CODEC_AOM': 'LOCAL',
+    'AVIF_CODEC_DAV1D': false,
+    'AVIF_CODEC_LIBGAV1': false,
+    'AVIF_CODEC_RAV1E': false,
+    'AVIF_CODEC_SVT': false,
+    'AVIF_LIBYUV': 'LOCAL',
+    'BUILD_SHARED_LIBS': false,
+})
+
+if not nasm.found()
+    libavif_o.add_cmake_defines({
+        'AOM_TARGET_CPU': 'generic'
+    })
+endif
+
+libjxl_o = cmake.subproject_options()
+libjxl_o.add_cmake_defines({
+    'JPEGXL_ENABLE_FUZZERS': false,
+    'JPEGXL_ENABLE_TOOLS': false,
+    'JPEGXL_ENABLE_DOXYGEN': false,
+    'JPEGXL_ENABLE_MANPAGES': false,
+    'JPEGXL_ENABLE_BENCHMARK': false,
+    'JPEGXL_ENABLE_EXAMPLES': false,
+    'JPEGXL_ENABLE_JNI': false,
+    'BUILD_SHARED_LIBS': false,
+})
+
+brotli = []
+
+if host_machine.system() == 'linux'
+    libjxl_o.add_cmake_defines({
+        'JPEGXL_FORCE_SYSTEM_BROTLI': true,
+    })
+
+    brotli = [
+        dependency('libbrotlicommon'),
+        dependency('libbrotlidec'),
+        dependency('libbrotlienc')
+    ]
+endif
 
 raylib_p = cmake.subproject('raylib', options: raylib_o)
 sqlite_p = subproject('sqlite3', default_options: ['default_library=static'])
+libavif_p = cmake.subproject('libavif', options: libavif_o)
+libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 
 raylib = raylib_p.dependency('raylib')
 sqlite = sqlite_p.get_variable('sqlite3_dep')
-
+libavif = libavif_p.dependency('avif')
+libjxl = libjxl_p.dependency('jxl')
 
 # Headers
 vendor_headers = [
@@ -129,7 +174,7 @@ endif
 executable(
     'OpenPNGStudio',
     src,
-    dependencies: [raylib, sqlite, opng, extra_libs],
+    dependencies: [raylib, sqlite, opng, libavif, libjxl, brotli, extra_libs],
     include_directories: ['include/', 'include/vendor/'],
     install: true,
     install_dir: 'bin',

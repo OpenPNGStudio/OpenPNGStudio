@@ -78,7 +78,7 @@ fn void Context.init(&self, Allocator alloc)
     log::info("Executable location: %s", self.exe_path);
     self.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
 
-    self.panel.init(alloc);
+    self.panel.init(alloc, HORIZONTAL);
     self.wm.init(&self.panel, alloc);
 
     self.file_dialog.init(alloc);
@@ -137,8 +137,7 @@ fn void Context.load_layer(&self, ZString path)
     ref.work.init(ref, fn (self) {
         /* work, separate thread */
         String path = self.ctx.path.str_view();
-        image::Image *img = malloc(image::Image.sizeof);
-        img.ref = 0;
+        image::Image *img = mem::new(image::Image);
         img.file_content = file::load(mem, path)!!;
         img.checksum = sha256::hash(img.file_content);
 
@@ -182,11 +181,11 @@ fn void Context.load_layer(&self, ZString path)
         }
         
         if (!self.ctx.animated) {
-            StaticLayer *slay = malloc(StaticLayer.sizeof);
+            StaticLayer *slay = mem::new(StaticLayer);
             slay.init(mem, self.ctx.name, self.ctx.loaded);
             instance.model.mgr.add(slay);
         } else {
-            AnimatedLayer *alay = malloc(AnimatedLayer.sizeof);
+            AnimatedLayer *alay = mem::new(AnimatedLayer);
             alay.init(mem, self.ctx.name, self.ctx.loaded,
                 self.ctx.delays[:self.ctx.nframes]);
             instance.model.mgr.add(alay);
@@ -287,6 +286,7 @@ fn void? load_icons2(Path exe_path) @local
             {icons::Type.PICK, "icons/pick.png"},
             {icons::Type.IMAGE, "icons/image.png"},
             {icons::Type.MICROPHONE, "icons/microphone.png"},
+            {icons::Type.SWAP, "icons/swap.png"},
             {icons::Type.OPEN, "icons/open.png"},
             {icons::Type.SAVE, "icons/save.png"},
             {icons::Type.LAYERS, "icons/layers.png"},

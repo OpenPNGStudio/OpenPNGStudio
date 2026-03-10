@@ -115,7 +115,7 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     nk::layout_row_template_end(ctx);
 
     if (nk::button_label(ctx, "Add Group")) {
-        LayerGroup *group = malloc(LayerGroup.sizeof);
+        LayerGroup *group = mem::new(LayerGroup);
 
         String name = "New Group";
         group.init(mem, name.zstr_copy(mem));

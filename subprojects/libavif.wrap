@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/AOMediaCodec/libavif.git
+revision = v1.4.0
+depth = 1
+
+diff_files = libavif-remove-dummy.patch

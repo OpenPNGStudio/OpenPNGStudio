@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/libjxl/libjxl.git
+revision = v0.11.2
+depth = 1
+clone-recursive = true

@@ -380,7 +380,7 @@ fn void start_timeout(StaticLayer *self)
     self.active = true;
     self.is_timeout_running = true;
 
-    LayerTimer *timer = malloc(LayerTimer.sizeof);
+    LayerTimer *timer = mem::new(LayerTimer);
     timer.init(loop, self.timeout, self, fn (timer) {
         StaticLayer *self = timer.ctx;
         self.active = false;
@@ -402,7 +402,7 @@ fn void start_toggle(StaticLayer *self)
     self.is_toggled = !self.is_toggled;
     self.is_toggle_running = true;
 
-    LayerTimer *timer = malloc(LayerTimer.sizeof);
+    LayerTimer *timer = mem::new(LayerTimer);
     timer.init(loop, 250, self, fn (timer) {
         StaticLayer *self = timer.ctx;
         self.is_toggle_running = false;

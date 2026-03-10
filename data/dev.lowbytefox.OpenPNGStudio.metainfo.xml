@@ -50,4 +50,10 @@
     <control>keyboard</control>
     <control>pointing</control>
   </requires>
+
+  <keywords>
+    <keyword>vtubing</keyword>
+    <keyword>linux</keyword>
+    <keyword>flatpak</keyword>
+  </keywords>
 </component>

@@ -164,17 +164,17 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
         case 0:
             return res;
         case 1:
-            Spinner *spin = malloc(Spinner.sizeof);
+            Spinner *spin = mem::new(Spinner);
             spin.init(360, 2500);
             self.a = spin;
             app_ctx.model.engine.add(spin);
         case 2:
-            Shake *shake = malloc(Shake.sizeof);
+            Shake *shake = mem::new(Shake);
             shake.init(100);
             self.a = shake;
             app_ctx.model.engine.add(shake);
         case 3:
-            Fade *fade = malloc(Fade.sizeof);
+            Fade *fade = mem::new(Fade);
             fade.init(250);
             self.a = fade;
             app_ctx.model.engine.add(fade);

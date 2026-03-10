@@ -79,7 +79,7 @@ fn int main() @winmain {
 
 extern fn void update_nuklear(nk::Context *ctx) @cname("UpdateNuklear");
 
-fn Action update(Idle{Context*} *idle)
+fn ev::Action update(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
     Mask mask = mask::get();
@@ -176,9 +176,9 @@ fn Action update(Idle{Context*} *idle)
 
 extern fn void draw_nuklear(nk::Context *ctx) @cname("DrawNuklear");
 
-const BACK_BTN_PADDING = 15;
+const BACK_BTN_PADDING = 10;
 
-fn Action draw(Idle{Context*} *idle)
+fn ev::Action draw(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
 
@@ -207,7 +207,7 @@ fn Action draw(Idle{Context*} *idle)
 
         rl::Vector2 pos = {
             ctx.width - BACK_BTN_PADDING - size.width, 
-            ctx.height - BACK_BTN_PADDING -size.height
+            ctx.height - BACK_BTN_PADDING - size.height
         };
         
         rl::Rectangle bounds = { pos.x, pos.y, size.width, size.height };
@@ -346,6 +346,15 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
+        if (ctx.panel.direction == HORIZONTAL) {
+            ctx.panel.direction = VERTICAL;
+        } else {
+            ctx.panel.direction = HORIZONTAL;
+        }
+    }, SWAP, self);
+
+    self.panel.add_right_entry(fn void(void *_ctx) {
+        Context *ctx = _ctx;
         ctx.loop.stop();
     }, CANCEL, self);
 
@@ -380,6 +389,15 @@ fn void initialize_panel(Context *self) @local
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, HELP, self);
+
+    self.panel.add_right_entry(fn void(void *_ctx) {
+        Context *ctx = _ctx;
+        if (ctx.panel.direction == HORIZONTAL) {
+            ctx.panel.direction = VERTICAL;
+        } else {
+            ctx.panel.direction = HORIZONTAL;
+        }
+    }, SWAP, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;

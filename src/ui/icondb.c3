@@ -21,6 +21,7 @@ enum Type : inline int {
     PICK,
     IMAGE,
     MICROPHONE,
+    SWAP,
 
     OPEN,
     SAVE,

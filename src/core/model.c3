@@ -26,7 +26,7 @@ fn void Model.free(&self)
 /* XXX ensure path separator is not in file name (filedialog) */
 fn void? Model.save(&self, String path)
 {
-    ModelSave *ctx = malloc(ModelSave.sizeof);
+    ModelSave *ctx = mem::new(ModelSave);
     ctx.model = self;
     
     @pool() {

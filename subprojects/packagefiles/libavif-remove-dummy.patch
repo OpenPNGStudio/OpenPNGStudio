@@ -1,0 +1,13 @@
+diff --git a/cmake/Modules/merge_static_libs.cmake b/cmake/Modules/merge_static_libs.cmake
+index 0a98965e..71b2465a 100644
+--- a/cmake/Modules/merge_static_libs.cmake
++++ b/cmake/Modules/merge_static_libs.cmake
+@@ -81,7 +81,7 @@ function(merge_static_libs target in_target)
+     list(REMOVE_DUPLICATES libs)
+ 
+     add_custom_command(
+-        OUTPUT ${source_file} DEPENDS ${dependencies} COMMAND ${CMAKE_COMMAND} -E echo \"const int dummy = 0\;\" > ${source_file}
++        OUTPUT ${source_file} DEPENDS ${dependencies} COMMAND ${CMAKE_COMMAND} -E echo "" > ${source_file}
+     )
+ 
+     add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove $<TARGET_FILE:${target}>)
