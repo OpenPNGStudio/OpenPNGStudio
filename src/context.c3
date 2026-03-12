@@ -66,8 +66,10 @@ struct Context {
 
 Context *instance @local = null;
 
-ZString edit_filter = "qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
+ZString edit_filter = "avif;qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 ZString stream_filter = "opng";
+
+extern fn bool load_avif_image(rl::Image *out, char *memory, usz size);
 
 fn void Context.init(&self, Allocator alloc)
 {
@@ -152,8 +154,13 @@ fn void Context.load_layer(&self, ZString path)
             } else {
                 String ext = path[path.rindex_of_char('.')!!..];
                 ZString zext = ext.zstr_copy(mem);
-                res.image = rl::loadImageFromMemory(zext, 
-                    img.file_content.ptr, img.file_content.len);
+                switch (ext) {
+                case ".avif":
+                    load_avif_image(&res.image, img.file_content.ptr, img.file_content.len);
+                default:
+                    res.image = rl::loadImageFromMemory(zext,
+                        img.file_content.ptr, img.file_content.len);
+                }
                 free(zext);
                 free(res.file_content.ptr); /* stays only for GIFs */
                 res.file_content = "";

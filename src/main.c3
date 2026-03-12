@@ -21,11 +21,18 @@ extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
 
-fn int win_main() @export("WinMain") @if(env::WIN32) {
+fn int win_main() @export("WinMain") @if(env::WIN32)
+{
     return main();
 }
 
-fn int main() @winmain {
+fn int win_main_cli() @export("main") @if(env::WIN32)
+{
+    return main();
+}
+
+fn int main()
+{
     console::init(mem);
 
     Context ctx;

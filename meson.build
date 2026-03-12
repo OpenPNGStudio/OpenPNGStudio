@@ -97,7 +97,11 @@ libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 
 raylib = raylib_p.dependency('raylib')
 sqlite = sqlite_p.get_variable('sqlite3_dep')
-libavif = libavif_p.dependency('avif')
+libavif = [
+    libavif_p.dependency('avif'),
+    libavif_p.dependency('aom'),
+    libavif_p.dependency('yuv')
+]
 libjxl = libjxl_p.dependency('jxl')
 
 # Headers
@@ -158,7 +162,7 @@ lib = custom_target(
 opng = declare_dependency(link_with: lib)
 
 # C part
-src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c']
+src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/core/avif_loader.c']
 extra_libs = []
 
 if host_machine.system() == 'windows'
@@ -178,7 +182,7 @@ executable(
     include_directories: ['include/', 'include/vendor/'],
     install: true,
     install_dir: 'bin',
-    win_subsystem: 'windows',
+    win_subsystem: 'console',
 )
 
 # Install
