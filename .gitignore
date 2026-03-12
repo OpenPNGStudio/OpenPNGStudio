@@ -1,4 +1,3 @@
-.clangd
 src/vendor/*
 !src/vendor/.gitkeep
 include/vendor/*

@@ -14,6 +14,7 @@ fn bool? load(image::Image *img, ImageReq *req, String path)
     /* possibly animated */
     case ".gif":
     case ".avif":
+    case ".jxl":
         return possibly_animated(img, req, ext);
     /* not animated */
     case ".qoi":
@@ -36,6 +37,7 @@ fn bool? load(image::Image *img, ImageReq *req, String path)
 }
 
 extern fn bool load_avif(rl::Image *out, char[] memory, int *nframes, int **delays);
+extern fn bool load_jpegxl(rl::Image *out, char[] memory, int *nframes, int **delays);
 
 fn bool? possibly_animated(image::Image *img, ImageReq *req, String ext) @local
 {
@@ -46,6 +48,8 @@ fn bool? possibly_animated(image::Image *img, ImageReq *req, String ext) @local
             &img.nframes, &img.delays);
     case ".avif":
         if (!load_avif(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
+    case ".jxl":
+        if (!load_jpegxl(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
     }
 
     if (img.nframes == 1) {

@@ -68,7 +68,7 @@ struct Context {
 
 Context *instance @local = null;
 
-ZString edit_filter = "avif;qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
+ZString edit_filter = "avif;jxl;qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 ZString stream_filter = "opng";
 
 fn void Context.init(&self, Allocator alloc)

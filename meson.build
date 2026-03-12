@@ -102,7 +102,10 @@ libavif = [
     libavif_p.dependency('aom'),
     libavif_p.dependency('yuv')
 ]
-libjxl = libjxl_p.dependency('jxl')
+libjxl = [
+    libjxl_p.dependency('jxl'),
+    libjxl_p.dependency('jxl_threads')
+]
 
 # Headers
 vendor_headers = [
@@ -162,7 +165,8 @@ lib = custom_target(
 opng = declare_dependency(link_with: lib)
 
 # C part
-src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/loaders/avif.c']
+src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/loaders/avif.c',
+    'src/loaders/jpeg_xl.cpp']
 extra_libs = []
 
 if host_machine.system() == 'windows'
