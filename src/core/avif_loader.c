@@ -20,14 +20,11 @@ bool load_avif_image(Image *out, const uint8_t *memory, const size_t size)
     if (res != AVIF_RESULT_OK)
         goto cleanup;
 
-    out->width = (int) img.width;
-    out->height = (int) img.height;
+    out->width = (int) decoder->image->width;
+    out->height = (int) decoder->image->height;
 
     if (avifDecoderNextImage(decoder) != AVIF_RESULT_OK)
         goto cleanup;
-
-    img.format = AVIF_RGB_FORMAT_RGBA;
-    img.depth = 8;
 
     avifRGBImageSetDefaults(&img, decoder->image);
     res = avifRGBImageAllocatePixels(&img);
@@ -42,16 +39,14 @@ bool load_avif_image(Image *out, const uint8_t *memory, const size_t size)
     out->mipmaps = 1;
 
     if (img.depth > 8) {
-        out->format = PIXELFORMAT_UNCOMPRESSED_R16G16B16A16;
+        out->format = decoder->alphaPresent ? PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 : PIXELFORMAT_UNCOMPRESSED_R16G16B16;
         ImageFormat(out, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     } else {
         out->format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-        uint8_t * firstPixel = img.pixels;
-        printf(" * First pixel: RGBA(%u,%u,%u,%u)\n", firstPixel[0], firstPixel[1], firstPixel[2], firstPixel[3]);
     }
 
 cleanup:
-    avifRGBImageFreePixels(&img);
+    // avifRGBImageFreePixels(&img);
     avifDecoderDestroy(decoder);
 
     return res == AVIF_RESULT_OK;
