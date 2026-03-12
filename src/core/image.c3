@@ -16,12 +16,17 @@ uint last_id @local = 1;
 struct Image {
     usz ref;
     uint id;
-    char[] file_content; /* only used for GIFs */
+    char[] file_content; /* only used for animated images */
     char[sha256::HASH_SIZE] checksum;
+    bool loaded;
 
     /* opaque data */
     rl::Image image;
     rl::Texture2D texture;
+
+    /* animation data */
+    int nframes;
+    int *delays;
 }
 
 /* request when loading an image */
@@ -33,8 +38,6 @@ struct ImageReq {
     Image *loaded;
     ZString name;
     bool animated;
-    int nframes;
-    int *delays;
 }
 
 fn uint Image.hash(Image *self)

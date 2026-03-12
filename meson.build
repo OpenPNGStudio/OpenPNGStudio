@@ -162,7 +162,7 @@ lib = custom_target(
 opng = declare_dependency(link_with: lib)
 
 # C part
-src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/core/avif_loader.c']
+src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/loaders/avif.c']
 extra_libs = []
 
 if host_machine.system() == 'windows'

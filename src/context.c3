@@ -14,6 +14,8 @@ import std::hash::sha256;
 import std::collections::linkedlist;
 
 import ev;
+import openpngstudio::loaders;
+import libc;
 
 enum FileLoadState {
     NOTHING,
@@ -68,8 +70,6 @@ Context *instance @local = null;
 
 ZString edit_filter = "avif;qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
 ZString stream_filter = "opng";
-
-extern fn bool load_avif_image(rl::Image *out, char *memory, usz size);
 
 fn void Context.init(&self, Allocator alloc)
 {
@@ -145,26 +145,15 @@ fn void Context.load_layer(&self, ZString path)
 
         image::Image *res = instance.image_manager.get(img);
 
-        if (res.ref == 1) {
-            if (path.ends_with(".gif")) {
-                self.ctx.animated = true;
-                res.image = rl::loadImageAnimFromMemory(".gif",
-                    (ZString) img.file_content.ptr, img.file_content.len, 
-                    &self.ctx.nframes, &self.ctx.delays);
-            } else {
-                String ext = path[path.rindex_of_char('.')!!..];
-                ZString zext = ext.zstr_copy(mem);
-                switch (ext) {
-                case ".avif":
-                    load_avif_image(&res.image, img.file_content.ptr, img.file_content.len);
-                default:
-                    res.image = rl::loadImageFromMemory(zext,
-                        img.file_content.ptr, img.file_content.len);
-                }
-                free(zext);
-                free(res.file_content.ptr); /* stays only for GIFs */
-                res.file_content = "";
-            }
+        if (!res.loaded) {
+            loaders::load(res, self.ctx, path)!!;
+        } else if (res.file_content.len > 0) {
+            loaders::load(img, self.ctx, path)!!;
+            res.ref = 1;
+            img.ref = 1;
+            img.id = res.id;
+            res = img;
+            self.ctx.animated = true;
         }
 
         if (res != img) free(img);
@@ -180,11 +169,12 @@ fn void Context.load_layer(&self, ZString path)
         /* after work, main thread */
         image::Image *img = self.ctx.loaded;
 
-        if (img.ref == 1) {
+        if (!img.loaded) {
             img.texture = rl::loadTextureFromImage(img.image);
             rl::setTextureFilter(img.texture, BILINEAR);
             rl::genTextureMipmaps(&img.texture);
             rl::setTextureWrap(img.texture, TextureWrap.CLAMP.ordinal);
+            img.loaded = true;
         }
         
         if (!self.ctx.animated) {
@@ -194,7 +184,7 @@ fn void Context.load_layer(&self, ZString path)
         } else {
             AnimatedLayer *alay = mem::new(AnimatedLayer);
             alay.init(mem, self.ctx.name, self.ctx.loaded,
-                self.ctx.delays[:self.ctx.nframes]);
+                self.ctx.loaded.delays[:self.ctx.loaded.nframes]);
             instance.model.mgr.add(alay);
         }
 
