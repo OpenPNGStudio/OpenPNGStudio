@@ -10,6 +10,7 @@ subprojects/raylib/
 subprojects/sqlite-amalgamation-3510200/
 subprojects/libavif/
 subprojects/libjxl/
+subprojects/libwebp-1.6.0/
 subprojects/packagecache/
 .cache/
 CMakeSettings.json

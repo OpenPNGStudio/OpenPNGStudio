@@ -68,6 +68,13 @@ libjxl_o = cmake.subproject_options()
 libjxl_o.add_cmake_defines({
     'JPEGXL_ENABLE_FUZZERS': false,
     'JPEGXL_ENABLE_TOOLS': false,
+    'JPEGXL_ENABLE_JPEGLI': false,
+    'JPEGXL_ENABLE_JPEGLI_LIBJPEG': false,
+    'JPEGXL_ENABLE_SJPEG': false,
+    'JPEGXL_ENABLE_OPENEXR': false,
+    'JPEGXL_ENABLE_SKCMS': true,
+    'JPEGXL_ENABLE_TRANSCODE_JPEG': false,
+    'JPEGXL_ENABLE_BOXES': false,
     'JPEGXL_ENABLE_DOXYGEN': false,
     'JPEGXL_ENABLE_MANPAGES': false,
     'JPEGXL_ENABLE_BENCHMARK': false,
@@ -76,24 +83,11 @@ libjxl_o.add_cmake_defines({
     'BUILD_SHARED_LIBS': false,
 })
 
-brotli = []
-
-if host_machine.system() == 'linux'
-    libjxl_o.add_cmake_defines({
-        'JPEGXL_FORCE_SYSTEM_BROTLI': true,
-    })
-
-    brotli = [
-        dependency('libbrotlicommon'),
-        dependency('libbrotlidec'),
-        dependency('libbrotlienc')
-    ]
-endif
-
 raylib_p = cmake.subproject('raylib', options: raylib_o)
 sqlite_p = subproject('sqlite3', default_options: ['default_library=static'])
 libavif_p = cmake.subproject('libavif', options: libavif_o)
 libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
+libwebp_p = subproject('libwebp', default_options: ['default_library=static'])
 
 raylib = raylib_p.dependency('raylib')
 sqlite = sqlite_p.get_variable('sqlite3_dep')
@@ -105,6 +99,11 @@ libavif = [
 libjxl = [
     libjxl_p.dependency('jxl'),
     libjxl_p.dependency('jxl_threads')
+]
+libwebp = [
+    libwebp_p.get_variable('webp_dep'),
+    libwebp_p.get_variable('webpdecoder_dep'),
+    libwebp_p.get_variable('webpdemux_dep'),
 ]
 
 # Headers
@@ -166,7 +165,7 @@ opng = declare_dependency(link_with: lib)
 
 # C part
 src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/loaders/avif.c',
-    'src/loaders/jpeg_xl.cpp']
+    'src/loaders/jpeg_xl.cpp', 'src/loaders/webp.c']
 extra_libs = []
 
 if host_machine.system() == 'windows'
@@ -182,7 +181,7 @@ endif
 executable(
     'OpenPNGStudio',
     src,
-    dependencies: [raylib, sqlite, opng, libavif, libjxl, brotli, extra_libs],
+    dependencies: [raylib, sqlite, opng, libavif, libjxl, libwebp, extra_libs],
     include_directories: ['include/', 'include/vendor/'],
     install: true,
     install_dir: 'bin',

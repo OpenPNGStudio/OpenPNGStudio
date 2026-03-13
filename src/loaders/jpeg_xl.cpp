@@ -81,6 +81,11 @@ bool load_jpegxl(Image *out, const uint8_t *memory, const size_t size, int *nfra
             if (!info.have_animation)
                 break;
 
+            assert(frame.layer_info.have_crop == false && "Crop is not supported yet");
+            assert(info.xsize == frame.layer_info.xsize && "Width does not match the animation frame");
+            assert(info.ysize == frame.layer_info.ysize && "Height does not match the animation frame");
+            assert(frame.layer_info.blend_info.blendmode == JXL_BLEND_REPLACE && "Blend mode isn't REPLACE");
+
             const uint32_t ms = (frame.duration * 1000) * info.animation.tps_denominator / info.animation.tps_numerator;
             jxl_delays.push_back(static_cast<int>(ms));
             break;
