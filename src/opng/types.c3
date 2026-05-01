@@ -99,3 +99,9 @@ struct SQLAnimation {
     void *data;
     usz data_size;
 }
+
+module opng::types @if($feature(OPNG_STANDALONE));
+
+struct ImageData {
+    int width, height, nframes;
+}

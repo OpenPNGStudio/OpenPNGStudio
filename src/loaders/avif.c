@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include <assert.h>
 #include <avif/avif.h>
-#include <raylib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef OPNG_STANDALONE
+#include <raylib.h>
 
 bool load_avif(Image *out, const uint8_t *memory, const size_t size, int *nframes, int **delays)
 {
@@ -73,3 +75,36 @@ cleanup:
 
     return res == AVIF_RESULT_OK;
 }
+
+#else
+#include <opng.h>
+
+bool load_avif(const uint8_t *memory, const size_t size, struct image_data *out)
+{
+    avifRGBImage img = { 0 };
+
+    avifDecoder *decoder = avifDecoderCreate();
+    if (decoder == NULL)
+        return false;
+
+    avifResult res = avifDecoderSetIOMemory(decoder, memory, size);
+    if (res != AVIF_RESULT_OK)
+        goto cleanup;
+
+    res = avifDecoderParse(decoder);
+    if (res != AVIF_RESULT_OK)
+        goto cleanup;
+
+    out->width = (int) decoder->image->width;
+    out->height = (int) decoder->image->height;
+    out->nframes = decoder->imageCount;
+
+    res = AVIF_RESULT_OK;
+cleanup:    
+    avifRGBImageFreePixels(&img);
+    avifDecoderDestroy(decoder);
+
+    return res == AVIF_RESULT_OK;
+}
+
+#endif

@@ -113,6 +113,7 @@ vendor_headers = [
     'https://raw.githubusercontent.com/OpenPNGStudio/raylib-nuklear/refs/heads/master/include/raylib-nuklear.h',
     'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h',
     'https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h',
+    'https://raw.githubusercontent.com/nothings/stb/refs/heads/master/stb_image.h',
 ]
 
 foreach url : vendor_headers
@@ -146,15 +147,13 @@ assert(
     'C3 compiler hash does not match: ' + c3_target_hash + ' != ' + c3_hash,
 )
 
-includes = include_directories('include', 'include/vendor')
-
 # OpenPNGStudio and opng
 subdir('src')
 executable(
     'OpenPNGStudio',
     c_src,
     dependencies: [raylib, sqlite, app_dep, libavif, libjxl, libwebp, extra_libs],
-    include_directories: includes,
+    include_directories: ['include', 'include/vendor'],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',
@@ -165,9 +164,12 @@ executable(
     'opng',
     opng_c_srcs,
     dependencies: [sqlite, opng_dep, libavif, libjxl, libwebp, extra_libs],
+    include_directories: ['include'],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',
+    c_args: ['-DOPNG_STANDALONE'],
+    cpp_args: ['-DOPNG_STANDALONE']
 )
 
 # Install

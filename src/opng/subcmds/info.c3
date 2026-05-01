@@ -246,16 +246,7 @@ fn void anim_info(SQLAnimation self, int depth) @local
 fn void? image_info(Reader *rd, ImageEntry img) @local @maydiscard
 {
     @pool() {
-        char[] data = mem::temp_array(char, img.uncompressed_size);
-        
-        rd.read_into(img.offset, data)!;
-        QOIDesc desc;
-
-        @pool() {
-            char[] useless = qoi::decode(tmem, data[:img.uncompressed_size],
-                &desc)!;
-        };
-
+        ImageData data = image_data(rd, img)!;
         @ident("id", 2);
         io::print(" = ");
         @integer(img.id);
@@ -267,7 +258,13 @@ fn void? image_info(Reader *rd, ImageEntry img) @local @maydiscard
         case STATIC:
             @string("static");
         case ANIMATED_GIF:
-            @string("animated");
+            @string("animated (gif)");
+        case ANIMATED_AVIF:
+            @string("animated (avif)");
+        case ANIMATED_JPEG_XL:
+            @string("animated (jpeg xl)");
+        case ANIMATED_WEBP:
+            @string("animated (webp)");
         default:
         }
         io::printn();
@@ -289,11 +286,56 @@ fn void? image_info(Reader *rd, ImageEntry img) @local @maydiscard
         @ident("h", 0);
         io::print(") = ");
         io::print("(");
-        @decimal(desc.width);
+        @decimal(data.width);
         io::print(", ");
-        @decimal(desc.height);
+        @decimal(data.height);
         io::printn(")");
+
+        if (data.nframes > 1) {
+            @ident("nframes", 2);
+            io::print(" = ");
+            @integer(data.nframes);
+            io::printn();
+        }
     };
+}
+
+extern fn bool load_gif(char[] memory, ImageData *out);
+extern fn bool load_avif(char[] memory, ImageData *out);
+extern fn bool load_jpegxl(char[] memory, ImageData *out);
+extern fn bool load_webp(char[] memory, ImageData *out);
+
+fn ImageData? image_data(Reader *rd, ImageEntry img) @local
+{
+    ImageData res;
+    res.nframes = 1;
+    
+    char[] data = mem::temp_array(char, img.uncompressed_size);
+    
+    rd.read_into(img.offset, data)!;
+    
+    switch (img.type) {
+        case STATIC:
+            QOIDesc desc;
+    
+            @pool() {
+                char[] useless = qoi::decode(tmem, data[:img.uncompressed_size],
+                    &desc)!;
+            };
+            res.width = desc.width;
+            res.height = desc.height;
+        case ANIMATED_GIF:
+            load_gif(data, &res);
+        case ANIMATED_AVIF:
+            load_avif(data, &res);
+        case ANIMATED_JPEG_XL:
+            load_jpegxl(data, &res);
+        case ANIMATED_WEBP:
+            load_webp(data, &res);
+        default:
+    }
+
+    return res;
 }
 
 macro void @ident($str, #d) @local

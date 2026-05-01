@@ -3,9 +3,11 @@
 #include <webp/decode.h>
 
 #include <stdbool.h>
-#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifndef OPNG_STANDALONE
+#include <raylib.h>
 
 bool load_webp(Image *out, const uint8_t *memory, const size_t size, int *nframes, int **delays)
 {
@@ -57,3 +59,30 @@ bool load_webp(Image *out, const uint8_t *memory, const size_t size, int *nframe
 
     return true;
 }
+
+#else
+#include <opng.h>
+
+bool load_webp(const uint8_t *memory, const size_t size, struct image_data *out)
+{
+    const WebPData data = { .bytes = memory, .size = size };
+    WebPAnimDecoderOptions options;
+    WebPAnimDecoderOptionsInit(&options);
+    options.color_mode = MODE_RGBA;
+    options.use_threads = true;
+
+    WebPAnimDecoder *decoder = WebPAnimDecoderNew(&data, &options);
+    WebPAnimInfo anim_info;
+
+    WebPAnimDecoderGetInfo(decoder, &anim_info);
+
+    out->width = (int) anim_info.canvas_width;
+    out->height = (int) anim_info.canvas_height;
+    out->nframes = (int) anim_info.frame_count;
+
+    WebPAnimDecoderDelete(decoder);
+
+    return true;
+}
+
+#endif

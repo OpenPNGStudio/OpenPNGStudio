@@ -6,12 +6,13 @@
 #include <jxl/resizable_parallel_runner_cxx.h>
 #include <jxl/types.h>
 
-#include <raylib.h>
 #include <cassert>
 #include <cstring>
 #include <vector>
 
 extern "C" {
+#ifndef OPNG_STANDALONE
+#include <raylib.h>
 
 bool load_jpegxl(Image *out, const uint8_t *memory, const size_t size, int *nframes, int **delays)
 {
@@ -121,5 +122,60 @@ bool load_jpegxl(Image *out, const uint8_t *memory, const size_t size, int *nfra
 
     return true;
 }
+#else
+#include <opng.h>
 
+bool load_jpegxl(const uint8_t *memory, const size_t size, struct image_data 
+    *out)
+{
+    JxlResizableParallelRunnerPtr runner = JxlResizableParallelRunnerMake(nullptr);
+
+    JxlDecoderPtr decoder = JxlDecoderMake(nullptr);
+    if (JxlDecoderSubscribeEvents(decoder.get(), JXL_DEC_BASIC_INFO | JXL_DEC_FULL_IMAGE
+        | JXL_DEC_FRAME) != JXL_DEC_SUCCESS)
+        return false;
+
+    if (JxlDecoderSetParallelRunner(decoder.get(), JxlResizableParallelRunner, runner.get()) !=
+        JXL_DEC_SUCCESS)
+        return false;
+
+    JxlBasicInfo info;
+    
+    JxlDecoderSetInput(decoder.get(), memory, size);
+    JxlDecoderCloseInput(decoder.get());
+
+    bool end = false;
+
+    while (!end) {
+        switch (JxlDecoderProcessInput(decoder.get())) {
+        case JXL_DEC_BASIC_INFO:
+            if (JxlDecoderGetBasicInfo(decoder.get(), &info) != JXL_DEC_SUCCESS)
+                return false;
+
+            out->width = static_cast<int>(info.xsize);
+            out->height = static_cast<int>(info.ysize);
+            JxlResizableParallelRunnerSetThreads(runner.get(),
+                JxlResizableParallelRunnerSuggestThreads(info.xsize, info.ysize));
+            break;
+        case JXL_DEC_NEED_IMAGE_OUT_BUFFER:
+        {
+            JxlDecoderSkipCurrentFrame(decoder.get());
+            out->nframes++;
+            break;
+        }
+        case JXL_DEC_FRAME:
+        case JXL_DEC_FULL_IMAGE:
+            break;
+        case JXL_DEC_SUCCESS:
+            end = true;
+            break;
+        default:
+            return false;
+        }
+    }
+
+    return true;
+}
+
+#endif
 }
