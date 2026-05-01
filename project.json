@@ -9,21 +9,19 @@
     "test-sources": ["test/**"],
     "output": "build",
     "targets": {
-        "OpenPNGStudio-linux-x64": {
+        "OpenPNGStudio": {
             "type": "static-lib",
-            "name": "libOpenPNGStudio"
-        },
-        "OpenPNGStudio-windows-x64": {
-            "type": "static-lib",
-            "name": "libOpenPNGStudio"
+            "name": "libOpenPNGStudio",
         },
         "opng": {
-            "type": "executable",
+            "type": "static-lib",
+            "name": "libopng",
             "dependencies-override": ["sqlite3"],
             "linked-libraries-override": ["sqlite3"],
             "sources-override": ["src/opng/**"],
             "features": ["OPNG_STANDALONE"],
-            "test-sources-override": ["test/opng/**"]
+            "test-sources-override": ["test/opng/**"],
+            "output": "build/src/opng",
         }
     },
     "cpu": "generic",

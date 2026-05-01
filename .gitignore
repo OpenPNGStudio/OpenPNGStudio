@@ -15,3 +15,7 @@ subprojects/packagecache/
 .cache/
 CMakeSettings.json
 .vs/
+.idea/
+lib/ev.c3l/
+subprojects/.wraplock
+src/opng/example.opng

@@ -80,6 +80,7 @@ libjxl_o.add_cmake_defines({
     'JPEGXL_ENABLE_BENCHMARK': false,
     'JPEGXL_ENABLE_EXAMPLES': false,
     'JPEGXL_ENABLE_JNI': false,
+    'BROTLI_BUILD_TOOLS': false,
     'BUILD_SHARED_LIBS': false,
 })
 
@@ -128,8 +129,8 @@ endforeach
 c3_version = c3c.version()
 c3_hash = 'unknown'
 
-c3_target_version = '0.7.10'
-c3_target_hash = '1a3cdc01ecb6165669cdb3c53660aafb6d001103'
+c3_target_version = '0.7.11'
+c3_target_hash = '71c5d5bafd700d7d2f2a0fe282fc93a7420faf9e'
 
 output = run_command(c3c, '--version', check: true).stdout()
 
@@ -145,90 +146,33 @@ assert(
     'C3 compiler hash does not match: ' + c3_target_hash + ' != ' + c3_hash,
 )
 
-# C3 project
-target = 'OpenPNGStudio-linux-x64'
-ext = 'a'
+includes = include_directories('include', 'include/vendor')
 
-if host_machine.system() == 'windows'
-    ext = 'lib'
-    target = 'OpenPNGStudio-windows-x64'
-endif
-
-lib = custom_target(
-    'OpenPNGStudio C3 library',
-    output: 'libOpenPNGStudio.' + ext,
-    command: [c3c, 'build', target, '--warn-deprecation=no'],
-    build_always_stale: true,
-)
-
-opng = declare_dependency(link_with: lib)
-
-# C part
-src = ['src/wrappers.c', 'src/core/brain_damage.c', 'src/core/microphone.c', 'src/loaders/avif.c',
-    'src/loaders/jpeg_xl.cpp', 'src/loaders/webp.c']
-extra_libs = []
-
-if host_machine.system() == 'windows'
-    add_project_arguments(['/wd5105', '/experimental:c11atomics'], language: 'c')
-    foreach winlib : ['Shlwapi', 'Dbghelp']
-        extra_libs += cc.find_library(winlib)
-    endforeach
-
-    windows = import('windows')
-    src += windows.compile_resources('data/win.rc')
-endif
-
+# OpenPNGStudio and opng
+subdir('src')
 executable(
     'OpenPNGStudio',
-    src,
-    dependencies: [raylib, sqlite, opng, libavif, libjxl, libwebp, extra_libs],
-    include_directories: ['include/', 'include/vendor/'],
+    c_src,
+    dependencies: [raylib, sqlite, app_dep, libavif, libjxl, libwebp, extra_libs],
+    include_directories: includes,
+    install: true,
+    install_dir: 'bin',
+    win_subsystem: 'console',
+)
+subdir('src/opng')
+
+executable(
+    'opng',
+    opng_c_srcs,
+    dependencies: [sqlite, opng_dep, libavif, libjxl, libwebp, extra_libs],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',
 )
 
 # Install
-install_subdir(
-    'assets',
-    install_dir: 'share/OpenPNGStudio',
-    exclude_files: ['assets/Oxy/refsheet.png'],
-    strip_directory: true
-)
-
-install_subdir(
-    'licenses',
-    install_dir: 'share/OpenPNGStudio',
-)
-
-install_data(
-    'assets/logo.png',
-    install_dir: 'share/icons/hicolor/512x512/apps',
-    rename: 'openpngstudio.png'
-)
-
-install_data(
-    'data/dev.lowbytefox.OpenPNGStudio.metainfo.xml',
-    install_dir: 'usr/share/metainfo'
-)
-
-install_data(
-    'data/dev.lowbytefox.OpenPNGStudio.desktop',
-    install_dir: 'share/applications'
-)
+subdir('assets')
+subdir('licenses')
+subdir('data')
 
 # Note: when installing use --skip-subprojects
-
-# Validate MetaInfo file
-if ascli.found()
-    test('validate metainfo file',
-        ascli,
-        args: [
-            'validate',
-            '--no-net',
-            '--pedantic',
-            'data/dev.lowbytefox.OpenPNGStudio.metainfo.xml'
-        ],
-        workdir: meson.project_source_root()
-    )
-endif

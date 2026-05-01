@@ -54,9 +54,12 @@ struct SQLiteDir {
     usz uncompressed_size, size, offset;
 }
 
-enum ImageType : inline char {
+constdef ImageType : inline char {
     STATIC,
-    ANIMATED,
+    ANIMATED_GIF,
+    ANIMATED_AVIF,
+    ANIMATED_JPEG_XL,
+    ANIMATED_WEBP,
 
     LIMIT
 }

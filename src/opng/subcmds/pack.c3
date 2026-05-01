@@ -153,7 +153,7 @@ fn bool? parse(ParseContext *self, ParsedLayer *target, Path file) @local
                     id_counter++,
                     1,
                     file::load(mem, file.str_view())!,
-                    basename.ends_with(".gif") ? ANIMATED : STATIC,
+                    basename.ends_with(".gif") ? ANIMATED_GIF : STATIC,
                 };
 
                 return false;

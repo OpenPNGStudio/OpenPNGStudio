@@ -58,14 +58,6 @@ struct ModelSave @local {
     ModelSaveState state;
     Work{ModelSave*} worker;
 }
-/*
-struct QOIDesc {
-	uint width;
-	uint height;
-	char channels;
-	char colorspace;
-}
-*/
 
 extern fn void *qoi_encode(void *data, QOIDesc *desc, int *out_len);
 
@@ -84,45 +76,42 @@ fn void write_layers(Work{ModelSave*} *work) @local
         self.wr.start_images()!!;
 
         app_ctx.image_manager.images.@each(; image::Image* img) {
-            if (img.file_content.len > 0) unreachable("GIF not yet");
-        
-            if (img.image.format != UNCOMPRESSED_R8G8B8A8) {
-                rl::imageFormat(&img.image, UNCOMPRESSED_R8G8B8A8);
+            if (img.file_content.len > 0) {
+                write_animated(self, img)!!;
+            } else {
+                write_static(self, img)!!;
             }
-
-            usz size = (usz) img.image.width * img.image.height * 4;
-            
-            QOIDesc desc = {
-                img.image.width,
-                img.image.height,
-                RGBA,
-                LINEAR
-            };
-
-            @pool() {
-                char[] encoded = qoi::encode(mem, img.image.data[:size], &desc)!!;
-                self.wr.add_image(STATIC, img.id, encoded)!!;
-            };
-/*
-            QOIDesc desc = {
-                img.image.width,
-                img.image.height,
-                4,
-                1
-            };
-
-            @pool() {
-                int len;
-                void *encoded = qoi_encode(img.image.data, &desc, &len);
-
-                self.wr.add_image(STATIC, img.id, encoded[:len])!!;
-            };
-            */
         };
 
         self.wr.end_images()!!;
         break;
     }
+}
+
+fn void? write_static(ModelSave *self, image::Image *img) @local
+{
+    if (img.image.format != UNCOMPRESSED_R8G8B8A8) {
+        rl::imageFormat(&img.image, UNCOMPRESSED_R8G8B8A8);
+    }
+
+    usz size = (usz) img.image.width * img.image.height * 4;
+    
+    QOIDesc desc = {
+        img.image.width,
+        img.image.height,
+        RGBA,
+        LINEAR
+    };
+
+    @pool() {
+        char[] encoded = qoi::encode(mem, img.image.data[:size], &desc)!;
+        self.wr.add_image(STATIC, img.id, encoded)!;
+    };
+}
+
+fn void? write_animated(ModelSave *self, image::Image *img) @local
+{
+    self.wr.add_image(img.type, img.id, img.file_content)!;
 }
 
 fn ev::Action write_done(Work{ModelSave*} *work) @local

@@ -4,6 +4,7 @@ module openpngstudio::loaders;
 import openpngstudio::image;
 import std::core::log;
 import raylib5::rl;
+import opng::types;
 
 fn bool? load(image::Image *img, ImageReq *req, String path)
 {
@@ -29,6 +30,7 @@ fn bool? load(image::Image *img, ImageReq *req, String path)
         img.image = rl::loadImageFromMemory(zext, img.file_content.ptr, img.file_content.len);
         free(img.file_content.ptr); /* removed for static images */
         img.file_content = {};
+        img.type = STATIC;
     default:
         log::error("Unknown file format: %s", ext[1..]);
     }
@@ -48,18 +50,23 @@ fn bool? possibly_animated(image::Image *img, ImageReq *req, String ext) @local
         img.image = rl::loadImageAnimFromMemory(".gif",
             (ZString) img.file_content.ptr, img.file_content.len,
             &img.nframes, &img.delays);
+        img.type = ANIMATED_GIF;
     case ".avif":
         if (!load_avif(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
+        img.type = ANIMATED_AVIF;
     case ".jxl":
         if (!load_jpegxl(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
+        img.type = ANIMATED_JPEG_XL;
     case ".webp":
         if (!load_webp(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
+        img.type = ANIMATED_WEBP;
     }
 
     if (img.nframes == 1) {
         free(img.delays);
         free(img.file_content.ptr); /* removed for static images */
         img.file_content = {};
+        img.type = STATIC;
         return true;
     }
 

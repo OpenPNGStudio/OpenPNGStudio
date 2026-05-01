@@ -266,7 +266,7 @@ fn void? image_info(Reader *rd, ImageEntry img) @local @maydiscard
         switch (img.type) {
         case STATIC:
             @string("static");
-        case ANIMATED:
+        case ANIMATED_GIF:
             @string("animated");
         default:
         }

@@ -11,6 +11,8 @@ import std::hash::sha256;
 import std::io;
 import libc;
 
+import opng::types;
+
 uint last_id @local = 1;
 
 struct Image {
@@ -25,6 +27,7 @@ struct Image {
     rl::Texture2D texture;
 
     /* animation data */
+    ImageType type;
     int nframes;
     int *delays;
 }

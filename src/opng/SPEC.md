@@ -55,10 +55,10 @@ Directory info header:
 | 0xD    | 0x8  | Size              |
 | 0x15   | 0x8  | Image Offset*     |
 
-*Image Type - type of the image: `0 (Static)`, `1 (Animated e.g. GIF)`<br>
+*Image Type - type of the image: `0 (Static)`, `1 (GIF)`, `2 (AVIF)`, `3 (JPEG XL)`, `4 (WebP)`<br>
 *Image Offset - file cursor position from the start where data is located<br>
 
-> Note: every image is stored using QOI format (for now)
+> Note: every static image is stored using QOI format (for now)
 
 ## SQLite Schema
 
