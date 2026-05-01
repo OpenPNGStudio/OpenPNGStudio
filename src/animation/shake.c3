@@ -4,19 +4,24 @@ module openpngstudio::animation::shake;
 import std::time;
 import std::core::mem;
 import openpngstudio::layer;
-import openpngstudio::animation::easings;
+import openpngstudio::animation::easings, openpngstudio::util;
 import std::math, std::math::random;
 import std::io;
 import raylib5::rl;
 import nk;
+import opng;
 
 struct Shake (Animation) {
     BasicAnimation base;
     DefaultRandom rng;
     Vector2 current, offset;
+
+    /* conf */
     int start, end;
     ulong length;
 }
+
+const DATA_SIZE = int.sizeof + int.sizeof + ulong.sizeof;
 
 fn void Shake.init(&self, ulong length)
 {
@@ -65,6 +70,23 @@ fn void Shake.animate(&self, Origin *origin) @dynamic
 }
 
 fn BasicAnimation *Shake.get_base(&self) @dynamic => &self.base;
+
+fn void? Shake.pack(&self, Writer *wr, uint layer_id) @dynamic
+{
+    SQLAnimation base = animation::prepare_data(self);
+    
+    base.type = 2;
+    base.layer_id = layer_id;
+    base.data = malloc(DATA_SIZE);
+    base.data_size = DATA_SIZE;   
+
+    char[] buf = base.data[:DATA_SIZE];
+    util::@copy_into(buf, self.start);
+    util::@copy_into(buf[int.sizeof..], self.end);
+    util::@copy_into(buf[int.sizeof + int.sizeof..], self.length);
+
+    wr.add_animation(base)!;
+}
 
 fn void Shake.config(&self, nk::Context *ctx) @dynamic
 {

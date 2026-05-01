@@ -5,7 +5,9 @@ import std::time;
 import std::core::mem;
 import openpngstudio::layer;
 import openpngstudio::animation::easings;
+import openpngstudio::util;
 import std::io;
+import opng;
 import nk;
 
 struct Spinner (Animation) {
@@ -13,6 +15,8 @@ struct Spinner (Animation) {
     float rotation, target_rotation;
     ulong length;
 }
+
+const DATA_SIZE = float.sizeof + ulong.sizeof;
 
 fn void Spinner.init(&self, float rotation, ulong length)
 {
@@ -43,6 +47,22 @@ fn void Spinner.animate(&self, Origin *origin) @dynamic =>
     origin.rotation += self.rotation;
 
 fn BasicAnimation *Spinner.get_base(&self) @dynamic => &self.base;
+
+fn void? Spinner.pack(&self, Writer *wr, uint layer_id) @dynamic
+{
+    SQLAnimation base = animation::prepare_data(self);
+    
+    base.type = 1;
+    base.layer_id = layer_id;
+    base.data = malloc(DATA_SIZE);
+    base.data_size = DATA_SIZE;   
+
+    char[] buf = base.data[:DATA_SIZE];
+    util::@copy_into(buf, self.target_rotation);
+    util::@copy_into(buf[float.sizeof..], self.length);
+
+    wr.add_animation(base)!;
+}
 
 fn void Spinner.config(&self, nk::Context *ctx) @dynamic
 {

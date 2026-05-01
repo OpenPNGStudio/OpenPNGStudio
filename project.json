@@ -12,6 +12,7 @@
         "OpenPNGStudio": {
             "type": "static-lib",
             "name": "libOpenPNGStudio",
+            "output": "build/src",
         },
         "opng": {
             "type": "static-lib",

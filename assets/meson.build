@@ -1,6 +1,6 @@
 install_subdir(
     '.',
-    install_dir: 'share/OpenPNGStudio/assets',
+    install_dir: 'share/OpenPNGStudio',
     exclude_files: ['Oxy/refsheet.png', 'meson.build'],
     strip_directory: true
 )

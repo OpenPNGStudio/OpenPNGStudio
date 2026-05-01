@@ -234,11 +234,7 @@ fn void? LayerGroup.pack(&self, Writer *wr) @dynamic
     uint layer_id = wr.add_layer_data(data)!;
 
     foreach (anim : self.base.animations) {
-        unreachable("UNIMPLEMENTED");
-        /*
-        anim.layer_id = layer_id;
-        wr.add_animation(anim)!;
-        */
+        anim.a.pack(wr, layer_id)!;
     }
 
     wr.add_layer({self.layers.len(), layer_id})!;

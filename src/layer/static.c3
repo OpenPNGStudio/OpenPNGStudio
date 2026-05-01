@@ -85,11 +85,7 @@ fn void? pack(StaticLayer *self, Writer *wr)
     uint layer_id = wr.add_layer_data(data)!;
     
     foreach (anim : self.animations) {
-        unreachable("UNIMPLEMENTED");
-        /*
-        anim.layer_id = layer_id;
-        wr.add_animation(anim)!;
-        */
+        anim.a.pack(wr, layer_id)!;
     }
 
     wr.add_layer({0, layer_id})!;
@@ -340,7 +336,7 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     nk::spacer(ctx);
 }
 
-fn SQLLayerData prepare_data(StaticLayer *self) => {
+fn SQLLayerData prepare_data(StaticLayer *self) @inline => {
     self.name.buffer,
     {
         self.position.x,

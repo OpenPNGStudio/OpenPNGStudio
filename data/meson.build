@@ -1,6 +1,6 @@
 install_data(
     'dev.lowbytefox.OpenPNGStudio.metainfo.xml',
-    install_dir: 'usr/share/metainfo'
+    install_dir: 'share/metainfo'
 )
 
 install_data(

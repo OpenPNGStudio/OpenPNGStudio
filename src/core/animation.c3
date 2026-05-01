@@ -6,6 +6,7 @@ import std::collections::list;
 import openpngstudio::layer, openpngstudio::ui::icons;
 import std::io;
 import nk;
+import opng;
 
 /* Constants */
 const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade"};
@@ -16,6 +17,7 @@ interface Animation {
     fn BasicAnimation *get_base();
     fn void config(nk::Context *ctx);
     fn void reset();
+    fn void? pack(Writer *wr, uint layer_id);
 }
 
 struct BasicAnimation {
@@ -238,4 +240,19 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
     nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
 
     return res;
+}
+
+fn SQLAnimation prepare_data(Animation anim) @inline
+{
+    BasicAnimation *base = anim.get_base();
+
+    return {
+        -1,
+        base.mask,
+        base.easing,
+        base.repeat,
+        0,
+        null,
+        0
+    };
 }
