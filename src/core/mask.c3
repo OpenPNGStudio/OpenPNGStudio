@@ -46,6 +46,16 @@ fn Mask get()
     return current;
 }
 
+fn char Mask.get_char(self)
+{
+    for (ulong i = 0; i <= 26; i++) {
+        ulong mask = 1ULL << (i + KEY_START);
+        if (self & mask) return 'A' + (char) i;
+    }
+    
+    return 0;
+}
+
 fn void update(Mask *mask)
 {
     int key = rl::getKeyPressed();

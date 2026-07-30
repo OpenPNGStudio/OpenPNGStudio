@@ -227,62 +227,8 @@ SELECT * FROM animations WHERE layer = ?;
         defer sqlite3::finalize(stmt);
 
         return anims.to_array(alloc);
-    };    
+    };
 }
-
-/*
-fn void? Reader.read_image(&self, Image info, char[] out)
-{
-    self.stream.offset(true, info.offset)!;
-
-    self.stream.read(out)!;
-}
-
-fn void? Reader.read_animation_data(&self, Animation info, char[] out)
-{
-    self.stream.offset(true, self.animation_data_offsets[info.id]!)!;
-    defer self.animation_data_offsets.remove(info.id);
-
-    self.stream.read(out)!;
-}
-
-fn void? read_conf(Reader *self, DirResult *res)
-{
-    self.stream.@read(res.value.cfg.microphone_trigger)!;
-    self.stream.@read(res.value.cfg.microphone_sensitivity)!;
-    self.stream.@read(res.value.cfg.background_color)!;
-}
-
-fn void? read_layers(Reader *self, DirResult *res)
-{
-    foreach (&layer : res.value.layers) {
-        self.stream.@read(layer.x)!;
-        self.stream.@read(layer.y)!;
-        self.stream.@read(layer.rotation)!;
-        self.stream.@read(layer.timeout)!;
-        self.stream.@read(layer.toggle_mode)!;
-        self.stream.@read(layer.mask)!;
-        self.stream.@read(layer.image_id)!;
-        self.stream.@read(layer.animation_id)!;
-    }
-}
-
-fn void? read_animations(Reader *self, DirResult *res)
-{
-    foreach (&anim : res.value.animations) {
-        self.stream.@read(anim.type)!;
-        if (anim.type >= LIMIT) return ANIMATION_TYPE_MISMATCH?;
-
-        self.stream.@read(anim.id)!;
-        self.stream.@read(anim.easing)!;
-        self.stream.@read(anim.mask)!;
-        self.stream.@read(anim.data_size)!;
-
-        self.animation_data_offsets[anim.id] = self.stream.offset()!;
-        self.stream.skip(anim.data_size)!;
-    }
-}
-*/
 
 module opng;
 

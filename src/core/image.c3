@@ -65,6 +65,8 @@ fn void Image.free(&self)
 
         rl::unloadImage(self.image);
         rl::unloadTexture(self.texture);
+        
+        self.loaded = false;
     }
 }
 
@@ -95,6 +97,7 @@ fn Image *Manager.get(&self, Image *img)
     defer self.mutex.unlock();
 
     if (try Image *res = self.images[img]) {
+        if (res.ref == 0) res.file_content = img.file_content;
         res.ref++;
         return res;
     }

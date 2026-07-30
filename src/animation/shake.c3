@@ -88,6 +88,15 @@ fn void? Shake.pack(&self, Writer *wr, uint layer_id) @dynamic
     wr.add_animation(base)!;
 }
 
+fn void Shake.unpack(&self, char[] data) @dynamic
+{
+    mem::copy(&self.start, data, int.sizeof);
+    mem::copy(&self.end, data[int.sizeof..], int.sizeof);
+    mem::copy(&self.length, data[int.sizeof + int.sizeof..], ulong.sizeof);
+    
+    self.reset();
+}
+
 fn void Shake.config(&self, nk::Context *ctx) @dynamic
 {
     float win_width = nk::window_get_width(ctx);

@@ -22,7 +22,6 @@ enum FileLoadState {
     SELECTING_IMAGE,
     SELECTING_SCRIPT,
     WRITING_MODEL,
-    LOADING_MODEL,
 }
 
 struct Context {
@@ -146,17 +145,19 @@ fn void Context.load_layer(&self, ZString path)
         image::Image *res = instance.image_manager.get(img);
 
         if (!res.loaded) {
-            loaders::load(res, self.ctx, path)!!;
+            loaders::load(res, path)!!;
         } else if (res.file_content.len > 0) {
-            loaders::load(img, self.ctx, path)!!;
+            loaders::load(img, path)!!;
             res.ref = 1;
             img.ref = 1;
             img.id = res.id;
             res = img;
-            self.ctx.animated = true;
         }
 
-        if (res != img) free(img);
+        if (res != img) {
+            free(img.file_content);
+            free(img);
+        }
 
         Path pth = path.to_path(mem)!!;
         defer pth.free();
@@ -168,6 +169,8 @@ fn void Context.load_layer(&self, ZString path)
     }, fn (self) {
         /* after work, main thread */
         image::Image *img = self.ctx.loaded;
+        
+        log::info("Loaded image with id %d", img.id);
 
         if (!img.loaded) {
             img.texture = rl::loadTextureFromImage(img.image);
@@ -177,7 +180,7 @@ fn void Context.load_layer(&self, ZString path)
             img.loaded = true;
         }
         
-        if (!self.ctx.animated) {
+        if (img.file_content.len == 0) {
             StaticLayer *slay = mem::new(StaticLayer);
             slay.init(mem, self.ctx.name, self.ctx.loaded);
             instance.model.mgr.add(slay);

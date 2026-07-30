@@ -18,6 +18,7 @@ interface Animation {
     fn void config(nk::Context *ctx);
     fn void reset();
     fn void? pack(Writer *wr, uint layer_id);
+    fn void unpack(char[] data);
 }
 
 struct BasicAnimation {
@@ -222,7 +223,7 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
     }
 
     mask::configure(&base.mask, &self.input_buffer, &self.input_length, ctx,
-        "Animation Mask:");
+        "Animation Activation:");
 
     if (nk::tree_state_push(ctx, nk::TREE_TAB, "Animation Options",
         &self.custom_cfg_state)) {

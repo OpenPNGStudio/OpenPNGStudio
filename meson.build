@@ -28,6 +28,7 @@ raylib_o = cmake.subproject_options()
 raylib_o.add_cmake_defines({
     'BUILD_EXAMPLES': false,
     'CUSTOMIZE_BUILD': true,
+    'GLFW_BUILD_WAYLAND': true,
     'SUPPORT_MODULE_RMODELS': false,
     'SUPPORT_MODULE_RAUDIO': false,
     'SUPPORT_GESTURE_SYSTEM': false,
@@ -131,7 +132,7 @@ c3_version = c3c.version()
 c3_hash = 'unknown'
 
 c3_target_version = '0.7.11'
-c3_target_hash = '71c5d5bafd700d7d2f2a0fe282fc93a7420faf9e'
+c3_target_hash = 'unknown'
 
 output = run_command(c3c, '--version', check: true).stdout()
 

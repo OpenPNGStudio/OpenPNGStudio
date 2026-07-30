@@ -2,6 +2,7 @@
 module openpngstudio::ui::line_edit;
 
 import nk;
+import libc;
 
 struct LineEdit {
     ZString buffer;

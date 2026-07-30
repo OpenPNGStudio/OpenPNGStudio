@@ -6,7 +6,7 @@ import std::core::log;
 import raylib5::rl;
 import opng::types;
 
-fn bool? load(image::Image *img, ImageReq *req, String path)
+fn bool? load(image::Image *img, String path)
 {
     String ext = path[path.rindex_of_char('.')!!..];
     ZString zext = ext.zstr_copy(mem);
@@ -17,7 +17,7 @@ fn bool? load(image::Image *img, ImageReq *req, String path)
     case ".avif":
     case ".jxl":
     case ".webp":
-        return possibly_animated(img, req, ext);
+        return possibly_animated(img, ext);
     /* not animated */
     case ".qoi":
     case ".png": /* no apng support */
@@ -43,7 +43,7 @@ extern fn bool load_avif(rl::Image *out, char[] memory, int *nframes, int **dela
 extern fn bool load_jpegxl(rl::Image *out, char[] memory, int *nframes, int **delays);
 extern fn bool load_webp(rl::Image *out, char[] memory, int *nframes, int **delays);
 
-fn bool? possibly_animated(image::Image *img, ImageReq *req, String ext) @local
+fn bool? possibly_animated(image::Image *img, String ext) @local
 {
     switch (ext) {
     case ".gif":
@@ -67,9 +67,7 @@ fn bool? possibly_animated(image::Image *img, ImageReq *req, String ext) @local
         free(img.file_content.ptr); /* removed for static images */
         img.file_content = {};
         img.type = STATIC;
-        return true;
     }
-
-    req.animated = true;
+    
     return true;
 }

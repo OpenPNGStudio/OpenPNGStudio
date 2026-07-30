@@ -68,13 +68,21 @@ fn void? Fade.pack(&self, Writer *wr, uint layer_id) @dynamic
     base.type = 3;
     base.layer_id = layer_id;
     base.data = malloc(DATA_SIZE);
-    base.data_size = DATA_SIZE;   
+    base.data_size = DATA_SIZE;
 
     char[] buf = base.data[:DATA_SIZE];
     util::@copy_into(buf, self.mode);
-    util::@copy_into(buf[float.sizeof..], self.length);
+    util::@copy_into(buf[FadeMode.sizeof..], self.length);
 
     wr.add_animation(base)!;
+}
+
+fn void Fade.unpack(&self, char[] data) @dynamic
+{
+    mem::copy(&self.mode, data, FadeMode.sizeof);
+    mem::copy(&self.length, data[FadeMode.sizeof..], ulong.sizeof);
+    
+    self.reset();
 }
 
 const CChar*[] MODES = {"Fade In", "Fade Out"};

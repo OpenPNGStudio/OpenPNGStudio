@@ -127,10 +127,9 @@ fn ev::Action update(Idle{Context*} *idle)
             load_file(ctx);
             break;
         case SELECTING_SCRIPT:
+            break;
         case WRITING_MODEL:
             write_model(ctx);
-        case LOADING_MODEL:
-            /* ERROR */
             break;
         }
 
@@ -185,6 +184,9 @@ extern fn void draw_nuklear(nk::Context *ctx) @cname("DrawNuklear");
 
 const BACK_BTN_PADDING = 10;
 
+extern fn void rlSetBlendFactorsSeparate(int a, int b, int c, int d, int e,
+    int f);
+
 fn ev::Action draw(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
@@ -203,7 +205,10 @@ fn ev::Action draw(Idle{Context*} *idle)
     if (ctx.editing) draw_grid(1, 60, inverted);
 
     rl::beginMode2D(ctx.camera);
+    rl::beginBlendMode(7);
+    rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
     ctx.model.mgr.render();
+    rl::endBlendMode();
     rl::endMode2D();
 
     draw_nuklear(ctx.nk_ctx);
@@ -276,7 +281,7 @@ fn void load_file(Context *ctx) @local
         String path = selection[0].str_view();
 
         if (path.ends_with(".opng")) {
-            io::printf("%s\n", path);
+            model::load(path)!!;
             return;
         }
     }

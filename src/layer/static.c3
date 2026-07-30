@@ -114,8 +114,6 @@ fn bool draw(StaticLayer *self, Origin origin)
         origin.rotation += self.rotation;
         origin.tint = self.tint;
 
-        rl::drawLineEx(orig_pos, origin.position, 5, rl::LIME);
-
         foreach (&a : self.animations) {
             if (a.a == null) continue;
 
@@ -300,7 +298,7 @@ fn void config(StaticLayer *self, nk::Context *ctx)
     nk::spacer(ctx);
 
     mask::configure(&self.mask, &self.input_buffer,
-        &self.input_length, ctx, "self activation: ");
+        &self.input_length, ctx, "Activation: ");
 
     nk::layout_row_dynamic(ctx, 4, 1);
     nk::spacer(ctx);

@@ -95,6 +95,7 @@ fn void? Writer.end_images(&self)
             self.stream.skip(0x1)!;
             uint id = 0;
             self.stream.@read(id)!;
+            self.stream.offset(true, self.stream.offset())!;
             
             char[] buf = self.images[id]!;
             usz size = buf.len;
@@ -347,7 +348,7 @@ fn Writer? write_file(Allocator alloc, String path, WriterConfig cfg)
 {
     Writer w;
     FileStream *s = calloc(FileStream.sizeof);
-    s.file = file::open(path, "w+")!;
+    s.file = file::open(path, "w+b")!;
     w.stream = s;
 
     init_writer(&w, alloc, cfg)!;
