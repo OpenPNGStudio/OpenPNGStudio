@@ -223,8 +223,12 @@ fn ev::Action load_done(Work{ModelLoad*} *work) @local
             if (self.roots.last()!!.remaining <= 0) self.roots.pop()!!;
         }
         
+        Model old = self.ctx.model;
         self.ctx.model = self.model;
+        old.free();
+        
         self.ctx.file_lock = false;
+        self.ctx.toaster.add(self.ctx, "Model loaded successfully");
     case ANIM_CLONE:
         unreachable("how did you get here");
     }

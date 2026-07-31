@@ -31,7 +31,7 @@ fn void LayerGroup.free(&self) @dynamic
 
     foreach (layer : self.layers) {
         layer.free();
-        free(layer.ptr);
+        if (layer.type != AnimatedLayer) free(layer.ptr);
     }
 
     self.layers.free();

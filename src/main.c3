@@ -72,6 +72,7 @@ fn int main()
     Idle{Context*} update_idle;
     Idle{Context*} draw_idle;
     Timer{Context*} settings_timer;
+    Timer{Toaster*} toaster_timer;
 
     update_idle.init(&ctx, &update);
     draw_idle.init(&ctx, &draw);
@@ -84,10 +85,21 @@ fn int main()
         }
         return REARM;
     });
+    toaster_timer.init(&ctx.loop, 1000, &ctx.toaster, fn (timer) {
+        Toaster *self = timer.ctx;
+        
+        foreach (&current : self) {
+            if (current.stl) current.stl--;
+        }
+        
+        self.retain_if(fn (toast) => toast.stl > 0 || toast.opacity > 0);
+        return REARM;
+    });
 
     ctx.loop.add(&update_idle);
     ctx.loop.add(&draw_idle);
     ctx.loop.add(&settings_timer);
+    ctx.loop.add(&toaster_timer);
 
     defer icons::cleanup();
 
@@ -255,6 +267,8 @@ fn ev::Action draw(Idle{Context*} *idle)
         btn_bg.a = 0xAA;
         rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
     }
+    
+    ctx.toaster.draw(ctx);
     
     rl::endBlendMode();
     rl::endDrawing();

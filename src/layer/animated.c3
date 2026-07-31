@@ -21,6 +21,7 @@ struct AnimatedLayer (Layer) {
     bitstruct : char {
         bool animating;
         bool stop;
+        bool die;
     }
 }
 
@@ -38,6 +39,11 @@ fn void AnimatedLayer.init(&self, Allocator alloc, ZString name,
 
     self.timer.init(loop, delays[0], self, fn (timer) {
         AnimatedLayer *layer = timer.ctx;
+        if (layer.die) {
+            free(layer);
+            return DISARM;
+        }
+        
         layer.prev_idx = layer.frame_idx;
         timer.set_timeout(layer.delays[layer.frame_idx]);
         layer.frame_idx = (layer.frame_idx + 1) % layer.delays.len;
@@ -57,6 +63,7 @@ fn void AnimatedLayer.free(&self) @dynamic
 {
     free(self.delays.ptr);
     self.base.free();
+    self.die = true;
 }
 
 fn bool AnimatedLayer.draw(&self, Origin origin) @dynamic

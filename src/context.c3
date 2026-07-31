@@ -58,6 +58,8 @@ struct Context {
 
     Outline outline;
     
+    Toaster toaster;
+    
     Settings settings;
     union dirty_settings {
         bitstruct : char {
@@ -114,6 +116,7 @@ fn void Context.init(&self, Allocator alloc)
     self.cleanup_queue.init(alloc);
     self.settings.init(self)!!;
     self.scene.init();
+    self.toaster.init(mem);
 
     self.wm.register("Scene Configurator", &self.scene);
     
@@ -202,6 +205,7 @@ fn void Context.load_layer(&self, ZString path)
         }
 
         self.ctx.ready = true;
+        instance.toaster.add(instance, "Layer loaded successfully");
 
         return DISARM;
     });

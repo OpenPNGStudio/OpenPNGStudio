@@ -127,6 +127,7 @@ fn ev::Action write_done(Work{ModelSave*} *work) @local
         
         self.wr.free();
         app_ctx.file_lock = false;
+        app_ctx.toaster.add(app_ctx, "Model saved successfully");
     default:
     }
     return DISARM;
