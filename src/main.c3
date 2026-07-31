@@ -71,12 +71,23 @@ fn int main()
 
     Idle{Context*} update_idle;
     Idle{Context*} draw_idle;
+    Timer{Context*} settings_timer;
 
     update_idle.init(&ctx, &update);
     draw_idle.init(&ctx, &draw);
+    settings_timer.init(&ctx.loop, 250, &ctx, fn (self) {
+        Context *ctx = self.ctx;
+        
+        if (ctx.dirty_settings.mask) {
+            ctx.settings.update(ctx);
+            ctx.dirty_settings.mask = 0;
+        }
+        return REARM;
+    });
 
     ctx.loop.add(&update_idle);
     ctx.loop.add(&draw_idle);
+    ctx.loop.add(&settings_timer);
 
     defer icons::cleanup();
 
@@ -203,12 +214,12 @@ fn ev::Action draw(Idle{Context*} *idle)
     rl::clearBackground(bg);
 
     if (ctx.editing) draw_grid(1, 60, inverted);
-
-    rl::beginMode2D(ctx.camera);
+    
     rl::beginBlendMode(7);
     rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
+
+    rl::beginMode2D(ctx.camera);
     ctx.model.mgr.render();
-    rl::endBlendMode();
     rl::endMode2D();
 
     draw_nuklear(ctx.nk_ctx);
@@ -245,6 +256,7 @@ fn ev::Action draw(Idle{Context*} *idle)
         rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
     }
     
+    rl::endBlendMode();
     rl::endDrawing();
 
     if (rl::windowShouldClose()) ctx.loop.stop();

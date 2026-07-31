@@ -2,6 +2,7 @@
 module openpngstudio::core::microphone;
 
 import std::atomic::types;
+import openpngstudio;
 import openpngstudio::ui::wm;
 import openpngstudio::core::mask;
 import std::math @public;
@@ -130,6 +131,7 @@ fn void Microphone.internal_update(&self, ev::Loop *loop)
 
 fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
+    bool dirty = false;
     float win_width = nk::window_get_width(ctx);
     float min_width = math::max(win_width * 0.49f, 250.0f);
 
@@ -151,6 +153,7 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         if (old != current) {
             self.current_device = current;
             switch_device(self, self.devices[current]);
+            dirty = true;
         }
         nk::group_end(ctx);
     }
@@ -188,12 +191,16 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     if (nk::group_begin(ctx, "Microphone Trigger",
         nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
+        
+        usz old = self.trigger;
 
         $if env::WIN32:
             nk::progress(ctx, (uint*) &self.trigger, 100, true);
         $else
             nk::progress(ctx, &self.trigger, 100, true);
         $endif
+        
+        if (self.trigger != old) dirty = true;
         
         nk::group_end(ctx);
     }
@@ -203,10 +210,17 @@ fn void Microphone.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         nk::WINDOW_NO_SCROLLBAR)) {
         nk::layout_row_dynamic(ctx, 30, 1);
 
-        int multiplier = self.multiplier.load();
+        int old = self.multiplier.load();
+        int multiplier = old;
         nk::slider_int(ctx, 0, &multiplier, 25000, 100);
-        self.multiplier.store(multiplier);
+        
+        if (multiplier != old)  {
+            self.multiplier.store(multiplier);
+            dirty = true;
+        }
         
         nk::group_end(ctx);
     }
+    
+    if (dirty) openpngstudio::get_ctx().dirty_settings.mic = true;
 }

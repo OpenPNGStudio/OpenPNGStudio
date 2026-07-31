@@ -49,13 +49,7 @@ struct Context {
     LinkedList{Layer} cleanup_queue;
 
     ZString model_output;
-
-    bitstruct : char {
-        bool override_save;
-        bool editing;
-        bool hide_ui;
-    }
-
+    
     rl::Color ambient;
     Path exe_path;
 
@@ -63,6 +57,21 @@ struct Context {
     rl::Texture2D restore_icon;
 
     Outline outline;
+    
+    Settings settings;
+    union dirty_settings {
+        bitstruct : char {
+            bool scene;
+            bool mic;
+        }
+        char mask;
+    }
+    
+    bitstruct : char {
+        bool override_save;
+        bool editing;
+        bool hide_ui;
+    }
 }
 
 Context *instance @local = null;
@@ -103,10 +112,11 @@ fn void Context.init(&self, Allocator alloc)
     self.layer_queue.init(alloc);
     self.image_manager.init(alloc);
     self.cleanup_queue.init(alloc);
+    self.settings.init(self)!!;
     self.scene.init();
 
     self.wm.register("Scene Configurator", &self.scene);
-
+    
     initialize_raylib(self);
 }
 
