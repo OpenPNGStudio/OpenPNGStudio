@@ -20,6 +20,7 @@ fs = import('fs')
 cc = meson.get_compiler('c')
 curl = find_program('curl')
 c3c = find_program('c3c')
+patch = find_program('patch')
 ascli = find_program('appstreamcli', required: false)
 nasm = find_program('nasm', required: false)
 
@@ -91,6 +92,8 @@ libavif_p = cmake.subproject('libavif', options: libavif_o)
 libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 libwebp_p = subproject('libwebp', default_options: ['default_library=static'])
 
+raylib_i = raylib_p.get_variable('raylib_inc')
+
 raylib = raylib_p.dependency('raylib')
 sqlite = sqlite_p.get_variable('sqlite3_dep')
 libavif = [
@@ -115,6 +118,7 @@ vendor_headers = [
     'https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h',
     'https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h',
     'https://raw.githubusercontent.com/nothings/stb/refs/heads/master/stb_image.h',
+    'https://raw.githubusercontent.com/memononen/fontstash/refs/heads/master/src/fontstash.h'
 ]
 
 foreach url : vendor_headers
@@ -125,6 +129,16 @@ foreach url : vendor_headers
     else
         message('File ' + file + ' exists')
     endif
+endforeach
+
+# Additional Patches
+patches = {
+    'fontstash-remove-stb.patch': 'include/vendor/fontstash.h'
+}
+
+foreach ptch, to_patch : patches
+    file = 'subprojects/packagefiles' / ptch
+    run_command(patch, '-N', '-i', file, to_patch, check: false)
 endforeach
 
 # C3
@@ -154,7 +168,7 @@ executable(
     'OpenPNGStudio',
     c_src,
     dependencies: [raylib, sqlite, app_dep, libavif, libjxl, libwebp, extra_libs],
-    include_directories: ['include', 'include/vendor'],
+    include_directories: ['include', 'include/vendor', raylib_i],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',

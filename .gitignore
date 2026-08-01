@@ -19,3 +19,4 @@ CMakeSettings.json
 lib/ev.c3l/
 subprojects/.wraplock
 src/opng/example.opng
+src/vendor/fontstash.h*

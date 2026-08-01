@@ -1,0 +1,120 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+module fons;
+
+const CInt INVALID = -1;
+
+constdef Flags : CUChar {
+    ZERO_TOPLEFT = 1,
+    ZERO_BOTTOMLEFT = 2,
+}
+
+constdef Align : CInt {
+    LEFT = 1 << 0,
+    CENTER = 1 << 1,
+    RIGHT = 1 << 2,
+    
+    TOP = 1 << 3,
+    MIDDLE = 1 << 4,
+    BOTTOM = 1 << 5,
+    BASELINE = 1 << 6
+}
+
+constdef ErrorCode : CInt {
+    ATLAS_FULL = 1,
+    SCRATCH_FULL = 2,
+    STATES_OVERFLOW = 3,
+    STATES_UNDERFLOW = 4
+}
+
+alias RenderCreate = fn CInt(void *userdata, CInt width, CInt height);
+alias RenderResize = fn CInt(void *userdata, CInt width, CInt height);
+alias RenderUpdate = fn void(void *userdata, CInt *rect, CUChar *data);
+alias RenderDraw = fn void(void *userdata, float *verts, float *tcoords,
+    CUInt *colors, CInt nverts);
+alias RenderDelete = fn void(void *userdata);
+
+struct Params {
+    CInt width, height;
+    Flags flags;
+    void *userdata;
+    RenderCreate create;
+    RenderResize resize;
+    RenderUpdate update;
+    RenderDraw draw;
+    RenderDelete delete;
+}
+
+struct Quad {
+    float x0, y0, s0, t0;
+    float x1, y1, s1, t1;
+}
+
+struct TextIter {
+    float x, y, nextx, nexty, scale, spacing;
+    CUInt codepoint;
+    CShort isize, iblur;
+    Font *font;
+    CInt prev_glyph_index;
+    ZString str;
+    ZString next;
+    ZString end;
+    CUInt utf8state;
+}
+
+alias Font = void;
+alias Context = void;
+
+fn Context *create_internal(Params *params) @cname("fonsCreateInternal");
+fn void delete_internal(Context *s) @cname("fonsDeleteInternal");
+
+alias ErrorCallback = fn void(void *userdata, ErrorCode error, CInt val);
+
+fn void set_error_callback(Context *s, ErrorCallback callback, void *userdata)
+    @cname("fonsSetErrorCallback");
+fn void get_atlas_size(Context *s, CInt *width, CInt *height)
+    @cname("fonsGetAtlasSize");
+fn CInt expand_atlas(Context *s, CInt width, CInt height)
+    @cname("fonsExpandAtlas");
+fn CInt reset_atlas(Context *s, CInt width, CInt height)
+    @cname("fonsResetAtlas");
+
+fn CInt add_font(Context *s, ZString name, ZString path)
+    @cname("fonsAddFont");
+fn CInt add_font_mem(Context *s, ZString name, CUChar *data, CInt ndata,
+    CInt free_data) @cname("fonsAddFontMem");
+fn CInt get_font_by_name(Context *s, ZString name)
+    @cname("fonsGetFontByName");
+fn CInt add_fallback_font(Context *s, CInt base, CInt fallback)
+    @cname("fonsAddFallbackFont");
+
+fn void push_state(Context *s) @cname("fonsPushState");
+fn void pop_state(Context *s) @cname("fonsPopState");
+fn void clear_state(Context *s) @cname("fonsClearState");
+
+fn void set_size(Context *s, float size) @cname("fonsSetSize");
+fn void set_color(Context *s, CUInt color) @cname("fonsSetColor");
+fn void set_spacing(Context *s, float spacing) @cname("fonsSetSpacing");
+fn void set_blur(Context *s, float blur) @cname("fonsSetBlur");
+fn void set_align(Context *s, Align align) @cname("fonsSetAlign");
+fn void set_font(Context *s, CInt font) @cname("fonsSetFont");
+
+fn float draw_text(Context *s, float x, float y, ZString string, ZString end)
+    @cname("fonsDrawText");
+
+fn float text_bounds(Context *s, float x, float y, ZString string, ZString end,
+    float *bounds) @cname("fonsTextBounds");
+fn void line_bounds(Context *s, float y, float *miny, float *maxy)
+    @cname("fonsLineBounds");
+fn void vert_metrics(Context *s, float *ascender, float *descender,
+    float *lineh) @cname("fonsLineBounds");
+
+fn CInt text_iter_init(Context *s, TextIter *iter, float x, float y,
+    ZString str, ZString end) @cname("fonsTextIterInit");
+fn CInt text_iter_next(Context *s, TextIter *iter, Quad *quad)
+    @cname("fonsTextIterNext");
+
+fn CUChar *get_texture_data(Context *s, CInt *width, CInt *height)
+    @cname("fonsGetTextureData");
+fn CInt validate_texture(Context *s, CInt *dirty) @cname("fonsGetTextureData");
+
+fn void draw_debug(Context *s, float x, float y) @cname("fonsDrawDebug");

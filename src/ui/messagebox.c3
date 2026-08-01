@@ -29,7 +29,7 @@ fn MessageBox info(ZString title, ZString body)
         .type = INFO,
         .res = -1,
         .custom = null,
-.userdata = null,
+        .userdata = null,
     };
 }
 
@@ -66,7 +66,7 @@ fn void MessageBox.run(&self, nk::Context *ctx)
         int extra_flags = 0;
 
         openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
-        Vector2 size = rl::measureTextEx(app_ctx.font, self.body, 16, 16 / 10.0f);
+        Vector2 size = app_ctx.fons.measure(app_ctx.font, self.body, 16);
         size.x += 16;
         size.y += 16 + 50 + 30;
 

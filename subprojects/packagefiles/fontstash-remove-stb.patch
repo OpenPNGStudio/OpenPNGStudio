@@ -1,0 +1,17 @@
+--- fontstash.h.orig	2026-07-27 11:52:15.889749090 +0200
++++ fontstash.h	2026-07-27 11:52:32.483748607 +0200
+@@ -256,13 +256,11 @@
+ 
+ #else
+ 
+-#define STB_TRUETYPE_IMPLEMENTATION
+-#define STBTT_STATIC
+ static void* fons__tmpalloc(size_t size, void* up);
+ static void fons__tmpfree(void* ptr, void* up);
+ #define STBTT_malloc(x,u)    fons__tmpalloc(x,u)
+ #define STBTT_free(x,u)      fons__tmpfree(x,u)
+-#include "stb_truetype.h"
++#include "external/stb_truetype.h"
+ 
+ struct FONSttFontImpl {
+ 	stbtt_fontinfo font;

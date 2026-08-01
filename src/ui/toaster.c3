@@ -4,6 +4,7 @@ module openpngstudio::ui;
 import openpngstudio;
 import std::io, std::collections::list;
 import raylib5::rl;
+import fons;
 
 const HEIGHT = 34;
 const SPACING = 7.5;
@@ -18,7 +19,7 @@ struct Toast {
 
 alias Toaster = List{Toast};
 
-fn void Toaster.draw(&self, Context *ctx)
+fn void Toaster.draw(&self, openpngstudio::Context *ctx)
 {
     float y = ctx.height - (float) (self.len() * HEIGHT);
     y -= (float) (self.len() - 1) * SPACING + (SPACING * 2);
@@ -39,19 +40,19 @@ fn void Toaster.draw(&self, Context *ctx)
         rl::drawRectangleRounded(dest, 1.0f, 16, { 0x20, 0x20, 0x20,
             (char) current.opacity });
         
-        rl::drawTextEx(ctx.font, current.message, {
-            dest.x + HEIGHT / 2.0,
-            dest.y + HEIGHT / 2.0 - current.height / 2.0
-        }, 20, 2.0, { 0xFF, 0xFF, 0xFF, (char) current.opacity });
-        
+        fons::set_color(ctx.fons, fons::convert_color({ 0xFF, 0xFF, 0xFF,
+            (char) current.opacity }));
+        ctx.fons.draw(dest.x + HEIGHT / 2.0,
+            dest.y + HEIGHT / 2.0 - current.height / 2.0, current.message);
         y += SPACING;
     }
 }
 
-fn void Toaster.add(&self, Context *ctx, ZString msg, char timeout = DEADLINE)
+fn void Toaster.add(&self, openpngstudio::Context *ctx, ZString msg,
+    char timeout = DEADLINE)
 {
     float width = ctx.width;
-    Vector2 size = rl::measureTextEx(ctx.font, msg, 20, 2.0);
+    Vector2 size = ctx.fons.measure(ctx.font, msg, 20);
     
     self.push({
         msg,

@@ -82,7 +82,7 @@ fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 
         nk::layout_row_push(ctx, 0.10f * win_width);
         switch (iter.type) {
-	    case VERBOSE:
+        case VERBOSE:
             nk::label_colored(ctx, "Debug", nk::TEXT_LEFT,
                 nk::rgb(0x0D, 0xBC, 0x79));
         case DEBUG:
@@ -103,8 +103,7 @@ fn void Console.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         }
 
         openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
-        rl::Vector2 size = rl::measureTextEx(app_ctx.font, iter.buffer, 16, 
-            1);
+        rl::Vector2 size = app_ctx.fons.measure(app_ctx.font, iter.buffer, 18);
 
         if (size.x + 16 > self.max_width) self.max_width = size.x + 16;
 

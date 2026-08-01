@@ -3,6 +3,7 @@ module openpngstudio;
 import std::io, std::collections::list;
 
 import nk;
+import fons;
 /*
 import novacrash;
 import novacrash::options;
@@ -210,6 +211,12 @@ const BACK_BTN_PADDING = 10;
 extern fn void rlSetBlendFactorsSeparate(int a, int b, int c, int d, int e,
     int f);
 
+fn void custom_blend() @export("custom_blend") @inline
+{
+    rl::beginBlendMode(7);
+    rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
+}
+
 fn ev::Action draw(Idle{Context*} *idle)
 {
     Context *ctx = idle.ctx;
@@ -227,13 +234,12 @@ fn ev::Action draw(Idle{Context*} *idle)
 
     if (ctx.editing) draw_grid(1, 60, inverted);
     
-    rl::beginBlendMode(7);
-    rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
-
+    custom_blend();
+    
     rl::beginMode2D(ctx.camera);
     ctx.model.mgr.render();
     rl::endMode2D();
-
+    
     draw_nuklear(ctx.nk_ctx);
     
     if (ctx.wm.show_bring_back) {
@@ -268,9 +274,8 @@ fn ev::Action draw(Idle{Context*} *idle)
         rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
     }
     
-    ctx.toaster.draw(ctx);
-    
     rl::endBlendMode();
+    ctx.toaster.draw(ctx);
     rl::endDrawing();
 
     if (rl::windowShouldClose()) ctx.loop.stop();

@@ -7,6 +7,7 @@ import openpngstudio::ui::wm;
 import openpngstudio::image;
 import std::io::file;
 import nk;
+import fons;
 import raylib5::rl;
 import std::io::path;
 import std::hash::sha256;
@@ -27,7 +28,7 @@ enum FileLoadState {
 struct Context {
     Loop loop;
     Camera2D camera;
-    rl::Font font;
+    int font;
 
     FileDialog file_dialog;
     WindowManager wm;
@@ -38,6 +39,7 @@ struct Context {
 
     ui::Panel panel;
     nk::Context *nk_ctx;
+    fons::Context *fons;
 
     /* State */
     FileLoadState loading_state;
@@ -213,32 +215,31 @@ fn void Context.load_layer(&self, ZString path)
     self.loop.add(&ref.work);
 }
 
-extern fn nk::Context *init_nuklear_ex(rl::Font font, float size)
+extern fn nk::Context *init_nuklear_ex(void *ctx, int font, float size)
     @cname("InitNuklearEx");
 extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
 
 fn void initialize_raylib(Context *self) @local
 {
     rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE | 
-        rl::FLAG_WINDOW_TRANSPARENT);
+        rl::FLAG_WINDOW_TRANSPARENT | rl::FLAG_MSAA_4X_HINT);
     rl::initWindow(1024, 640, "OpenPNGStudio");
     rl::setExitKey(rl::KEY_NULL);
+    
+    self.fons = fons::init();
 
     self.font = load_font(self);
-    rl::setTextureFilter(self.font.texture, BILINEAR);
+    fons::set_font(self.fons, self.font);
 
     load_icons(self);
 
-    self.nk_ctx = init_nuklear_ex(self.font, 18);
-    set_nk_font(self.font);
+    self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
 
     rl::setTargetFPS(60);
     style::apply(self.nk_ctx);
 }
 
-extern fn void set_nk_font(rl::Font font);
-
-fn rl::Font load_font(Context *self)
+fn int load_font(Context *self)
 {
     @pool() {
         Path dir = self.exe_path.parent()!!;
@@ -252,8 +253,8 @@ fn rl::Font load_font(Context *self)
         }
         
         Path tmp = dir.tappend("fonts/VarelaRound-Regular.ttf")!!;
-
-        return rl::loadFont(tmp.str_view().zstr_tcopy());
+        
+        return self.fons.add("default", tmp.str_view().zstr_tcopy())!!;
     };
 }
 
