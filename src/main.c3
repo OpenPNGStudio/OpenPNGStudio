@@ -14,6 +14,7 @@ import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
 import raylib5::rl;
+import std::net::url;
 import std::math @public;
 
 import ev;
@@ -139,11 +140,7 @@ fn ev::Action update(Idle{Context*} *idle)
 
     ctx.microphone.internal_update(&ctx.loop);
 
-    FileDialogState state = ctx.file_dialog.get_state();
-
-    if (state == CLOSED) ctx.wm.hide(&ctx.file_dialog);
-
-    if (state == READ_READY || state == WRITE_READY || ctx.override_save) {
+    if (ctx.file_dialog.ready()) {
         switch (ctx.loading_state) {
         case NOTHING:
             break;
@@ -158,8 +155,6 @@ fn ev::Action update(Idle{Context*} *idle)
         }
 
         ctx.loading_state = NOTHING;
-        ctx.file_dialog.reset();
-        ctx.wm.hide(&ctx.file_dialog);
     }
 
     ctx.model.engine.tick(ctx.loop.now);
@@ -286,30 +281,19 @@ fn ev::Action draw(Idle{Context*} *idle)
 fn void save(void *_ctx, bool save_as) @local
 {
     Context *ctx = _ctx;
-
-    if (save_as) ctx.model_output = null;
-
-    if (ctx.model_output != null) {
-        ctx.loading_state = WRITING_MODEL;
-        ctx.override_save = true;
-        return;
-    }
-
-    ctx.file_dialog.write_file();
-    ctx.file_dialog.set_filter(null);
-    ctx.file_dialog.populate();
-    ctx.file_dialog.set_title(&ctx.wm, "Save Model As");
-    ctx.file_dialog.show(&ctx.wm);
-
+    
+    ctx.file_dialog.set_filter(stream_filter);
+    ctx.file_dialog.save("Save Model As");
+    
     ctx.loading_state = WRITING_MODEL;
 }
 
 fn void load_file(Context *ctx) @local
 {
-    List{ZString} selection = ctx.file_dialog.get_selection();
+    Url[] selection = ctx.file_dialog.uris();
 
-    if (selection.len() == 1) {
-        String path = selection[0].str_view();
+    if (selection.len == 1) {
+        String path = selection[0].path;
 
         if (path.ends_with(".opng")) {
             model::load(path)!!;
@@ -317,21 +301,19 @@ fn void load_file(Context *ctx) @local
         }
     }
 
-    foreach (path : selection) {
-        if (path.str_view().ends_with(".opng")) continue;
-        ctx.load_layer(path.str_view().zstr_copy(mem));
+    foreach (sel : selection) {
+        String path = sel.path;
+        if (path.ends_with(".opng")) continue;
+        ctx.load_layer(path.zstr_copy(mem));
     }
 }
 
 /* TODO save config dialog */
 fn void write_model(Context *ctx) @local
 {
-    List{ZString} selection = ctx.file_dialog.get_selection();
+    Url[] selection = ctx.file_dialog.uris();
 
-    if (ctx.model_output == null) ctx.model_output = selection[0];
-    ctx.override_save = false;
-
-    ctx.model.save(ctx.model_output.str_view())!!;
+    ctx.model.save(selection[0].path)!!;
 }
 
 fn void draw_grid(int line_width, int spacing, rl::Color color) @local
@@ -360,11 +342,8 @@ fn void initialize_panel(Context *self) @local
 {
     self.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        ctx.file_dialog.open_files();
         ctx.file_dialog.set_filter(edit_filter);
-        ctx.file_dialog.populate();
-        ctx.file_dialog.set_title(&ctx.wm, "Open File");
-        ctx.file_dialog.show(&ctx.wm);
+        ctx.file_dialog.open("Open Files", true);
         ctx.loading_state = SELECTING_IMAGE;
     }, OPEN, self);
 
@@ -406,11 +385,8 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        ctx.file_dialog.open_files();
         ctx.file_dialog.set_filter(stream_filter);
-        ctx.file_dialog.populate();
-        ctx.file_dialog.set_title(&ctx.wm, "Open File");
-        ctx.file_dialog.show(&ctx.wm);
+        ctx.file_dialog.open("Open Model", false);
         ctx.loading_state = SELECTING_IMAGE;
     }, OPEN, self);
 

@@ -3,6 +3,7 @@ module openpngstudio;
 
 import openpngstudio::core;
 import openpngstudio::ui;
+import openpngstudio::ui::filedialogs::builtin;
 import openpngstudio::ui::wm;
 import openpngstudio::image;
 import std::io::file;
@@ -29,7 +30,8 @@ struct Context {
     Loop loop;
     Camera2D camera;
     int font;
-
+    
+    BuiltinFileDialog file_dialog_builtin;
     FileDialog file_dialog;
     WindowManager wm;
     model::Model model;
@@ -80,8 +82,9 @@ struct Context {
 
 Context *instance @local = null;
 
-ZString edit_filter = "avif;jxl;webp;qoi;png;bmp;jpg;jpeg;tga;psd;dds;gif;opng";
-ZString stream_filter = "opng";
+ZString[] edit_filter = {"*.avif", "*.jxl", "*.webp", "*.qoi", "*.png", "*.bmp",
+    "*.jpg", "*.jpeg", "*.tag", "*.psd", "*.dds", "*.gif", "*.opng"};
+ZString[] stream_filter = {"*.opng"};
 
 fn void Context.init(&self, Allocator alloc)
 {
@@ -95,14 +98,16 @@ fn void Context.init(&self, Allocator alloc)
     self.panel.init(alloc, HORIZONTAL);
     self.wm.init(&self.panel, alloc);
 
-    self.file_dialog.init(alloc);
-    self.file_dialog.set_filter(edit_filter);
-    self.file_dialog.populate();
+    self.file_dialog_builtin.init(alloc);
+    self.file_dialog_builtin.set_filter(edit_filter);
+    self.file_dialog_builtin.populate();
+    
+    self.file_dialog = &self.file_dialog_builtin;
 
     self.model.mgr.init(&self.wm, alloc);
     self.model.engine.init(alloc);
 
-    self.wm.register("File Dialog", &self.file_dialog);
+    self.wm.register("File Dialog", &self.file_dialog_builtin);
     self.microphone.init();
     self.wm.register("Microphone Configuration", &self.microphone);
 
@@ -131,7 +136,7 @@ fn void Context.free(&self)
     unload_nuklear(self.nk_ctx);
     self.loop.free();
     self.microphone.free();
-    self.file_dialog.free();
+    self.file_dialog_builtin.free();
     self.model.free();
     self.wm.free();
     self.panel.free();
