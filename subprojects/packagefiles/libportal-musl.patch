@@ -1,0 +1,12 @@
+diff --git a/libportal/portal.c b/libportal/portal.c
+index 1d304d3..1e2a21e 100644
+--- a/libportal/portal.c
++++ b/libportal/portal.c
+@@ -22,6 +22,7 @@
+  *    Hubert Figuière <hub@figuiere.net>
+  */
+ 
++#define _POSIX_SOURCE
+ #include "config.h"
+ 
+ #include "portal-helpers.h"

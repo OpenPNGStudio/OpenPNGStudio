@@ -31,7 +31,6 @@ struct Context {
     Camera2D camera;
     int font;
     
-    BuiltinFileDialog file_dialog_builtin;
     FileDialog file_dialog;
     WindowManager wm;
     model::Model model;
@@ -97,17 +96,12 @@ fn void Context.init(&self, Allocator alloc)
 
     self.panel.init(alloc, HORIZONTAL);
     self.wm.init(&self.panel, alloc);
-
-    self.file_dialog_builtin.init(alloc);
-    self.file_dialog_builtin.set_filter(edit_filter);
-    self.file_dialog_builtin.populate();
     
-    self.file_dialog = &self.file_dialog_builtin;
+    self.file_dialog = ui::init_filedialog();
 
     self.model.mgr.init(&self.wm, alloc);
     self.model.engine.init(alloc);
 
-    self.wm.register("File Dialog", &self.file_dialog_builtin);
     self.microphone.init();
     self.wm.register("Microphone Configuration", &self.microphone);
 
@@ -136,7 +130,6 @@ fn void Context.free(&self)
     unload_nuklear(self.nk_ctx);
     self.loop.free();
     self.microphone.free();
-    self.file_dialog_builtin.free();
     self.model.free();
     self.wm.free();
     self.panel.free();

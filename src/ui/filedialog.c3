@@ -10,3 +10,14 @@ interface FileDialog {
     fn bool ready();
     fn Url[] uris();
 }
+
+fn FileDialog init_filedialog()
+{
+    $if env::LINUX:
+        filedialogs::xdp::XdpFileDialog *xdp = filedialogs::xdp::init();
+        if (xdp) return xdp;
+    $endif
+    
+    log::warn("Unable to use native file dialog, using fallback");
+    return filedialogs::builtin::init();
+}

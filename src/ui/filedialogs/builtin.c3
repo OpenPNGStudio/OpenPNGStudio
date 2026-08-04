@@ -550,10 +550,23 @@ fn Url[] BuiltinFileDialog.uris(&self) @dynamic
     return uris;
 }
 
-
 fn void BuiltinFileDialog.reset(&self)
 {
     self.state = CLOSED;
     openpngstudio::Context *ctx = openpngstudio::get_ctx();
     ctx.wm.hide(self);
+}
+
+fn BuiltinFileDialog *init()
+{
+    BuiltinFileDialog *self = mem::new(BuiltinFileDialog);
+    
+    self.init(mem);
+    self.set_filter(openpngstudio::edit_filter);
+    self.populate();
+    
+    openpngstudio::Context *ctx = openpngstudio::get_ctx();
+    ctx.wm.register("File Dialog", self);
+    
+    return self;
 }

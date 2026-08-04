@@ -8,7 +8,7 @@ project(
         'assets/Oxy/CREDIT.txt',
     ],
     version: '0.3.0',
-    meson_version: '>= 1.2.0',
+    meson_version: '>= 1.8.0',
     default_options: ['c_std=c17']
 )
 
@@ -46,6 +46,7 @@ raylib_o.add_cmake_defines({
     'SUPPORT_FILEFORMAT_DDS': true,
     'SUPPORT_GIF_RECORDING': false,
     'SUPPORT_SCREEN_CAPTURE': false,
+    'CMAKE_C_FLAGS': '-D_GLFW_WAYLAND',
     'CMAKE_SKIP_INSTALL_RULES': true,
 })
 
@@ -162,13 +163,44 @@ assert(
     'C3 compiler hash does not match: ' + c3_target_hash + ' != ' + c3_hash,
 )
 
+extra_libs = []
+extra_src = []
+
+if host_machine.system() == 'linux'
+    libportal_p = subproject('libportal', default_options: {
+        'default_library': 'static',
+        'backend-gtk3': 'disabled',
+        'backend-gtk4': 'disabled',
+        'backend-qt5': 'disabled',
+        'backend-qt6': 'disabled',
+        'introspection': false,
+        'vapi': false,
+        'docs': false,
+        'tests': false
+    })
+    
+    extra_libs += libportal_p.get_variable('libportal_dep')
+    
+    wl = import('wayland')
+    xml = wl.find_protocol('xdg-foreign',
+        state : 'unstable',
+        version : 1,
+    )
+    
+    xdg_foreign = wl.scan_xml(xml)
+    
+    extra_src += xdg_foreign
+    extra_libs += dependency('wayland-client')
+endif
+
 # OpenPNGStudio and opng
 subdir('src')
 executable(
     'OpenPNGStudio',
-    c_src,
+    [c_src, extra_src],
     dependencies: [raylib, sqlite, app_dep, libavif, libjxl, libwebp, extra_libs],
-    include_directories: ['include', 'include/vendor', raylib_i],
+    include_directories: ['include', 'include/vendor', raylib_i,
+        'subprojects/libportal/libportal'],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',

@@ -42,8 +42,14 @@ fn void Toaster.draw(&self, openpngstudio::Context *ctx)
         
         fons::set_color(ctx.fons, fons::convert_color({ 0xFF, 0xFF, 0xFF,
             (char) current.opacity }));
-        ctx.fons.draw(dest.x + HEIGHT / 2.0,
-            dest.y + HEIGHT / 2.0 - current.height / 2.0, current.message);
+            
+        fons::draw_text(ctx.fons, dest.x + HEIGHT / 2.0,
+            dest.y + HEIGHT / 2.0 - current.height / 2.0
+        , current.message, null);
+        fons::draw_text(ctx.fons, dest.x + HEIGHT / 2.0,
+            dest.y + HEIGHT / 2.0 - current.height / 2.0
+        , current.message, null);
+        
         y += SPACING;
     }
 }

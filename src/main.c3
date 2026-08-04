@@ -269,8 +269,8 @@ fn ev::Action draw(Idle{Context*} *idle)
         rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
     }
     
-    rl::endBlendMode();
     ctx.toaster.draw(ctx);
+    rl::endBlendMode();
     rl::endDrawing();
 
     if (rl::windowShouldClose()) ctx.loop.stop();
