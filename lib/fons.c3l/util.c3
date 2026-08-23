@@ -57,13 +57,10 @@ fn Vector2 Context*.measure(self, int font, ZString text, float size)
     
     float[4] bounds;
     text_bounds(self, 0, 0, text, null, &bounds);
-    
-    float asc, desc, lh;
-    vert_metrics(self, &asc, &desc, &lh);
-    
+
     return {
         (bounds[2] - bounds[0]),
-        (desc - asc)
+        (bounds[3] - bounds[1])
     };
 }
 

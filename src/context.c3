@@ -251,7 +251,7 @@ fn int load_font(Context *self)
         }
         
         Path tmp = dir.tappend("fonts/VarelaRound-Regular.ttf")!!;
-        
+
         return self.fons.add("default", tmp.str_view().zstr_tcopy())!!;
     };
 }

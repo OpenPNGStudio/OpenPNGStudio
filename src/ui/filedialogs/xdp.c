@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifdef __linux__
 #include <libportal/portal.h>
 
 #include <stdbool.h>
@@ -121,3 +122,4 @@ XdpParent *xdp_parent_new_raylib(void *window)
     
     return parent;
 }
+#endif

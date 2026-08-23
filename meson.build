@@ -9,7 +9,7 @@ project(
     ],
     version: '0.3.0',
     meson_version: '>= 1.8.0',
-    default_options: ['c_std=c17']
+    default_options: ['c_std=c17', 'cpp_std=c++20']
 )
 
 # Modules
@@ -29,7 +29,6 @@ raylib_o = cmake.subproject_options()
 raylib_o.add_cmake_defines({
     'BUILD_EXAMPLES': false,
     'CUSTOMIZE_BUILD': true,
-    'GLFW_BUILD_WAYLAND': true,
     'SUPPORT_MODULE_RMODELS': false,
     'SUPPORT_MODULE_RAUDIO': false,
     'SUPPORT_GESTURE_SYSTEM': false,
@@ -46,9 +45,15 @@ raylib_o.add_cmake_defines({
     'SUPPORT_FILEFORMAT_DDS': true,
     'SUPPORT_GIF_RECORDING': false,
     'SUPPORT_SCREEN_CAPTURE': false,
-    'CMAKE_C_FLAGS': '-D_GLFW_WAYLAND',
     'CMAKE_SKIP_INSTALL_RULES': true,
 })
+
+if host_machine.system() == 'linux'
+    raylib_o.add_cmake_defines({
+        'GLFW_BUILD_WAYLAND': true,
+        'CMAKE_C_FLAGS': '-D_GLFW_WAYLAND',
+    })
+endif
 
 libavif_o = cmake.subproject_options()
 libavif_o.add_cmake_defines({
@@ -144,27 +149,11 @@ endforeach
 
 # C3
 c3_version = c3c.version()
-c3_hash = 'unknown'
-
-c3_target_version = '0.7.11'
-c3_target_hash = 'unknown'
-
-output = run_command(c3c, '--version', check: true).stdout()
-
-foreach line : output.splitlines()
-    if line.to_lower().contains('hash')
-        c3_hash = line.split(':')[1].strip()
-    endif
-endforeach
-
-assert(c3_version == c3_target_version)
-assert(
-    c3_hash == c3_target_hash,
-    'C3 compiler hash does not match: ' + c3_target_hash + ' != ' + c3_hash,
-)
+assert(c3_version == '0.7.11')
 
 extra_libs = []
 extra_src = []
+extra_inc = []
 
 if host_machine.system() == 'linux'
     libportal_p = subproject('libportal', default_options: {
@@ -191,6 +180,7 @@ if host_machine.system() == 'linux'
     
     extra_src += xdg_foreign
     extra_libs += dependency('wayland-client')
+    extra_inc += 'subprojects/libportal/libportal'
 endif
 
 # OpenPNGStudio and opng
@@ -199,8 +189,7 @@ executable(
     'OpenPNGStudio',
     [c_src, extra_src],
     dependencies: [raylib, sqlite, app_dep, libavif, libjxl, libwebp, extra_libs],
-    include_directories: ['include', 'include/vendor', raylib_i,
-        'subprojects/libportal/libportal'],
+    include_directories: ['include', 'include/vendor', raylib_i, extra_inc],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'console',

@@ -23,14 +23,14 @@ fn void Toaster.draw(&self, openpngstudio::Context *ctx)
 {
     float y = ctx.height - (float) (self.len() * HEIGHT);
     y -= (float) (self.len() - 1) * SPACING + (SPACING * 2);
-    
+
     foreach (i, &current : self) {
         float dy = y + (float) (i * HEIGHT);
         
         Rectangle dest = {
             ctx.width / 2.0 - current.width / 2.0, dy, current.width, HEIGHT
         };
-        
+
         if (!current.stl) {
             char to_sub = (char) (rl::getFrameTime() * 1000);
             
@@ -39,10 +39,10 @@ fn void Toaster.draw(&self, openpngstudio::Context *ctx)
         
         rl::drawRectangleRounded(dest, 1.0f, 16, { 0x20, 0x20, 0x20,
             (char) current.opacity });
-        
+
         fons::set_color(ctx.fons, fons::convert_color({ 0xFF, 0xFF, 0xFF,
             (char) current.opacity }));
-            
+
         fons::draw_text(ctx.fons, dest.x + HEIGHT / 2.0,
             dest.y + HEIGHT / 2.0 - current.height / 2.0
         , current.message, null);

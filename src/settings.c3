@@ -102,19 +102,43 @@ fn bool? populate_self(Settings *self) @if(env::POSIX) @local => @pool()
         self.conf_file = self.conf_file.append(mem, ".config/OpenPNGStudio/"
             "settings.json")!;
     }
-    
+
+    return default_options(self);
+}
+
+fn bool? populate_self(Settings *self) @if(env::WIN32) @local => @pool()
+{
+    String appdata = env::tget_var("APPDATA")!;
+    if (!appdata.len) {
+        String profile = env::tget_var("USERPROFILE")!;
+        self.conf_file = path::temp(profile)!;
+        Path dir = self.conf_file.tappend("AppData\\Roaming\\OpenPNGStudio")!;
+        path::mkdir(dir, true)!;
+        self.conf_file = self.conf_file.append(mem, "AppData\\Roaming\\OpenPNGStudio\\settings.json")!;
+    } else {
+        self.conf_file = path::temp(appdata)!;
+        Path dir = self.conf_file.tappend("OpenPNGStudio")!;
+        path::mkdir(dir, true)!;
+        self.conf_file = self.conf_file.append(mem, "OpenPNGStudio\\settings.json")!;
+    }
+
+    return default_options(self);
+}
+
+fn bool? default_options(Settings *self) @local
+{
     if (try File settings = file::open(self.conf_file.str_view(), "r")) {
         Object *root = json::tparse(&settings)!;
-        
+
         if (try bool t = root.get_bool("transparency")) self.transparency = t;
         if (try uint u = root.get_uint("bg")) self.bg_repr = u;
         if (try String s = root.get_string("mic")) self.mic_name = s
-            .zstr_copy(mem);
+        .zstr_copy(mem);
         if (try usz u = root.get_ulong("trigger")) self.mic_trigger = u;
         if (try int i = root.get_int("sensitivity")) self.mic_sensitivity = i;
-        
+
         return true;
     }
-    
+
     return false;
 }

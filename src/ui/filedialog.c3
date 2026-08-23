@@ -17,6 +17,11 @@ fn FileDialog init_filedialog()
         filedialogs::xdp::XdpFileDialog *xdp = filedialogs::xdp::init();
         if (xdp) return xdp;
     $endif
+
+    $if env::WIN32:
+        filedialogs::win32::WinFileDialog *wd = filedialogs::win32::init();
+        if (wd) return wd;
+    $endif
     
     log::warn("Unable to use native file dialog, using fallback");
     return filedialogs::builtin::init();

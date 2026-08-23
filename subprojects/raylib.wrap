@@ -2,3 +2,5 @@
 url = https://github.com/OpenPNGStudio/raylib.git
 revision = master
 depth = 1
+
+diff_files = raylib-stbtt.patch
