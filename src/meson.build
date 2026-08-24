@@ -7,7 +7,7 @@ endif
 app_lib = custom_target(
     'OpenPNGStudio C3 library',
     output: 'libOpenPNGStudio.' + ext,
-    command: [c3c, 'build', 'OpenPNGStudio', '--warn-deprecation=no'],
+    command: [c3c, c3_opt, 'build', 'OpenPNGStudio', '--warn-deprecation=no'],
     build_always_stale: true,
 )
 

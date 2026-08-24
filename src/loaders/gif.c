@@ -5,6 +5,7 @@
 
 #define STBI_ONLY_GIF
 #define STB_IMAGE_IMPLEMENTATION
+#include <stdint.h>
 #include <vendor/stb_image.h>
 
 bool load_gif(const uint8_t *memory, const size_t size, struct image_data *out)

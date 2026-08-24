@@ -12,6 +12,15 @@ project(
     default_options: ['c_std=c17', 'cpp_std=c++20']
 )
 
+c3_opt_map = {
+    'debug': '-O0',
+    'debugoptimized': '-O4',
+    'release': '-O5',
+    'minsize': '-Os'
+}
+
+c3_opt = c3_opt_map.get(get_option('buildtype'), '-O2')
+
 # Modules
 cmake = import('cmake')
 fs = import('fs')
@@ -192,25 +201,27 @@ executable(
     include_directories: ['include', 'include/vendor', raylib_i, extra_inc],
     install: true,
     install_dir: 'bin',
-    win_subsystem: 'console',
+    win_subsystem: 'windows',
 )
 subdir('src/opng')
 
-executable(
-    'opng',
-    opng_c_srcs,
-    dependencies: [sqlite, opng_dep, libavif, libjxl, libwebp, extra_libs],
-    include_directories: ['include'],
-    install: true,
-    install_dir: 'bin',
-    win_subsystem: 'console',
-    c_args: ['-DOPNG_STANDALONE'],
-    cpp_args: ['-DOPNG_STANDALONE']
-)
+if host_machine.system() != 'windows'
+    executable(
+        'opng',
+        opng_c_srcs,
+        dependencies: [sqlite, opng_dep, libavif, libjxl, libwebp, extra_libs],
+        include_directories: ['include'],
+        install: true,
+        install_dir: 'bin',
+        win_subsystem: 'console',
+        c_args: ['-DOPNG_STANDALONE'],
+        cpp_args: ['-DOPNG_STANDALONE']
+    )
+endif
 
 # Install
 subdir('assets')
 subdir('licenses')
 subdir('data')
 
-# Note: when installing use --skip-subprojects
+# Note: meson install --no-rebuild --destdir .\..\install -C build --skip-subprojects
