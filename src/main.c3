@@ -71,13 +71,20 @@ fn int main()
     };
     */
 
-    Idle{Context*} update_idle;
-    Idle{Context*} draw_idle;
+    Timer{Context*} draw_idle;
     Timer{Context*} settings_timer;
     Timer{Toaster*} toaster_timer;
-
-    update_idle.init(&ctx, &update);
-    draw_idle.init(&ctx, &draw);
+    
+    {
+        int mon = rl::getCurrentMonitor();
+        double rate = (double) rl::getMonitorRefreshRate(mon);
+        
+        if (rate == 0) rate = 60.0;
+        
+        double timeout = (1.0 / rate) * 1000.0;
+        
+        draw_idle.init(&ctx.loop, (ulong) timeout, &ctx, &draw);
+    }
     settings_timer.init(&ctx.loop, 250, &ctx, fn (self) {
         Context *ctx = self.ctx;
         
@@ -98,22 +105,19 @@ fn int main()
         return REARM;
     });
 
-    ctx.loop.add(&update_idle);
     ctx.loop.add(&draw_idle);
     ctx.loop.add(&settings_timer);
     ctx.loop.add(&toaster_timer);
 
     defer icons::cleanup();
-
     ctx.loop.run(DEFAULT);
     return 0;
 }
 
 extern fn void update_nuklear(nk::Context *ctx) @cname("UpdateNuklear");
 
-fn ev::Action update(Idle{Context*} *idle)
+fn ev::Action update(Context* ctx)
 {
-    Context *ctx = idle.ctx;
     Mask mask = mask::get();
     mask::handle(&mask);
 
@@ -212,9 +216,10 @@ fn void custom_blend() @export("custom_blend") @inline
     rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
 }
 
-fn ev::Action draw(Idle{Context*} *idle)
+fn ev::Action draw(Timer{Context*} *idle)
 {
     Context *ctx = idle.ctx;
+    update(ctx);
 
     if (rl::windowShouldClose()) ctx.loop.stop();
 

@@ -231,7 +231,6 @@ fn void initialize_raylib(Context *self) @local
 
     self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
 
-    rl::setTargetFPS(60);
     style::apply(self.nk_ctx);
 
     $if env::WIN32:
