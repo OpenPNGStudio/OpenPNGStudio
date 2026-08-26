@@ -4,7 +4,6 @@
 #include <opng.h>
 
 #define STBI_ONLY_GIF
-#define STB_IMAGE_IMPLEMENTATION
 #include <stdint.h>
 #include <vendor/stb_image.h>
 

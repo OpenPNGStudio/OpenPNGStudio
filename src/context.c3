@@ -81,8 +81,7 @@ struct Context {
 
 Context *instance @local = null;
 
-ZString[] edit_filter = {"*.avif", "*.jxl", "*.webp", "*.qoi", "*.png", "*.bmp",
-    "*.jpg", "*.jpeg", "*.tag", "*.psd", "*.dds", "*.gif", "*.opng"};
+ZString[] edit_filter = gen_open_flags();
 ZString[] stream_filter = {"*.opng"};
 
 fn void Context.init(&self, Allocator alloc)
@@ -351,3 +350,16 @@ fn void? load_icons2(Path exe_path) @local
 }
 
 fn Context *get_ctx() => instance;
+
+macro ZString[] gen_open_flags()
+{
+    var $flags = {"*.avif", "*.qoi", "*.png", "*.bmp", "*.jpg", "*.jpeg",
+        "*.tga", "*.dds", "*.gif", "*.webp"};
+    
+    $if $feature(HAS_JXL):
+        $flags = $flags +++ "*.jxl";
+    $endif
+    
+    $flags = $flags +++ "*.opng";
+    return $flags;
+}

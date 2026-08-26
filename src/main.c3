@@ -343,7 +343,7 @@ fn void initialize_panel(Context *self) @local
     self.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         ctx.file_dialog.set_filter(edit_filter);
-        ctx.file_dialog.open("Open Files", true);
+        ctx.file_dialog.open("Open File(s)", true);
         ctx.loading_state = SELECTING_IMAGE;
     }, OPEN, self);
 

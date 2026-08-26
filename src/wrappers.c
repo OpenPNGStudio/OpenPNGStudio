@@ -44,8 +44,6 @@
 
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
 
 #define FONTSTASH_IMPLEMENTATION
 #include "fontstash.h"

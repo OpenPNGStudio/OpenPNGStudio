@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifdef HAS_JXL
+
 #include <jxl/codestream_header.h>
 #include <jxl/decode.h>
 #include <jxl/decode_cxx.h>
@@ -179,3 +181,5 @@ bool load_jpegxl(const uint8_t *memory, const size_t size, struct image_data
 
 #endif
 }
+
+#endif

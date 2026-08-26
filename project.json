@@ -8,6 +8,7 @@
     "sources": ["src/**"],
     "test-sources": ["test/**"],
     "output": "build",
+    
     "targets": {
         "OpenPNGStudio": {
             "type": "static-lib",
@@ -25,8 +26,8 @@
             "output": "build/src/opng",
         }
     },
+    
     "cpu": "generic",
-    "fp-math": "fast",
     "opt": "O0",
     "features": [],
     "quiet": true

@@ -25,7 +25,6 @@ fn bool? load(image::Image *img, String path)
     case ".jpg":
     case ".jpeg":
     case ".tga":
-    case ".psd":
     case ".dds":
         img.image = rl::loadImageFromMemory(zext, img.file_content.ptr, img.file_content.len);
         free(img.file_content.ptr); /* removed for static images */
@@ -43,6 +42,12 @@ extern fn bool load_avif(rl::Image *out, char[] memory, int *nframes, int **dela
 extern fn bool load_jpegxl(rl::Image *out, char[] memory, int *nframes, int **delays);
 extern fn bool load_webp(rl::Image *out, char[] memory, int *nframes, int **delays);
 
+fn bool jxl_loader(rl::Image *out, char[] memory, int *nframes, int **delays)
+    @if($feature(HAS_JXL)) @inline => load_jpegxl(out, memory, nframes, delays);
+    
+fn bool jxl_loader(rl::Image *out, char[] memory, int *nframes, int **delays)
+    @if(!$feature(HAS_JXL)) @inline => false;
+
 fn bool? possibly_animated(image::Image *img, String ext) @local
 {
     switch (ext) {
@@ -55,7 +60,7 @@ fn bool? possibly_animated(image::Image *img, String ext) @local
         if (!load_avif(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
         img.type = ANIMATED_AVIF;
     case ".jxl":
-        if (!load_jpegxl(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
+        if (!jxl_loader(&img.image, img.file_content, &img.nframes, &img.delays)) return false;
         img.type = ANIMATED_JPEG_XL;
     case ".webp":
         if (!load_webp(&img.image, img.file_content, &img.nframes, &img.delays)) return false;

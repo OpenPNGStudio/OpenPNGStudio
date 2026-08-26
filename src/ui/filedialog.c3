@@ -2,6 +2,7 @@
 module openpngstudio::ui;
 
 import std::net::url;
+import std::io;
 
 interface FileDialog {
     fn void open(ZString title, bool multiple);

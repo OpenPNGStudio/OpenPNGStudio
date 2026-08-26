@@ -305,6 +305,12 @@ extern fn bool load_avif(char[] memory, ImageData *out);
 extern fn bool load_jpegxl(char[] memory, ImageData *out);
 extern fn bool load_webp(char[] memory, ImageData *out);
 
+fn void jxl_loader(char[] memory, ImageData *out)
+    @if($feature(HAS_JXL)) @inline => load_jpegxl(memory, out);
+    
+fn void jxl_loader(char[] memory, ImageData *out)
+    @if(!$feature(HAS_JXL)) @inline => *out = {};
+
 fn ImageData? image_data(Reader *rd, ImageEntry img) @local
 {
     ImageData res;
@@ -329,7 +335,7 @@ fn ImageData? image_data(Reader *rd, ImageEntry img) @local
         case ANIMATED_AVIF:
             load_avif(data, &res);
         case ANIMATED_JPEG_XL:
-            load_jpegxl(data, &res);
+            jxl_loader(data, &res);
         case ANIMATED_WEBP:
             load_webp(data, &res);
         default:

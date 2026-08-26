@@ -1,11 +1,12 @@
-opng_lib = custom_target(
-    'OpenPNGStudio opng cli',
-    output: 'libopng.' + ext,
-    command: [c3c, 'build', 'opng', '--warn-deprecation=no'],
-    build_always_stale: true,
+cli_lib = custom_target(
+    'OpenPNGStudio cli library',
+    output: 'libopng.' + lib_ext,
+    command: [c3c, c3_opt, 'build', 'opng', c3_flags],
+    depends: [opng_lib], # so C3 doesn't collide when compiling
+    build_always_stale: true
 )
 
-opng_dep = declare_dependency(link_with: opng_lib)
+cli_dep = declare_dependency(link_with: cli_lib)
 
-opng_c_srcs = ['src/loaders/avif.c', 'src/loaders/jpeg_xl.cpp', 
-    'src/loaders/webp.c', 'src/loaders/gif.c']
+opng_src = files('../loaders/avif.c', '../loaders/jpeg_xl.cpp',
+    '../loaders/webp.c', '../loaders/gif.c')

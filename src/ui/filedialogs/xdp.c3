@@ -11,7 +11,6 @@ import raylib5::rl;
 struct XdpFileDialog (FileDialog) {
     GMainContext *loop;
     XdpPortal *portal;
-    XdpParent *parent;
     Idle{XdpFileDialog*} glib_loop;
     GVariant *filters;
     Url[] urls;
@@ -44,20 +43,18 @@ fn XdpFileDialog *init()
 fn void XdpFileDialog.open(&self, ZString title, bool multiple) @dynamic
 {
     if (self.is_open) return;
-    if (!self.parent) self.parent = xdp_parent_new_raylib(rl::getWindowHandle());
     
     self.is_open = true;
-    xdp_portal_open_file(self.portal, self.parent, title, self.filters, null,
+    xdp_portal_open_file(self.portal, null, title, self.filters, null,
         null, multiple ? MULTIPLE : NONE, null, &on_open, self);
 }
 
 fn void XdpFileDialog.save(&self, ZString title) @dynamic
 {
     if (self.is_open) return;
-    if (!self.parent) self.parent = xdp_parent_new_raylib(rl::getWindowHandle());
     
     self.is_open = true;
-    xdp_portal_save_file(self.portal, self.parent, "Save File", "model.opng",
+    xdp_portal_save_file(self.portal, null, "Save File", "model.opng",
         null, null, self.filters, null, null, NONE, null, &on_save, self);
 }
 
@@ -160,7 +157,6 @@ alias GAsyncReadyCallback = fn void(GObject *source, GAsyncResult *res,
 
 extern fn ZString glib_errmsg(GError *err);
 extern fn GVariant *glib_make_filters(ZString *extensions, usz len);
-extern fn XdpParent *xdp_parent_new_raylib(void *window);
 
 extern fn GMainContext *g_main_context_default();
 extern fn bool g_main_context_iteration(GMainContext *context, bool may_block);

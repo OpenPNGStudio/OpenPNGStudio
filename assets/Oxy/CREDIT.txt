@@ -8,6 +8,17 @@ Protogen base:
 - ko-fi:                https://ko-fi.com/s/7d068af0ae
 - license:              CUSTOM License (TOS on ko-fi)
 
+Protogen stickers base:
+- artist:               FelisRandomis
+- ccard:                https://felisrandomis.carrd.co/
+- ko-fi:                https://ko-fi.com/felisrandomis
+- license:              CUSTOM License (TOS in the bases)
+
+Digital Protogen Furry Sticker / Emote Base:
+- artist:               YourCoffeeCreamer
+- etsy:                 https://www.etsy.com/shop/YourCoffeeCreamer
+- license:              CUSTOM License (TOS in product details)
+
 C3 logo:
 - author:               Christoffer Lerno
 - website:              https://c3-lang.org/
