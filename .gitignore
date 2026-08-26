@@ -13,6 +13,8 @@ subprojects/libjxl/
 subprojects/libwebp-1.6.0/
 subprojects/packagecache/
 subprojects/libportal/
+subprojects/libaom/
+subprojects/libyuv/
 .cache/
 CMakeSettings.json
 .vs/

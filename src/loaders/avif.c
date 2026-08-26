@@ -43,9 +43,9 @@ bool load_avif(Image *out, const uint8_t *memory, const size_t size, int *nframe
     out->data = malloc(img_size * decoder->imageCount);
 
     for (int frame = 0; avifDecoderNextImage(decoder) == AVIF_RESULT_OK; frame++) {
+        avifRGBImageSetDefaults(&img, decoder->image);
         img.format = AVIF_RGB_FORMAT_RGBA;
         img.depth = 8;
-        avifRGBImageSetDefaults(&img, decoder->image);
 
         res = avifRGBImageAllocatePixels(&img);
         if (res != AVIF_RESULT_OK)
@@ -63,8 +63,10 @@ bool load_avif(Image *out, const uint8_t *memory, const size_t size, int *nframe
         if (decoder->imageCount > 1) {
             avifImageTiming timing;
             avifDecoderNthImageTiming(decoder, frame, &timing);
+            
+            double frame_delay_ms = ((double)timing.durationInTimescales / (double)timing.timescale) * 1000.0;
 
-            (*delays)[frame] = (int) (timing.duration * 1000);
+            (*delays)[frame] = (int)frame_delay_ms;
         }
     }
 

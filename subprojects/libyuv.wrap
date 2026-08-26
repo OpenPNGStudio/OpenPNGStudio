@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://chromium.googlesource.com/libyuv/libyuv
+revision = 644251f252a84bf8ce91ff0aca86a9b16b069ab8
+depth = 1

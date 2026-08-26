@@ -95,8 +95,6 @@ fn void Context.init(&self, Allocator alloc)
 
     self.panel.init(alloc, HORIZONTAL);
     self.wm.init(&self.panel, alloc);
-    
-    self.file_dialog = ui::init_filedialog();
 
     self.model.mgr.init(&self.wm, alloc);
     self.model.engine.init(alloc);
@@ -105,6 +103,7 @@ fn void Context.init(&self, Allocator alloc)
     self.wm.register("Microphone Configuration", &self.microphone);
 
     self.loop.init(alloc);
+    self.file_dialog = ui::init_filedialog();
     self.camera.zoom = 1.0f;
 
     self.override_save = false;
