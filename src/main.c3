@@ -373,15 +373,6 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        if (ctx.panel.direction == HORIZONTAL) {
-            ctx.panel.direction = VERTICAL;
-        } else {
-            ctx.panel.direction = HORIZONTAL;
-        }
-    }, SWAP, self);
-
-    self.panel.add_right_entry(fn void(void *_ctx) {
-        Context *ctx = _ctx;
         ctx.loop.stop();
     }, CANCEL, self);
 
@@ -413,15 +404,6 @@ fn void initialize_panel(Context *self) @local
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, HELP, self);
-
-    self.panel.add_right_entry(fn void(void *_ctx) {
-        Context *ctx = _ctx;
-        if (ctx.panel.direction == HORIZONTAL) {
-            ctx.panel.direction = VERTICAL;
-        } else {
-            ctx.panel.direction = HORIZONTAL;
-        }
-    }, SWAP, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;

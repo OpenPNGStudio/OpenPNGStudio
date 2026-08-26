@@ -2,17 +2,17 @@
 module openpngstudio::ui;
 
 import openpngstudio::ui::icons;
+import openpngstudio::layer;
+import std::io;
 import std::collections::list;
 import std::core::mem;
 import nk;
 import raylib5::rl;
 
-alias Action = fn void(void *ctx);
+char[256] name_buffer @local;
+String name @local = "";
 
-enum Orientation {
-    HORIZONTAL,
-    VERTICAL
-}
+alias Action = fn void(void *ctx);
 
 struct Entry {
     Action action;
@@ -21,15 +21,12 @@ struct Entry {
 }
 
 struct Panel {
-    Orientation direction;
     List{Entry}[2] left_entries;
     List{Entry}[2] right_entries;
 }
 
-fn void Panel.init(&self, Allocator alloc, Orientation direction)
+fn void Panel.init(&self, Allocator alloc)
 {
-    self.direction = direction;
-    
     self.left_entries[0].init(alloc);
     self.right_entries[0].init(alloc);
 
@@ -80,20 +77,44 @@ fn void Panel.ui(&self, nk::Context *ctx)
     nk::style_push_vec2(ctx, &ctx.style.window.padding, nk::vec2(0, 0));
     defer nk::style_pop_vec2(ctx);
 
-    switch (self.direction) {
-    case HORIZONTAL:
-        if (nk::begin(ctx, "Panel", nk::rect(7, 7,
-            (float) rl::getScreenWidth() - 14, 34), nk::WINDOW_NO_SCROLLBAR)) {
-            horizontal(self, ctx);
-        }
-    case VERTICAL:
-        if (nk::begin(ctx, "Panel", nk::rect(7, 7,
-            34, (float) rl::getScreenHeight() - 14), nk::WINDOW_NO_SCROLLBAR)) {
-            vertical(self, ctx);
-        }
+    if (nk::begin(ctx, "Panel", nk::rect(7, 7,
+        (float) rl::getScreenWidth() - 14, 34), nk::WINDOW_NO_SCROLLBAR)) {
+        horizontal(self, ctx);
     }
 
     nk::end(ctx);
+}
+
+fn void Panel.set_name(&self, Layer layer)
+{
+    if (layer == null) {
+        name = "";
+        return;
+    }
+    
+    ByteBuffer buffer;
+    buffer.init_with_buffer(&name_buffer);
+    
+    switch (layer.type) {
+    case StaticLayer:
+        StaticLayer *sl = layer.ptr;
+        if (try usz len = io::fprintf(&buffer, "— layer: %s —",
+            sl.name.buffer)) {
+            name = (String) name_buffer[:len];
+        }
+    case AnimatedLayer:
+        AnimatedLayer *al = layer.ptr;
+        if (try usz len = io::fprintf(&buffer, "— animated: %s —",
+            al.base.name.buffer)) {
+            name = (String) name_buffer[:len];
+        }
+    case LayerGroup:
+        LayerGroup *lg = layer.ptr;
+        if (try usz len = io::fprintf(&buffer, "— group: %s —",
+            lg.base.name.buffer)) {
+            name = (String) name_buffer[:len];
+        }
+    }
 }
 
 fn void horizontal(Panel *self, nk::Context *ctx) @local
@@ -141,65 +162,13 @@ fn void horizontal(Panel *self, nk::Context *ctx) @local
             btn.color_factor_background = 1f;
         }
     }
-    nk::spacer(ctx);
-    foreach (&entry : self.right_entries[idx]) {
-        if (nk::button_image_styled(ctx, &btn, icons::get(entry.icon))) {
-            entry.action(entry.ctx);
-        }
-    }
-}
-
-fn void vertical(Panel *self, nk::Context *ctx) @local
-{
-    openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
-    usz idx = app_ctx.editing ? 0 : 1;
-
-    nk::StyleButton btn = ctx.style.button;
-    btn.normal = {
-        .type = nk::STYLE_ITEM_COLOR,
-        .data = {
-            .color = nk::rgba(0, 0, 0, 0),
-        }
-    };
     
-    btn.active = btn.normal;
-    btn.hover = btn.normal;
-
-    nk::Rect bounds = nk::window_get_bounds(ctx);
-    nk::layout_row_dynamic(ctx, 34, 1);
-
-    foreach (&entry : self.left_entries[idx]) {
-        bool layer_op = entry.icon == OPEN || entry.icon == SAVE || 
-            entry.icon == LAYERS;
-
-        nk::Image icon = icons::get(entry.icon);
-
-        if (layer_op && app_ctx.file_lock) {
-            btn.color_factor_background = 0.7f;
-        }
-        
-        if (nk::button_image_styled(ctx, &btn, icon)) {
-            if (!(layer_op && app_ctx.file_lock)) {
-                entry.action(entry.ctx);
-            }
-        }
-
-        if (layer_op && app_ctx.file_lock) {
-            btn.color_factor_background = 1f;
-        }
+    /* currently selected layer name + type */
+    if (name != "") {
+        nk::text(ctx, (CChar*) name.ptr, name.len, nk::TEXT_CENTERED);
+    } else {
+        nk::spacer(ctx);
     }
-
-    usz total_count = self.left_entries[idx].len() + 
-        self.right_entries[idx].len();
-
-    float total_spacing = ctx.style.window.spacing.y * total_count;
-
-    float height = bounds.h - (total_count * 34.0f) - total_spacing;
-
-    nk::layout_row_dynamic(ctx, height, 1);
-    nk::spacer(ctx);
-    
-    nk::layout_row_dynamic(ctx, 34, 1);
     
     foreach (&entry : self.right_entries[idx]) {
         if (nk::button_image_styled(ctx, &btn, icons::get(entry.icon))) {

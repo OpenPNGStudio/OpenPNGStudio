@@ -24,6 +24,8 @@ fn void Toaster.draw(&self, openpngstudio::Context *ctx)
     float y = ctx.height - (float) (self.len() * HEIGHT);
     y -= (float) (self.len() - 1) * SPACING + (SPACING * 2);
 
+    fons::set_align(ctx.fons, CENTER | MIDDLE);
+    
     foreach (i, &current : self) {
         float dy = y + (float) (i * HEIGHT);
         
@@ -42,12 +44,12 @@ fn void Toaster.draw(&self, openpngstudio::Context *ctx)
 
         fons::set_color(ctx.fons, fons::convert_color({ 0xFF, 0xFF, 0xFF,
             (char) current.opacity }));
-
-        fons::draw_text(ctx.fons, dest.x + HEIGHT / 2.0,
-            dest.y + HEIGHT / 2.0 - current.height / 2.0
+            
+        fons::draw_text(ctx.fons, dest.x + dest.width / 2.0,
+            dest.y + HEIGHT / 2.0
         , current.message, null);
-        fons::draw_text(ctx.fons, dest.x + HEIGHT / 2.0,
-            dest.y + HEIGHT / 2.0 - current.height / 2.0
+        fons::draw_text(ctx.fons, dest.x + dest.width / 2.0,
+            dest.y + HEIGHT / 2.0
         , current.message, null);
         
         y += SPACING;

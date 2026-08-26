@@ -106,7 +106,7 @@ fn float text_bounds(Context *s, float x, float y, ZString string, ZString end,
 fn void line_bounds(Context *s, float y, float *miny, float *maxy)
     @cname("fonsLineBounds");
 fn void vert_metrics(Context *s, float *ascender, float *descender,
-    float *lineh) @cname("fonsLineBounds");
+    float *lineh) @cname("fonsVertMetrics");
 
 fn CInt text_iter_init(Context *s, TextIter *iter, float x, float y,
     ZString str, ZString end) @cname("fonsTextIterInit");

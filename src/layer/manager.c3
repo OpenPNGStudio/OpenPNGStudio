@@ -10,6 +10,7 @@ import openpngstudio::animation, openpngstudio::outline;
 import openpngstudio::ui::wm;
 import openpngstudio::ui::icons;
 import openpngstudio::ui::line_edit;
+import openpngstudio;
 import nk;
 import raylib5::rl;
 import std::math @public;
@@ -45,6 +46,8 @@ extern fn void winabi_set_nk_flag(nk::Context *ctx, Flags flag);
 
 fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
+    openpngstudio::Context *app_ctx = openpngstudio::get_ctx();
+    
     float win_width = nk::window_get_width(ctx);
     float min_width = math::max(win_width * 0.49f, 250.0f);
 
@@ -87,16 +90,20 @@ fn void Manager.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
         case SELECT:
             if (self.selected.layer == cmd.layer) {
                 self.selected = { NONE, null, null };
+                app_ctx.panel.set_name(null);
                 break;
             }
+            
             self.selected = cmd;
+            app_ctx.panel.set_name(self.selected.layer);
         case DELETE:
             if (self.selected.layer == cmd.layer) {
                 self.selected = { NONE, null, null };
             }
 
             cmd.parent.del(cmd.layer);
-            openpngstudio::get_ctx().cleanup_queue.push(cmd.layer);
+            app_ctx.panel.set_name(null);
+            app_ctx.cleanup_queue.push(cmd.layer);
         default:
             io::printn(cmd);
         }

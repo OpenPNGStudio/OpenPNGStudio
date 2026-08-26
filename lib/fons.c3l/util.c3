@@ -51,15 +51,15 @@ fn Vector2 Context*.measure(self, int font, ZString text, float size)
 {
     clear_state(self);
     set_font(self, font);
-    set_spacing(self, 0);
-    set_align(self, LEFT | TOP);
+    set_spacing(self, 0.0f);
+    set_align(self, LEFT | BASELINE);
     set_size(self, size);
-    
+
     float[4] bounds;
-    text_bounds(self, 0, 0, text, null, &bounds);
+    float advance = text_bounds(self, 0.0f, 0.0f, text, null, &bounds);
 
     return {
-        (bounds[2] - bounds[0]),
+        advance,
         (bounds[3] - bounds[1])
     };
 }
@@ -79,7 +79,17 @@ fn float measure_text(Context *ctx, int font, ZString txt, float height)
 fn void cdraw_text(Context *ctx, int font, float x, float y, ZString txt,
     float height, rl::Color color) @export("draw_text")
 {
-    fons::set_size(ctx, height);
-    fons::set_color(ctx, convert_color(color));
-    ctx.draw(x, y, txt);
+    clear_state(ctx);
+    set_font(ctx, font);
+    set_spacing(ctx, 0.0f);
+    set_align(ctx, LEFT | BASELINE);
+    set_size(ctx, height);
+    set_color(ctx, convert_color(color));
+    
+    float asc;
+    float desc;
+    float lh;
+    vert_metrics(ctx, &asc, &desc, &lh);
+    
+    ctx.draw(x, y + asc, txt);
 }
