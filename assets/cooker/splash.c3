@@ -45,7 +45,7 @@ fn String get_hash() @local
         usz start = msg.index_of(GOT_START)!!;
         start += GOT_START.len + 2; /* color and space */
         msg = msg[start..];
-        msg = msg[:msg.index_of_char('\n')!!];
+        msg = msg[..msg.index_of_char('\n')!!];
         
         return msg.tcopy();
     }
