@@ -102,7 +102,7 @@ bool load_avif(const uint8_t *memory, const size_t size, struct image_data *out)
     out->nframes = decoder->imageCount;
 
     res = AVIF_RESULT_OK;
-cleanup:    
+cleanup:
     avifRGBImageFreePixels(&img);
     avifDecoderDestroy(decoder);
 

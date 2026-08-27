@@ -24,3 +24,5 @@ subprojects/.wraplock
 src/opng/example.opng
 src/vendor/fontstash.h*
 data/nsis/installer.exe
+assets/icon_atlas.qoi
+assets/cooked_assets.c3

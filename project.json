@@ -5,7 +5,6 @@
     "dependencies": ["raylib55", "nk", "raygui", "ev", "sqlite3", "fons"],
     "authors": ["LowByteFox"],
     "version": "0.3.0",
-    "sources": ["src/**"],
     "test-sources": ["test/**"],
     "output": "build",
     
@@ -14,13 +13,14 @@
             "type": "static-lib",
             "name": "libOpenPNGStudio",
             "output": "build/src",
+            "sources": ["src/**", "assets/cooked_assets.c3"],
         },
         "opng": {
             "type": "static-lib",
             "name": "libopng",
             "dependencies-override": ["sqlite3"],
             "linked-libraries-override": ["sqlite3"],
-            "sources-override": ["src/opng/**"],
+            "sources": ["src/opng/**"],
             "features": ["OPNG_STANDALONE"],
             "test-sources-override": ["test/opng/**"],
             "output": "build/src/opng",

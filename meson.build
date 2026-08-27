@@ -67,6 +67,9 @@ assert(c3c.version() == '0.7.11')
 # Dependencies
 subdir('deps')
 
+# Assets and asset cooker
+subdir('assets')
+
 # OpenPNGStudio and opng
 subdir('src')
 executable(
@@ -95,7 +98,6 @@ if host_machine.system() != 'windows'
 endif
 
 # Install
-subdir('assets')
 subdir('licenses')
 subdir('data')
 

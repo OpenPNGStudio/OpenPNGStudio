@@ -2,6 +2,7 @@ opng_lib = custom_target(
     'OpenPNGStudio library',
     output: 'libOpenPNGStudio.' + lib_ext,
     command: [c3c, c3_opt, 'build', 'OpenPNGStudio', c3_flags],
+    input: [cooked],
     build_always_stale: true
 )
 

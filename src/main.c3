@@ -243,8 +243,9 @@ fn ev::Action draw(Timer{Context*} *idle)
     draw_nuklear(ctx.nk_ctx);
     
     if (ctx.wm.show_bring_back) {
-        rl::Rectangle size = { 0, 0, ctx.restore_icon.width / 2.0f,
-            ctx.restore_icon.height / 2.0f };
+        rl::Rectangle size = icons::get_size(RESTORE);
+        size.width /= 2;
+        size.height /= 2;
 
         rl::Vector2 pos = {
             ctx.width - BACK_BTN_PADDING - size.width, 
@@ -271,7 +272,7 @@ fn ev::Action draw(Timer{Context*} *idle)
 
         btn_bg = rl::WHITE;
         btn_bg.a = 0xAA;
-        rl::drawTextureEx(ctx.restore_icon, pos, 0, 0.5f, btn_bg);
+        icons::draw(RESTORE, pos, 0, 0.5f, btn_bg);
     }
     
     ctx.toaster.draw(ctx);

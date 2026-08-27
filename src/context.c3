@@ -57,7 +57,6 @@ struct Context {
     Path exe_path;
 
     rl::Image icon;
-    rl::Texture2D restore_icon;
 
     Outline outline;
     
@@ -259,7 +258,8 @@ fn int load_font(Context *self)
     };
 }
 
-extern fn nk::Image load_nk_image(ZString path) @extern("LoadNuklearImage");
+extern fn rl::Texture texture_from_nk(nk::Image img)
+    @cname("TextureFromNuklear");
 
 struct TmpIcon @private {
     icons::Type type;
@@ -284,43 +284,11 @@ fn void? load_icons2(Path exe_path) @local
             dir = dir.tappend("OpenPNGStudio")!;
         }
 
-        var $icons = {
-            {icons::Type.LEFT, "icons/back.png"},
-            {icons::Type.RIGHT, "icons/forward.png"},
-            {icons::Type.UP, "icons/up.png"},
-            {icons::Type.DOWN, "icons/down.png"},
-            {icons::Type.LOOP, "icons/loop.png"},
-            {icons::Type.TRASH, "icons/trash.png"},
-            {icons::Type.CFG, "icons/cfg.png"},
-            {icons::Type.CANCEL, "icons/cancel.png"},
-            {icons::Type.CHECK, "icons/check.png"},
-            {icons::Type.MINIMIZE, "icons/minimize.png"},
-            {icons::Type.MAXIMIZE, "icons/maximize.png"},
-            {icons::Type.COMBO, "icons/combo.png"},
-            {icons::Type.COMBO_OPEN, "icons/combo-open.png"},
-            {icons::Type.COMBO_OPEN2, "icons/combo-open2.png"},
-            {icons::Type.PICK, "icons/pick.png"},
-            {icons::Type.IMAGE, "icons/image.png"},
-            {icons::Type.MICROPHONE, "icons/microphone.png"},
-            {icons::Type.SWAP, "icons/swap.png"},
-            {icons::Type.OPEN, "icons/open.png"},
-            {icons::Type.SAVE, "icons/save.png"},
-            {icons::Type.LAYERS, "icons/layers.png"},
-            {icons::Type.SHORTCUTS, "icons/shortcuts.png"},
-            {icons::Type.HELP, "icons/help.png"},
-            {icons::Type.DIR, "images/dir.png"},
-            {icons::Type.FILE, "images/file.png"},
-            {icons::Type.DRIVE, "images/drive.png"},
+        @pool() {
+            Path tmp = dir.tappend("icon_atlas.qoi")!;
+            
+            icons::init(tmp.str_view().zstr_tcopy());
         };
-
-        $foreach $icon : $icons:
-            @pool() {
-                TmpIcon $i = (TmpIcon) $icon;
-
-                Path tmp = dir.tappend($i.path)!;
-                icons::set($i.type, load_nk_image(tmp.str_view().zstr_tcopy()));
-            };
-        $endforeach
         
         @pool() {
             Path tmp = dir.tappend("logo.png")!;
@@ -328,15 +296,6 @@ fn void? load_icons2(Path exe_path) @local
             instance.icon = rl::loadImage(tmp.str_view().zstr_tcopy());
 
             rl::setWindowIcon(instance.icon);
-        };
-
-        @pool() {
-            Path tmp = dir.tappend("icons/restore.png")!;
-
-            rl::Image img = rl::loadImage(tmp.str_view().zstr_tcopy());
-            instance.restore_icon = rl::loadTextureFromImage(img);
-
-            rl::unloadImage(img);
         };
 
         @pool() {

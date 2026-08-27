@@ -73,6 +73,9 @@ if not nasm.found()
     libavif_o.add_cmake_defines({
         'AOM_TARGET_CPU': 'generic'
     })
+    libaom_o.add_cmake_defines({
+        'AOM_TARGET_CPU': 'generic'
+    })
 else
     libaom_o.add_cmake_defines({
         'ENABLE_NASM': true
@@ -166,6 +169,8 @@ headers = {
         'master/miniaudio.h',
     'stb_image.h': 'https://raw.githubusercontent.com/nothings/stb/refs/heads' /
         'master/stb_image.h',
+    'stb_rect_pack.h': 'https://raw.githubusercontent.com/nothings/stb/refs' /
+        'heads/master/stb_rect_pack.h',
     'fontstash.h': 'https://raw.githubusercontent.com/memononen/fontstash' /
         'refs/heads/master/src/fontstash.h'
 }
