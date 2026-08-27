@@ -81,23 +81,27 @@ fn int main(String[] args)
     }
     
     atlas::gen(map, arr)!!;
+    splash::gen()!!;
     code::gen(map)!!;
     
     /* because meson is stupid */
     (void) path::chdir(cwd);
     
     Path orig = path::new(tmem, args[1])!!;
-    orig = orig.tappend("icon_atlas.qoi")!!;
-    
-    {
-        File in = file::open(orig.str_view(), "rb")!!;
-        File out = file::open("assets/icon_atlas.qoi", "wb")!!;
-        defer (void) in.close();
-        defer (void) out.close();
-        
-        io::copy_to(&in, &out)!!;
-    }
+    copy_file(orig.tappend("icon_atlas.qoi").str_view(),
+        "assets/icon_atlas.qoi")!!;
+    copy_file(orig.tappend("splash.qoi").str_view(), "assets/splash.qoi")!!;
     return 0;
+}
+
+fn void? copy_file(String src, String dest)
+{
+    File in = file::open(src, "rb")!;
+    File out = file::open(dest, "wb")!;
+    defer (void) in.close();
+    defer (void) out.close();
+    
+    io::copy_to(&in, &out)!;
 }
 
 fn usz next_po2(usz cap)

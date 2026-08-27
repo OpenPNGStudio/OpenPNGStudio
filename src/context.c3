@@ -216,16 +216,6 @@ extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
 
 fn void initialize_raylib(Context *self) @local
 {
-    rl::setConfigFlags(rl::FLAG_WINDOW_RESIZABLE | 
-        rl::FLAG_WINDOW_TRANSPARENT | rl::FLAG_MSAA_4X_HINT);
-    rl::initWindow(1024, 640, "OpenPNGStudio");
-    rl::setExitKey(rl::KEY_NULL);
-    
-    self.fons = fons::init();
-
-    self.font = load_font(self);
-    fons::set_font(self.fons, self.font);
-
     load_icons(self);
 
     self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
@@ -289,14 +279,16 @@ fn void? load_icons2(Path exe_path) @local
             
             icons::init(tmp.str_view().zstr_tcopy());
         };
-        
-        @pool() {
-            Path tmp = dir.tappend("logo.png")!;
 
-            instance.icon = rl::loadImage(tmp.str_view().zstr_tcopy());
+        $if !env::WIN32:
+            @pool() {
+                Path tmp = dir.tappend("logo.png")!;
 
-            rl::setWindowIcon(instance.icon);
-        };
+                instance.icon = rl::loadImage(tmp.str_view().zstr_tcopy());
+
+                rl::setWindowIcon(instance.icon);
+            };
+        $endif
 
         @pool() {
             Path tmp = dir.tappend("shaders/outline.glsl")!;

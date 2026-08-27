@@ -4,10 +4,6 @@ import std::io, std::collections::list;
 
 import nk;
 import fons;
-/*
-import novacrash;
-import novacrash::options;
-*/
 
 import openpngstudio::console;
 import openpngstudio::ui;
@@ -35,42 +31,19 @@ fn int win_main_cli() @export("main") @if(env::WIN32)
 
 fn int main()
 {
-    console::init(mem);
-
     Context ctx;
+    
+    console::init(mem);
+    
+    splash::run(&ctx);
+
     ctx.init(mem);
     defer ctx.free();
 
     console::register(&ctx.wm);
 
     initialize_panel(&ctx);
-    /*
-    novacrash::uses_raylib = true;
-    options::cfg.app_name = "OpenPNGStudio";
-    options::cfg.message = "has reached a";
-
-    options::cfg.window = {
-        .title = "OpenPNGStudio crash report",
-        .width = 500,
-        .height = 750,
-    };
-
-    options::cfg.theme = {
-        .background = { 0x16, 0x16, 0x16, 0xff },
-        .foreground = { 0xbe, 0xbe, 0xbe, 0xff },
-        .font = $embed("../assets/fonts/VarelaRound-Regular.ttf"),
-        .font_size = 22,
-    };
-
-    static ZString[] phrases = {"!!!", "XXX", "ERROR", "PANIC", "GUH", "WEH", "ABWA"};
-
-    options::cfg.header = {
-        .catch_phrases = phrases,
-        .crash_icon = $embed("../assets/logo.png"),
-        .title_size = 32,
-    };
-    */
-
+    
     Timer{Context*} draw_idle;
     Timer{Context*} settings_timer;
     Timer{Toaster*} toaster_timer;
