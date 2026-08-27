@@ -1,5 +1,6 @@
 libcooker = static_library('cooker', 'cooker/loader.c',
-    include_directories: '../include/vendor'
+    include_directories: '../include/vendor',
+    name_suffix: lib_ext,
 )
 
 cooker = custom_target('cooker',

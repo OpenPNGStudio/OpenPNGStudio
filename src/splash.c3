@@ -10,7 +10,7 @@ const float MARGIN @local = 10.0f;
 const int TITLE_SIZE @local = 36;
 const int DESC_SIZE @local = 24;
 const rl::Color BG @local = { 0x0, 0x0, 0x0, 0xC3 };
-const Anchor ANCHOR @local = BOTTOM_RIGHT;
+const Anchor ANCHOR @local = TOP_LEFT;
 
 constdef Anchor @local {
     TOP_LEFT,
@@ -27,6 +27,8 @@ struct TextBounds @local {
     rl::Vector2 title, desc;
 }
 
+extern fn void update_titlebar_theme() @cname("UpdateTitleBarTheme") @if(env::WIN32);
+
 fn void run(openpngstudio::Context *self)
 {
     self.exe_path = core::whereami()!!;
@@ -34,6 +36,10 @@ fn void run(openpngstudio::Context *self)
     
     rl::setConfigFlags(rl::FLAG_WINDOW_TRANSPARENT | rl::FLAG_MSAA_4X_HINT);
     rl::initWindow(1024, 640, "OpenPNGStudio");
+    rl::setWindowIcon(assets.logo);
+    $if env::WIN32:
+        update_titlebar_theme();
+    $endif
     rl::setExitKey(rl::KEY_NULL);
     
     self.fons = fons::init();

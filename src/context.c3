@@ -221,13 +221,7 @@ fn void initialize_raylib(Context *self) @local
     self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
 
     style::apply(self.nk_ctx);
-
-    $if env::WIN32:
-        update_titlebar_theme();
-    $endif
 }
-
-extern fn void update_titlebar_theme() @cname("UpdateTitleBarTheme") @if(env::WIN32);
 
 fn int load_font(Context *self)
 {

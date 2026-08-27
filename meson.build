@@ -39,6 +39,7 @@ lib_ext = 'a'
 
 if system == 'windows'
     lib_ext = 'lib'
+    add_project_arguments('/wd5105', '/experimental:c11atomics', language: 'c')
 endif
 
 # Imports
@@ -75,15 +76,16 @@ subdir('src')
 executable(
     'OpenPNGStudio',
     [src, sources],
-    dependencies: [deps, opng_dep],
+    dependencies: [deps, opng_dep, libs],
     include_directories: ['include', 'include/vendor', includes],
     install: true,
     install_dir: 'bin',
     win_subsystem: 'windows',
 )
 
-subdir('src/opng')
-if host_machine.system() != 'windows'
+if system != 'windows'
+    subdir('src/opng')
+
     executable(
         'opng',
         opng_src,
@@ -101,4 +103,4 @@ endif
 subdir('licenses')
 subdir('data')
 
-# Note: meson install --no-rebuild --destdir .\..\install -C build --skip-subprojects
+# Note: meson install --no-rebuild --destdir _install -C build --skip-subprojects
