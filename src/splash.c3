@@ -10,6 +10,7 @@ const float MARGIN @local = 10.0f;
 const int TITLE_SIZE @local = 36;
 const int DESC_SIZE @local = 24;
 const float PROGRESSBAR_SIZE @local = 30.0f;
+const float ROUNDNESS @local = 0.35f;
 const rl::Color BG @local = { 0x0, 0x0, 0x0, 0xC3 };
 const Anchor ANCHOR @local = BOTTOM_RIGHT;
 
@@ -79,16 +80,22 @@ fn void run(openpngstudio::Context *self)
 
 fn void draw_progress(rl::Vector2 pos, rl::Vector2 size, float progress)
 {
-    rl::drawRectangleV(pos, size, { 0x19, 0x19, 0x19, 0xFF });
+    rl::drawRectangleRounded({
+        pos.x, pos.y, size.x, size.y
+    }, ROUNDNESS, 16, { 0x19, 0x19, 0x19, 0xFF });
     pos.x += MARGIN / 2.0;
     pos.y += MARGIN / 2.0;
     
     size.x -= MARGIN;
     size.y -= MARGIN;
-    rl::drawRectangleV(pos, size, { 0x38, 0x38, 0x38, 0xFF });
+    rl::drawRectangleRounded({
+        pos.x, pos.y, size.x, size.y
+    }, ROUNDNESS, 16, { 0x38, 0x38, 0x38, 0xFF });
     
     size.x *= progress;
-    rl::drawRectangleV(pos, size, { 0x7E, 0x57, 0xC2, 0xFF });
+    rl::drawRectangleRounded({
+        pos.x, pos.y, size.x, size.y
+    }, ROUNDNESS, 16, { 0x7E, 0x57, 0xC2, 0xFF });
 }
 
 fn void draw_logo(openpngstudio::Context *self, Anchor anchor,
