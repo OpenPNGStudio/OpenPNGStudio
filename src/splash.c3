@@ -9,8 +9,9 @@ import fons;
 const float MARGIN @local = 10.0f;
 const int TITLE_SIZE @local = 36;
 const int DESC_SIZE @local = 24;
+const float PROGRESSBAR_SIZE @local = 30.0f;
 const rl::Color BG @local = { 0x0, 0x0, 0x0, 0xC3 };
-const Anchor ANCHOR @local = TOP_LEFT;
+const Anchor ANCHOR @local = BOTTOM_RIGHT;
 
 constdef Anchor @local {
     TOP_LEFT,
@@ -61,11 +62,33 @@ fn void run(openpngstudio::Context *self)
         rl::drawTexture(splash, 0, 0, rl::WHITE);
         
         draw_logo(self, ANCHOR, logo, bounds);
+        
+        /* progress bar */
+        draw_progress({
+            MARGIN, 640 - PROGRESSBAR_SIZE - MARGIN
+        },{
+            1024 - MARGIN * 2, PROGRESSBAR_SIZE
+        }, 0.8);
+        
         rl::endDrawing();
     }
     
     rl::setTargetFPS(0);
     os::exit(1);
+}
+
+fn void draw_progress(rl::Vector2 pos, rl::Vector2 size, float progress)
+{
+    rl::drawRectangleV(pos, size, { 0x19, 0x19, 0x19, 0xFF });
+    pos.x += MARGIN / 2.0;
+    pos.y += MARGIN / 2.0;
+    
+    size.x -= MARGIN;
+    size.y -= MARGIN;
+    rl::drawRectangleV(pos, size, { 0x38, 0x38, 0x38, 0xFF });
+    
+    size.x *= progress;
+    rl::drawRectangleV(pos, size, { 0x7E, 0x57, 0xC2, 0xFF });
 }
 
 fn void draw_logo(openpngstudio::Context *self, Anchor anchor,
@@ -131,9 +154,9 @@ fn rl::Vector2 get_pos(Anchor anchor, float w, float h) @local @inline
     case TOP_RIGHT:
         return { sw - w - MARGIN, MARGIN };
     case BOTTOM_LEFT:
-        return { MARGIN, sh - h - MARGIN };
+        return { MARGIN, sh - h - MARGIN * 2 - PROGRESSBAR_SIZE };
     case BOTTOM_RIGHT:
-        return { sw - w - MARGIN, sh - h - MARGIN };
+        return { sw - w - MARGIN, sh - h - MARGIN * 2 - PROGRESSBAR_SIZE };
     }
     
     return { -w, -h };
