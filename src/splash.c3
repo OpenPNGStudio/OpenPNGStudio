@@ -9,6 +9,7 @@ import fons;
 const float MARGIN @local = 10.0f;
 const int TITLE_SIZE @local = 36;
 const int DESC_SIZE @local = 24;
+const int STATUS_SIZE @local = 22;
 const float PROGRESSBAR_SIZE @local = 30.0f;
 const float ROUNDNESS @local = 0.35f;
 const rl::Color BG @local = { 0x0, 0x0, 0x0, 0xC3 };
@@ -65,11 +66,11 @@ fn void run(openpngstudio::Context *self)
         draw_logo(self, ANCHOR, logo, bounds);
         
         /* progress bar */
-        draw_progress({
+        draw_progress(self, {
             MARGIN, 640 - PROGRESSBAR_SIZE - MARGIN
         },{
             1024 - MARGIN * 2, PROGRESSBAR_SIZE
-        }, 0.8);
+        }, 0.8, "Hello, World, uwu owo");
         
         rl::endDrawing();
     }
@@ -78,7 +79,8 @@ fn void run(openpngstudio::Context *self)
     os::exit(1);
 }
 
-fn void draw_progress(rl::Vector2 pos, rl::Vector2 size, float progress)
+fn void draw_progress(openpngstudio::Context *self, rl::Vector2 pos,
+    rl::Vector2 size, float progress, ZString message)
 {
     rl::drawRectangleRounded({
         pos.x, pos.y, size.x, size.y
@@ -86,7 +88,14 @@ fn void draw_progress(rl::Vector2 pos, rl::Vector2 size, float progress)
     pos.x += MARGIN / 2.0;
     pos.y += MARGIN / 2.0;
     
-    size.x -= MARGIN;
+    fons::clear_state(self.fons);
+    fons::set_font(self.fons, self.font);
+    fons::set_align(self.fons, RIGHT | MIDDLE);
+    fons::set_size(self.fons, STATUS_SIZE);
+    
+    float res = self.fons.draw(1024 - MARGIN - MARGIN / 2.0, 640 - MARGIN - PROGRESSBAR_SIZE / 2.0, message);
+    
+    size.x -= MARGIN + res + MARGIN / 2.0f;
     size.y -= MARGIN;
     rl::drawRectangleRounded({
         pos.x, pos.y, size.x, size.y
@@ -132,7 +141,7 @@ fn void draw_logo(openpngstudio::Context *self, Anchor anchor,
     pos.y += MARGIN / 2;
     
     fons::set_size(self.fons, TITLE_SIZE);
-    self.fons.draw(pos.x, pos.y, "OpenPNGStudio");
+    float res = self.fons.draw(pos.x, pos.y, "OpenPNGStudio");
     pos.y += bounds.title.y + MARGIN / 2;
     
     fons::set_size(self.fons, DESC_SIZE);

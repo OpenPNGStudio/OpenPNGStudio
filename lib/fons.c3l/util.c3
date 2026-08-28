@@ -66,11 +66,11 @@ fn Vector2 Context*.measure(self, int font, ZString text, float size)
 
 extern fn void custom_blend();
 
-fn void Context*.draw(self, float x, float y, ZString text)
+fn float Context*.draw(self, float x, float y, ZString text)
 {
     rl::beginBlendMode(5);
-    fons::draw_text(self, x, y, text, null);
-    custom_blend();
+    defer custom_blend();
+    return fons::draw_text(self, x, y, text, null);
 }
 
 fn float measure_text(Context *ctx, int font, ZString txt, float height)

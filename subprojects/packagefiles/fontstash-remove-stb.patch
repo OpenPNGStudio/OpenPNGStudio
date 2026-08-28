@@ -1,5 +1,5 @@
---- fontstash.h.orig	2026-07-27 11:52:15.889749090 +0200
-+++ fontstash.h	2026-07-27 11:52:32.483748607 +0200
+--- fontstash.h.orig	2026-08-28 10:17:17.584195307 +0200
++++ fontstash.h	2026-08-28 10:20:04.011180318 +0200
 @@ -256,13 +256,11 @@
  
  #else
@@ -15,3 +15,23 @@
  
  struct FONSttFontImpl {
  	stbtt_fontinfo font;
+@@ -1316,6 +1314,7 @@
+ 	float scale;
+ 	FONSfont* font;
+ 	float width;
++	float orig_x = x;
+ 
+ 	if (stash == NULL) return x;
+ 	if (state->font < 0 || state->font >= stash->nfonts) return x;
+@@ -1362,7 +1361,10 @@
+ 	}
+ 	fons__flush(stash);
+ 
+-	return x;
++	if (state->align & FONS_ALIGN_LEFT)
++		width = x - orig_x;
++
++	return width;
+ }
+ 
+ FONS_DEF int fonsTextIterInit(FONScontext* stash, FONStextIter* iter,
