@@ -185,6 +185,19 @@ foreach name, url : headers
     endif
 endforeach
 
+# C3 libs
+c3_libs = {
+    'ev.c3l': ['ev', 'https://codeberg.org/OpenPNGStudio/ev/archive/main.zip'],
+    'patterngen.c3l': ['patterngen', 'https://codeberg.org/OpenPNGStudio/patterngen/archive/main.zip']
+}
+
+foreach name, info : c3_libs
+    run_command(python, here / 'meson/fetch_lib.py', here / 'lib', name, info[0], info[1],
+        check: true,
+        console: true
+    )
+endforeach
+
 # Additional Patches
 patches = {
     'fontstash-remove-stb.patch': 'include/vendor/fontstash.h'

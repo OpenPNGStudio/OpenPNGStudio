@@ -18,7 +18,6 @@ subprojects/libyuv/
 .cache/
 CMakeSettings.json
 .vs/
-.idea/
 lib/ev.c3l/
 lib/patterngen.c3l/
 subprojects/.wraplock
@@ -28,3 +27,5 @@ data/nsis/installer.exe
 assets/icon_atlas.qoi
 assets/splash.qoi
 assets/cooked_assets.c3
+c3
+.idea/editor.xml

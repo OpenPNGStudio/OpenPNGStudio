@@ -3,7 +3,7 @@ url = https://github.com/flatpak/libportal.git
 revision = 0.10.0
 depth = 1
 
-diff_files = libportal-musl.patch
+diff_files = libportal-gnu_source.patch
 
 [provide]
 dependency_names = libportal_dep

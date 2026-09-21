@@ -58,15 +58,16 @@ endif
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 curl = find_program('curl')
-c3c = find_program('c3c')
+c3c = find_program('c3/c3c', 'c3c')
 patch = find_program('patch')
 ascli = find_program('appstreamcli', required: false)
 nasm = find_program('nasm', required: false)
+python = import('python').find_installation('python3')
 
 assert(c3c.version() == '0.7.11')
 
 # Dependencies
-subdir('deps')
+subdir('meson')
 
 # Assets and asset cooker
 subdir('assets')

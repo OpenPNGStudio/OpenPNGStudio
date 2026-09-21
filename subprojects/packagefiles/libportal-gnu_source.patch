@@ -1,0 +1,12 @@
+diff --git a/meson.build b/meson.build
+index 890b7c3..61d3d77 100644
+--- a/meson.build
++++ b/meson.build
+@@ -24,6 +24,7 @@ if meson.version().version_compare('>= 0.59.0')
+ endif
+ 
+ conf = configuration_data()
++conf.set('_GNU_SOURCE', true)
+ conf.set_quoted('G_LOG_DOMAIN', 'libportal')
+ conf.set_quoted('PACKAGE_NAME', 'libportal')
+ conf.set_quoted('PKGDATADIR', join_paths(get_option('prefix'), get_option('datadir'), 'libportal'))
