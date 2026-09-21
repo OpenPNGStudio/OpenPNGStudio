@@ -146,6 +146,8 @@ fn void run(openpngstudio::Context *self)
 
         thread::sleep(150 * time::MS);
     }
+
+    rl::setWindowState(rl::FLAG_WINDOW_RESIZABLE);
 }
 
 fn void draw_progress(openpngstudio::Context *self, rl::Vector2 pos,

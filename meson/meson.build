@@ -193,8 +193,7 @@ c3_libs = {
 
 foreach name, info : c3_libs
     run_command(python, here / 'meson/fetch_lib.py', here / 'lib', name, info[0], info[1],
-        check: true,
-        console: true
+        check: true
     )
 endforeach
 
