@@ -2,8 +2,9 @@
 module openpngstudio::splash;
 
 import openpngstudio;
-import std::os, std::io::path;
+import std::os, std::io::path, std::thread, std::time;
 import raylib5::rl;
+import nk;
 import fons;
 
 const float MARGIN @local = 10.0f;
@@ -22,6 +23,18 @@ constdef Anchor @local {
     BOTTOM_RIGHT
 }
 
+enum LoadingState : int (ZString label) {
+    AUDIO { "Loading Audio" },
+    LOOP { "Event Loop Init" },
+    SETTINGS { "Loading Settings" },
+    DEFAULTS { "Configuring Defaults" },
+    WINDOWS { "Window Registration" },
+    ICONS { "Loading Icons" },
+    NUKLEAR { "Loading Nuklear" },
+    STYLE { "Applying Style" },
+    COUNT { "Done" }
+}
+
 struct Assets @local {
     rl::Image splash, logo;
 }
@@ -31,6 +44,8 @@ struct TextBounds @local {
 }
 
 extern fn void update_titlebar_theme() @cname("UpdateTitleBarTheme") @if(env::WIN32);
+extern fn nk::Context *init_nuklear_ex(void *ctx, int font, float size)
+    @cname("InitNuklearEx");
 
 fn void run(openpngstudio::Context *self)
 {
@@ -56,9 +71,10 @@ fn void run(openpngstudio::Context *self)
     defer rl::unloadTexture(splash);
     rl::unloadImage(assets.splash);
     rl::unloadImage(assets.logo);
-    
-    rl::setTargetFPS(60);
-    while (!rl::windowShouldClose()) {
+
+    LoadingState state = AUDIO;
+
+    while LOOP: (!rl::windowShouldClose()) {
         rl::beginDrawing();
         rl::clearBackground(rl::BLANK);
         rl::drawTexture(splash, 0, 0, rl::WHITE);
@@ -70,13 +86,66 @@ fn void run(openpngstudio::Context *self)
             MARGIN, 640 - PROGRESSBAR_SIZE - MARGIN
         },{
             1024 - MARGIN * 2, PROGRESSBAR_SIZE
-        }, 0.8, "Hello, World, uwu owo");
+        }, ((float) state.ordinal) / ((float) LoadingState.COUNT.ordinal), state.label);
         
         rl::endDrawing();
+
+        switch (state) {
+        case AUDIO:
+            self.microphone.init();
+            state = LOOP;
+        case LOOP:
+            self.loop.init(mem);
+            state = SETTINGS;
+        case SETTINGS:
+            self.settings.init(self)!!;
+            state = DEFAULTS;
+        case DEFAULTS:
+            self.file_lock = false;
+            log::info("Executable location: %s", self.exe_path);
+            self.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
+
+            openpngstudio::set_ctx(self);
+
+            self.panel.init(mem);
+            self.wm.init(&self.panel, mem);
+
+            self.model.mgr.init(&self.wm, mem);
+            self.model.engine.init(mem);
+
+            self.camera.zoom = 1.0f;
+
+            self.override_save = false;
+            self.editing = true;
+            self.hide_ui = false;
+
+            self.file_dialog = ui::init_filedialog();
+
+            self.layer_queue.init(mem);
+            self.image_manager.init(mem);
+            self.cleanup_queue.init(mem);
+            self.scene.init();
+            self.toaster.init(mem);
+            state = WINDOWS;
+        case WINDOWS:
+            self.wm.register("Microphone Configuration", &self.microphone);
+            self.wm.register("Scene Configurator", &self.scene);
+            state = ICONS;
+        case ICONS:
+            openpngstudio::load_icons(self);
+            state = NUKLEAR;
+        case NUKLEAR:
+            self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
+            state = STYLE;
+        case STYLE:
+            style::apply(self.nk_ctx);
+            state = COUNT;
+        case COUNT:
+            break LOOP;
+        }
+
+        thread::sleep(150 * time::MS);
     }
-    
-    rl::setTargetFPS(0);
-    os::exit(1);
 }
 
 fn void draw_progress(openpngstudio::Context *self, rl::Vector2 pos,

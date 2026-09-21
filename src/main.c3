@@ -32,13 +32,11 @@ fn int win_main_cli() @export("main") @if(env::WIN32)
 fn int main()
 {
     Context ctx;
-    
-    console::init(mem);
-    
-    splash::run(&ctx);
-
-    ctx.init(mem);
     defer ctx.free();
+
+    console::init(mem);
+
+    splash::run(&ctx);
 
     console::register(&ctx.wm);
 

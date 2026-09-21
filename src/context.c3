@@ -83,44 +83,6 @@ Context *instance @local = null;
 ZString[] edit_filter = gen_open_flags();
 ZString[] stream_filter = {"*.opng"};
 
-fn void Context.init(&self, Allocator alloc)
-{
-    instance = self;
-
-    self.file_lock = false;
-    self.exe_path = core::whereami()!!;
-    log::info("Executable location: %s", self.exe_path);
-    self.ambient = { 0x7E, 0x57, 0xC2, 0xFF };
-
-    self.panel.init(alloc);
-    self.wm.init(&self.panel, alloc);
-
-    self.model.mgr.init(&self.wm, alloc);
-    self.model.engine.init(alloc);
-
-    self.microphone.init();
-    self.wm.register("Microphone Configuration", &self.microphone);
-
-    self.loop.init(alloc);
-    self.file_dialog = ui::init_filedialog();
-    self.camera.zoom = 1.0f;
-
-    self.override_save = false;
-    self.editing = true;
-    self.hide_ui = false;
-
-    self.layer_queue.init(alloc);
-    self.image_manager.init(alloc);
-    self.cleanup_queue.init(alloc);
-    self.settings.init(self)!!;
-    self.scene.init();
-    self.toaster.init(mem);
-
-    self.wm.register("Scene Configurator", &self.scene);
-    
-    initialize_raylib(self);
-}
-
 fn void Context.free(&self)
 {
     rl::unloadImage(self.icon);
@@ -210,18 +172,7 @@ fn void Context.load_layer(&self, ZString path)
     self.loop.add(&ref.work);
 }
 
-extern fn nk::Context *init_nuklear_ex(void *ctx, int font, float size)
-    @cname("InitNuklearEx");
 extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
-
-fn void initialize_raylib(Context *self) @local
-{
-    load_icons(self);
-
-    self.nk_ctx = init_nuklear_ex(self.fons, self.font, 18);
-
-    style::apply(self.nk_ctx);
-}
 
 fn int load_font(Context *self)
 {
@@ -250,7 +201,7 @@ struct TmpIcon @private {
     String path;
 }
 
-fn void load_icons(Context *ctx) @local
+fn void load_icons(Context *ctx) @inline
 {
     load_icons2(ctx.exe_path)!!;
 }
@@ -292,6 +243,7 @@ fn void? load_icons2(Path exe_path) @local
     };
 }
 
+fn void set_ctx(Context *ctx) => instance = ctx;
 fn Context *get_ctx() => instance;
 
 macro ZString[] gen_open_flags()
