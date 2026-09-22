@@ -90,7 +90,11 @@ fn int main(String[] args)
     Path orig = path::new(tmem, args[1])!!;
     copy_file(orig.tappend("icon_atlas.qoi").str_view(),
         "assets/icon_atlas.qoi")!!;
-    copy_file(orig.tappend("splash.qoi").str_view(), "assets/splash.qoi")!!;
+    $if !$feature(RELEASE_SPLASH):
+        copy_file(orig.tappend("splash.qoi").str_view(), "assets/splash.qoi")!!;
+    $else
+        copy_file("assets/banner.qoi", orig.tappend("splash.qoi").str_view())!!;
+    $endif
     return 0;
 }
 

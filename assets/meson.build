@@ -3,11 +3,20 @@ libcooker = static_library('cooker', 'cooker/loader.c',
     name_suffix: lib_ext,
 )
 
+cooker_flags = []
+cooker_depends = []
+
+if get_option('release')
+    cooker_flags += ['-D', 'RELEASE_SPLASH']
+
+    cooker_depends += fs.copyfile('banners/banner_' + meson.project_version() + '.qoi', 'banner.qoi')
+endif
+
 cooker = custom_target('cooker',
     command: [c3c, 'compile', '@INPUT@', '-o', '@OUTPUT@', '-l', libcooker,
-        '--libdir', here / 'lib', '--lib', 'patterngen'],
+        '--libdir', here / 'lib', '--lib', 'patterngen', cooker_flags],
     output: 'cooker',
-    depends: [libcooker],
+    depends: [libcooker, cooker_depends],
     input: ['cooker/main.c3', 'cooker/atlas.c3', 'cooker/codegen.c3',
         'cooker/splash.c3'],
     build_by_default: true
