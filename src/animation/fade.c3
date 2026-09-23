@@ -17,14 +17,14 @@ enum FadeMode : const int {
 
 struct Fade (Animation) {
     BasicAnimation base;
-    FadeMode mode;
+    FadeMode mode @AnimData;
     char opacity_change;
-    ulong length;
+    ulong length @AnimData;
 }
 
 const DATA_SIZE = FadeMode.sizeof + ulong.sizeof;
 
-fn void Fade.init(&self, ulong length)
+fn void Fade.init(&self, ulong length = 250)
 {
     self.base.init();
     self.mode = OUT;
@@ -60,22 +60,6 @@ fn void Fade.animate(&self, Origin *origin) @dynamic
 }
 
 fn BasicAnimation *Fade.get_base(&self) @dynamic => &self.base;
-
-fn void? Fade.pack(&self, Writer *wr, uint layer_id) @dynamic
-{
-    SQLAnimation base = animation::prepare_data(self);
-    
-    base.type = 3;
-    base.layer_id = layer_id;
-    base.data = malloc(DATA_SIZE);
-    base.data_size = DATA_SIZE;
-
-    char[] buf = base.data[:DATA_SIZE];
-    util::@copy_into(buf, self.mode);
-    util::@copy_into(buf[FadeMode.sizeof..], self.length);
-
-    wr.add_animation(base)!;
-}
 
 fn void Fade.unpack(&self, char[] data) @dynamic
 {

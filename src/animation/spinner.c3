@@ -12,13 +12,14 @@ import nk;
 
 struct Spinner (Animation) {
     BasicAnimation base;
-    float rotation, target_rotation;
-    ulong length;
+    float rotation;
+    float target_rotation @AnimData;
+    ulong length @AnimData;
 }
 
 const DATA_SIZE = float.sizeof + ulong.sizeof;
 
-fn void Spinner.init(&self, float rotation, ulong length)
+fn void Spinner.init(&self, float rotation = 360, ulong length = 1000)
 {
     self.base.init();
     self.target_rotation = rotation;
@@ -47,22 +48,6 @@ fn void Spinner.animate(&self, Origin *origin) @dynamic =>
     origin.rotation += self.rotation;
 
 fn BasicAnimation *Spinner.get_base(&self) @dynamic => &self.base;
-
-fn void? Spinner.pack(&self, Writer *wr, uint layer_id) @dynamic
-{
-    SQLAnimation base = animation::prepare_data(self);
-    
-    base.type = 1;
-    base.layer_id = layer_id;
-    base.data = malloc(DATA_SIZE);
-    base.data_size = DATA_SIZE;   
-
-    char[] buf = base.data[:DATA_SIZE];
-    util::@copy_into(buf, self.target_rotation);
-    util::@copy_into(buf[float.sizeof..], self.length);
-
-    wr.add_animation(base)!;
-}
 
 fn void Spinner.unpack(&self, char[] data) @dynamic
 {

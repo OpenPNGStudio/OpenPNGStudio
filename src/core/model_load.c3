@@ -269,26 +269,11 @@ fn void update_values(ModelLoad *self, StaticLayer *base, SQLLayerData data,
                 .selected_easing = anim_data.easing,
                 .custom_cfg_state = nk::MINIMIZED,
             };
-            
-            switch (anim_data.type) {
-            case 0:
-                abort("How did you even get here");
-            case 1:
-                Spinner *spin = mem::new(Spinner);
-                spin.init(360, 2500);
-                entry.a = spin;
-                self.model.engine.add(spin);
-            case 2:
-                Shake *shake = mem::new(Shake);
-                shake.init(100);
-                entry.a = shake;
-                self.model.engine.add(shake);
-            case 3:
-                Fade *fade = mem::new(Fade);
-                fade.init(250);
-                entry.a = fade;
-                self.model.engine.add(fade);
-            }
+
+            if (anim_data.type == 0) abort("How did you even get here");
+            Animation anim = animation::populate_animation(anim_data.type - 1);
+            entry.a = anim;
+            self.model.engine.add(anim);
             
             BasicAnimation *anim_base = entry.a.get_base();
             anim_base.mask = mask;

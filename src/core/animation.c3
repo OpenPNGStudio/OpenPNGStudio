@@ -8,16 +8,12 @@ import std::io;
 import nk;
 import opng;
 
-/* Constants */
-const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade", "Bounce"};
-
 interface Animation {
     fn void update(ulong now);
     fn void animate(Origin *origin);
     fn BasicAnimation *get_base();
     fn void config(nk::Context *ctx);
     fn void reset();
-    fn void? pack(Writer *wr, uint layer_id);
     fn void unpack(char[] data);
 }
 
@@ -163,30 +159,11 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
         self.input_length = 0;
         self.custom_cfg_state = nk::MINIMIZED;
 
-        switch (current) {
-        case 0:
-            return res;
-        case 1:
-            Spinner *spin = mem::new(Spinner);
-            spin.init(360, 2500);
-            self.a = spin;
-            app_ctx.model.engine.add(spin);
-        case 2:
-            Shake *shake = mem::new(Shake);
-            shake.init(100);
-            self.a = shake;
-            app_ctx.model.engine.add(shake);
-        case 3:
-            Fade *fade = mem::new(Fade);
-            fade.init(250);
-            self.a = fade;
-            app_ctx.model.engine.add(fade);
-        case 4:
-            Bounce *bounce = mem::new(Bounce);
-            bounce.init();
-            self.a = bounce;
-            app_ctx.model.engine.add(bounce);
-        }
+        if (current == 0) return res;
+
+        Animation anim = populate_animation(current - 1);
+        self.a = anim;
+        app_ctx.model.engine.add(anim);
     }
 
     if (self.a == null) return res;

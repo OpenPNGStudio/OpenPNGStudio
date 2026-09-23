@@ -17,18 +17,19 @@ struct Shake (Animation) {
     Vector2 current, offset;
 
     /* conf */
-    int start, end;
-    ulong length;
+    int start @AnimData;
+    int end @AnimData;
+    ulong length @AnimData;
 }
 
 const DATA_SIZE = int.sizeof + int.sizeof + ulong.sizeof;
 
-fn void Shake.init(&self, ulong length)
+fn void Shake.init(&self, ulong length = 100)
 {
     self.base.init();
     random::seed(&self.rng, time::now());
-    self.start = -50;
-    self.end = 50;
+    self.start = -10;
+    self.end = 10;
     self.current = { 0, 0 };
     self.offset = self.gen_pos();
     self.length = length;
@@ -70,23 +71,6 @@ fn void Shake.animate(&self, Origin *origin) @dynamic
 }
 
 fn BasicAnimation *Shake.get_base(&self) @dynamic => &self.base;
-
-fn void? Shake.pack(&self, Writer *wr, uint layer_id) @dynamic
-{
-    SQLAnimation base = animation::prepare_data(self);
-    
-    base.type = 2;
-    base.layer_id = layer_id;
-    base.data = malloc(DATA_SIZE);
-    base.data_size = DATA_SIZE;   
-
-    char[] buf = base.data[:DATA_SIZE];
-    util::@copy_into(buf, self.start);
-    util::@copy_into(buf[int.sizeof..], self.end);
-    util::@copy_into(buf[int.sizeof + int.sizeof..], self.length);
-
-    wr.add_animation(base)!;
-}
 
 fn void Shake.unpack(&self, char[] data) @dynamic
 {

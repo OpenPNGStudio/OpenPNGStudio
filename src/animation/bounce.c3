@@ -13,8 +13,9 @@ import nk;
 
 struct Bounce (Animation) {
     BasicAnimation base;
-    float amount, target_amount;
-    ulong length;
+    float amount;
+    float target_amount @AnimData;
+    ulong length @AnimData;
 }
 
 const DATA_SIZE = float.sizeof + ulong.sizeof;
@@ -48,11 +49,6 @@ fn void Bounce.update(&self, ulong now) @dynamic
 fn void Bounce.animate(&self, Origin *origin) @dynamic => origin.position.y -= self.amount;
 
 fn BasicAnimation *Bounce.get_base(&self) @dynamic => &self.base;
-
-fn void? Bounce.pack(&self, Writer *wr, uint layer_id) @dynamic
-{
-
-}
 
 fn void Bounce.unpack(&self, char[] data) @dynamic
 {

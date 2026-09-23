@@ -85,7 +85,7 @@ fn void? pack(StaticLayer *self, Writer *wr)
     uint layer_id = wr.add_layer_data(data)!;
     
     foreach (anim : self.animations) {
-        anim.a.pack(wr, layer_id)!;
+        animation::pack_animation(anim.a, wr, layer_id)!;
     }
 
     wr.add_layer({0, layer_id})!;
