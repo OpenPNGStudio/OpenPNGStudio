@@ -36,10 +36,15 @@ c3_buildtypes = {
 c3_opt = c3_buildtypes.get(get_option('buildtype'), ['-O0', '-g'])
 
 lib_ext = 'a'
+win_subsystem = 'windows'
 
 if system == 'windows'
     lib_ext = 'lib'
     add_project_arguments('/wd5105', '/experimental:c11atomics', language: 'c')
+
+    if get_option('buildtype') == 'debug'
+        win_subsystem = 'console'
+    endif
 endif
 
 # Imports
@@ -81,7 +86,7 @@ executable(
     include_directories: ['include', 'include/vendor', includes],
     install: true,
     install_dir: 'bin',
-    win_subsystem: 'windows',
+    win_subsystem: win_subsystem,
 )
 
 if system != 'windows'

@@ -9,7 +9,7 @@ import nk;
 import opng;
 
 /* Constants */
-const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade"};
+const CChar*[] ANIMATIONS = {"None", "Spinner", "Shake", "Fade", "Bounce"};
 
 interface Animation {
     fn void update(ulong now);
@@ -181,6 +181,11 @@ fn bool AnimationEntry.config(&self, nk::Context *ctx)
             fade.init(250);
             self.a = fade;
             app_ctx.model.engine.add(fade);
+        case 4:
+            Bounce *bounce = mem::new(Bounce);
+            bounce.init();
+            self.a = bounce;
+            app_ctx.model.engine.add(bounce);
         }
     }
 

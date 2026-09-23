@@ -13,7 +13,7 @@
             "type": "static-lib",
             "name": "libOpenPNGStudio",
             "output": "build/src",
-            "sources": ["src/**", "assets/cooked_assets.c3"],
+            "sources": ["src/**", "assets/cooked_assets.c3"]
         },
         "opng": {
             "type": "static-lib",
@@ -23,7 +23,7 @@
             "sources": ["src/opng/**"],
             "features": ["OPNG_STANDALONE"],
             "test-sources-override": ["test/opng/**"],
-            "output": "build/src/opng",
+            "output": "build/src/opng"
         }
     },
     
