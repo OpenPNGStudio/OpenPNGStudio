@@ -10,32 +10,52 @@ struct ColorPicker {
     nk::Colorf color;
     char[7] buffer;
     int buffer_len;
-    bool res;
+    bool res, popup_active;
 }
 
 import std::io;
 
 fn void ColorPicker.ui(&self, nk::Context *ctx)
 {
-    if (nk::group_begin(ctx, "Color Picker", nk::WINDOW_NO_SCROLLBAR)) {
-        nk::layout_row_dynamic(ctx, 216, 1);
-        bool res = nk::color_pick(ctx, &self.color, nk::RGB);
-        if (self.res != res && !res) {
-            rl::Color color = openpngstudio::color_from_nk_f(self.color);
-            libc::sprintf(&self.buffer, "%02x%02x%02x", color.r, 
+    nk::Rect bounds = nk::widget_bounds(ctx);
+    if (nk::button_color(ctx, nk::rgb_cf(self.color))) self.popup_active = true;
+
+    if (self.popup_active) {
+        if (nk::popup_begin(ctx, nk::POPUP_STATIC, "#Color Picker", nk::WINDOW_NO_SCROLLBAR, nk::rect(0, bounds.h * 1.25, 256, 256))) {
+            nk::Rect body = nk::window_get_bounds(ctx);
+            {
+                bool pressed, in_button, in_body;
+                pressed = nk::input_is_mouse_pressed(&ctx.input, nk::BUTTON_LEFT);
+                in_button = nk::input_is_mouse_hovering_rect(&ctx.input, bounds);
+                in_body = nk::input_is_mouse_hovering_rect(&ctx.input, body);
+
+                if (pressed && !(in_body || in_button)) {
+                    nk::popup_close(ctx);
+                    self.popup_active = false;
+                }
+            }
+
+            nk::layout_row_dynamic(ctx, 216, 1);
+            bool res = nk::color_pick(ctx, &self.color, nk::RGB);
+            if (self.res != res && !res) {
+                rl::Color color = openpngstudio::color_from_nk_f(self.color);
+                libc::sprintf(&self.buffer, "%02x%02x%02x", color.r,
                 color.g, color.b);
-            self.buffer_len = 6;
-        }
+                self.buffer_len = 6;
+            }
 
-        self.res = res;
+            self.res = res;
 
-        nk::layout_row_dynamic(ctx, 30, 1);
-        nk::edit_string(ctx, nk::EDIT_FIELD, (CChar*) &self.buffer, 
+            nk::layout_row_dynamic(ctx, 30, 1);
+            nk::edit_string(ctx, nk::EDIT_FIELD, (CChar*) &self.buffer,
             &self.buffer_len, 7, &nk::filter_hex);
 
-        if (self.buffer_len == 6 && !res) self.convert_hex();
+            if (self.buffer_len == 6 && !res) self.convert_hex();
 
-        nk::group_end(ctx);
+            nk::popup_end(ctx);
+        } else {
+            self.popup_active = false;
+        }
     }
 }
 

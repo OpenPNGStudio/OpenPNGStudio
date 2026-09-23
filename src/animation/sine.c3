@@ -80,8 +80,7 @@ fn void Sine.config(&self, nk::Context *ctx) @dynamic
         nk::Rect b = nk::widget_bounds(ctx);
 
         int old = (int) self.dir;
-        self.dir = (SineDir) ui::combo(ctx, MODES.ptr, MODES.len, old, 30,
-        nk::vec2(b.w, 200));
+        self.dir = (SineDir) ui::combo(ctx, MODES.ptr, MODES.len, old, 30, nk::vec2(b.w, 200));
         nk::group_end(ctx);
     }
 

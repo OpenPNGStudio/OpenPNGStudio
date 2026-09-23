@@ -74,7 +74,18 @@ fn void Scene.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 
     nk::label(ctx, "Background Color:", nk::TEXT_ALIGN_LEFT);
     rl::Color old = self.background;
-    self.picker.ui(ctx);
+    if (nk::group_begin(ctx, "Pick Background Color",
+        nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_template_begin(ctx, 30);
+        nk::layout_row_template_push_dynamic(ctx);
+        nk::layout_row_template_push_static(ctx, 30);
+        nk::layout_row_template_end(ctx);
+
+        nk::spacing(ctx, 1);
+        self.picker.ui(ctx);
+
+        nk::group_end(ctx);
+    }
 
     if (!self.toggle_transparency) {
         self.background = color_from_nk_f(self.picker.color);
