@@ -280,7 +280,7 @@ fn void update_values(ModelLoad *self, StaticLayer *base, SQLLayerData data,
             anim_base.repeat = anim_data.repeat;
             anim_base.easing = anim_data.easing;
             
-            entry.a.unpack(anim_data.data[:anim_data.data_size]);
+            animation::unpack_animation(entry.a, anim_data.data[:anim_data.data_size]);
             base.animations.push(entry);
         }
     };

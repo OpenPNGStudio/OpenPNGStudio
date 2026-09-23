@@ -49,14 +49,6 @@ fn void Spinner.animate(&self, Origin *origin) @dynamic =>
 
 fn BasicAnimation *Spinner.get_base(&self) @dynamic => &self.base;
 
-fn void Spinner.unpack(&self, char[] data) @dynamic
-{
-    mem::copy(&self.target_rotation, data, float.sizeof);
-    mem::copy(&self.length, data[float.sizeof..], ulong.sizeof);
-    
-    self.reset();
-}
-
 fn void Spinner.config(&self, nk::Context *ctx) @dynamic
 {
     float win_width = nk::window_get_width(ctx);

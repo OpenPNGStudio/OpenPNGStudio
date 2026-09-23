@@ -61,14 +61,6 @@ fn void Fade.animate(&self, Origin *origin) @dynamic
 
 fn BasicAnimation *Fade.get_base(&self) @dynamic => &self.base;
 
-fn void Fade.unpack(&self, char[] data) @dynamic
-{
-    mem::copy(&self.mode, data, FadeMode.sizeof);
-    mem::copy(&self.length, data[FadeMode.sizeof..], ulong.sizeof);
-    
-    self.reset();
-}
-
 const CChar*[] MODES = {"Fade In", "Fade Out"};
 
 fn void Fade.config(&self, nk::Context *ctx) @dynamic

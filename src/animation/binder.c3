@@ -52,6 +52,27 @@ macro usz data_size($Type) @local
     return $size;
 }
 
+fn void unpack_animation(Animation anim, char[] data)
+{
+    $foreach $i, $type : TYPES:
+        if (anim.type == $type) {
+            var $Type = $typefrom($type);
+            $Type *self = anim.ptr;
+
+            usz $progress = 0;
+
+            $foreach $m : $Type.membersof:
+                $if $m.has_tagof("AnimationData"):
+                    mem::copy(&$m.get(*self), data[$progress..], $m.sizeof);
+                    $progress += $m.sizeof;
+                $endif
+            $endforeach
+
+            self.reset();
+        }
+    $endforeach
+}
+
 fn void? pack_animation(Animation anim, Writer *wr, uint layer_id)
 {
     $foreach $i, $type : TYPES:

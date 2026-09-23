@@ -72,15 +72,6 @@ fn void Shake.animate(&self, Origin *origin) @dynamic
 
 fn BasicAnimation *Shake.get_base(&self) @dynamic => &self.base;
 
-fn void Shake.unpack(&self, char[] data) @dynamic
-{
-    mem::copy(&self.start, data, int.sizeof);
-    mem::copy(&self.end, data[int.sizeof..], int.sizeof);
-    mem::copy(&self.length, data[int.sizeof + int.sizeof..], ulong.sizeof);
-    
-    self.reset();
-}
-
 fn void Shake.config(&self, nk::Context *ctx) @dynamic
 {
     float win_width = nk::window_get_width(ctx);

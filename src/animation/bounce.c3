@@ -50,11 +50,6 @@ fn void Bounce.animate(&self, Origin *origin) @dynamic => origin.position.y -= s
 
 fn BasicAnimation *Bounce.get_base(&self) @dynamic => &self.base;
 
-fn void Bounce.unpack(&self, char[] data) @dynamic
-{
-
-}
-
 fn void Bounce.config(&self, nk::Context *ctx) @dynamic
 {
 }

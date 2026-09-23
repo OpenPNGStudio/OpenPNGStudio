@@ -14,7 +14,6 @@ interface Animation {
     fn BasicAnimation *get_base();
     fn void config(nk::Context *ctx);
     fn void reset();
-    fn void unpack(char[] data);
 }
 
 struct BasicAnimation {
