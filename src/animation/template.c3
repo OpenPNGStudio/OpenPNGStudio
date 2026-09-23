@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-module openpngstudio::animation::bounce;
+module openpngstudio::animation::template;
 
 import std::time;
 import std::core::mem;
@@ -11,23 +11,20 @@ import std::io;
 import opng;
 import nk;
 
-struct Bounce (Animation) {
+struct Template (Animation) {
     BasicAnimation base;
-    float amount;
-    float target_amount @AnimData;
     ulong length @AnimData;
 }
 
-fn void Bounce.init(&self, float amount = 25, ulong length = 250)
+fn void Template.init(&self, ulong length = 250)
 {
     self.base.init();
-    self.target_amount = amount;
     self.length = length;
 }
 
-fn void Bounce.reset(&self) @dynamic => self.amount = 0;
+fn void Template.reset(&self) @dynamic {}
 
-fn void Bounce.update(&self, ulong now) @dynamic
+fn void Template.update(&self, ulong now) @dynamic
 {
     ulong old = now;
     now -= self.base.start_time;
@@ -38,16 +35,12 @@ fn void Bounce.update(&self, ulong now) @dynamic
 
         self.base.repeat ? self.base.start(old) : self.base.stop(self);
     }
-
-    float y = (float) math::abs(math::sin(per * math::PI));
-
-    self.amount = easings::ease(self.base.easing, y, 0.0, self.target_amount, 1.0);
 }
 
-fn void Bounce.animate(&self, Origin *origin) @dynamic => origin.position.y -= self.amount;
-fn BasicAnimation *Bounce.get_base(&self) @dynamic => &self.base;
+fn void Template.animate(&self, Origin *origin) @dynamic {}
+fn BasicAnimation *Template.get_base(&self) @dynamic => &self.base;
 
-fn void Bounce.config(&self, nk::Context *ctx) @dynamic
+fn void Template.config(&self, nk::Context *ctx) @dynamic
 {
     float win_width = nk::window_get_width(ctx);
     float min_width = max(win_width * 0.49f, 250.0f);
@@ -56,17 +49,6 @@ fn void Bounce.config(&self, nk::Context *ctx) @dynamic
     nk::layout_row_template_push_dynamic(ctx);
     nk::layout_row_template_push_variable(ctx, min_width);
     nk::layout_row_template_end(ctx);
-
-    float old_amount = self.target_amount;
-
-    nk::label(ctx, "Amount: ", nk::TEXT_LEFT);
-    if (nk::group_begin(ctx, "Amount", nk::WINDOW_NO_SCROLLBAR)) {
-        nk::layout_row_dynamic(ctx, 30, 1);
-        nk::property_float(ctx, "#Amount: ", 0, &self.target_amount, float.max, 0.1f, 0.2f);
-
-        if (old_amount != self.target_amount) self.reset();
-        nk::group_end(ctx);
-    }
 
     nk::label(ctx, "Length:", nk::TEXT_LEFT);
     if (nk::group_begin(ctx, "Length", nk::WINDOW_NO_SCROLLBAR)) {

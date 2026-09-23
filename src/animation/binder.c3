@@ -4,7 +4,7 @@ module openpngstudio::animation;
 import std::io;
 import opng, openpngstudio::util;
 
-const typeid[] TYPES = {Spinner.typeid, Shake.typeid, Fade.typeid, Bounce.typeid};
+const typeid[] TYPES = {Spinner.typeid, Shake.typeid, Fade.typeid, Bounce.typeid, Sine.typeid};
 const CChar*[] ANIMATIONS = gen_names();
 
 attrdef @AnimData = @tag("AnimationData", true);
