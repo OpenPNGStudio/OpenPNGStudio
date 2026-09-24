@@ -105,6 +105,15 @@ if get_option('jxl')
     })
 endif
 
+sentry_o = cmake.subproject_options()
+sentry_o.add_cmake_defines({
+    'SENTRY_BUILD_SHARED_LIBS': 'OFF',
+    'SENTRY_LINK_CURL': 'OFF',
+    'SENTRY_TRANSPORT': 'none',
+    'SENTRY_BACKEND': 'native',
+    'SENTRY_INTEGRATION_WER': 'OFF',
+})
+
 # Projects
 raylib_p = cmake.subproject('raylib', options: raylib_o)
 
@@ -123,6 +132,8 @@ libwebp_p = subproject('libwebp', default_options: {
 if get_option('jxl')
     libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 endif
+
+sentry_p = cmake.subproject('sentry-native', options: sentry_o)
 
 # Includes
 includes += raylib_p.get_variable('raylib_inc')

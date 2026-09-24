@@ -1,0 +1,8 @@
+[wrap-file]
+directory = sentry-native
+source_url = https://github.com/getsentry/sentry-native/releases/download/0.17.1/sentry-native.zip
+source_filename = sentry-native.zip
+source_hash = e510b714ac0fb5c24b08011e07c5b13fa01c9bd0f40708356e4af022aa20c5a1
+lead_directory_missing = true
+
+diff_files = sentry-remove-wer.patch

@@ -15,6 +15,7 @@ subprojects/packagecache/
 subprojects/libportal/
 subprojects/libaom/
 subprojects/libyuv/
+subprojects/sentry-native/
 .cache/
 CMakeSettings.json
 .vs/
