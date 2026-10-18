@@ -49,7 +49,6 @@ extern fn nk::Context *init_nuklear_ex(void *ctx, int font, float size)
 
 fn void run(openpngstudio::Context *self)
 {
-    self.exe_path = core::whereami()!!;
     Assets assets = load_assets(self);
     
     rl::setConfigFlags(rl::FLAG_WINDOW_TRANSPARENT | rl::FLAG_MSAA_4X_HINT);

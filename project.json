@@ -2,7 +2,7 @@
     "langrev": "1",
     "warnings": ["no-unused"],
     "dependency-search-paths": ["lib"],
-    "dependencies": ["raylib55", "nk", "raygui", "ev", "sqlite3", "fons"],
+    "dependencies": ["raylib55", "nk", "ev", "sqlite3", "fons"],
     "authors": ["LowByteFox"],
     "version": "0.3.0",
     "test-sources": ["test/**"],
@@ -24,6 +24,14 @@
             "features": ["OPNG_STANDALONE"],
             "test-sources-override": ["test/opng/**"],
             "output": "build/src/opng"
+        },
+        "oxy_reporter": {
+            "type": "static-lib",
+            "name": "liboxy_reporter",
+            "dependencies-override": ["raylib55"],
+            "sources": ["src/oxy_reporter/**"],
+            "features": ["OXY_REPORTER_STANDALONE"],
+            "output": "build/src/oxy_reporter"
         }
     },
     

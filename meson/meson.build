@@ -155,6 +155,8 @@ deps += [
     libwebp_p.get_variable('webpdemux_dep'),
 ]
 
+deps += sentry_p.get_variable('sentry_dep')
+
 if get_option('jxl')
     deps += [
         libjxl_p.dependency('jxl'),

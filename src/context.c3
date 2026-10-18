@@ -12,6 +12,7 @@ import fons;
 import raylib5::rl;
 import std::io::path;
 import std::hash::sha256;
+import std::os::env;
 
 import std::collections::linkedlist;
 
@@ -30,7 +31,7 @@ struct Context {
     Loop loop;
     Camera2D camera;
     int font;
-    
+
     FileDialog file_dialog;
     WindowManager wm;
     model::Model model;
@@ -39,8 +40,8 @@ struct Context {
     Scene scene;
 
     ui::Panel panel;
-    nk::Context *nk_ctx;
-    fons::Context *fons;
+    nk::Context*nk_ctx;
+    fons::Context*fons;
 
     /* State */
     FileLoadState loading_state;
@@ -48,20 +49,22 @@ struct Context {
     float width, height;
     Microphone microphone;
 
-    LinkedList{ImageReq} layer_queue;
-    LinkedList{Layer} cleanup_queue;
+    LinkedList{ImageReq}
+    layer_queue;
+    LinkedList{Layer}
+    cleanup_queue;
 
     ZString model_output;
-    
+
     rl::Color ambient;
     Path exe_path;
 
     rl::Image icon;
 
     Outline outline;
-    
+
     Toaster toaster;
-    
+
     Settings settings;
     union dirty_settings {
         bitstruct : char {
@@ -70,11 +73,15 @@ struct Context {
         }
         char mask;
     }
-    
+
     bitstruct : char {
         bool override_save;
         bool editing;
         bool hide_ui;
+    }
+
+    struct sentry {
+        ZString crash, reporter, db;
     }
 }
 
@@ -173,6 +180,38 @@ fn void Context.load_layer(&self, ZString path)
 }
 
 extern fn void unload_nuklear(nk::Context *ctx) @cname("UnloadNuklear");
+
+fn void? prep_sentry(Context *self)
+{
+    @pool() {
+        Path dir = self.exe_path.parent()!;
+        if (dir.basename() != "build") {
+            dir = dir.tappend("libexec")!;
+            dir = dir.tappend("OpenPNGStudio")!;
+        }
+
+        self.sentry.crash = dir.tappend("sentry_crash").str_view().zstr_copy(mem)!;
+        self.sentry.reporter = dir.tappend("oxy_reporter").str_view().zstr_copy(mem)!;
+
+        String home = env::tget_var("HOME")!;
+
+        $if env::WIN32:
+        $error "Setup sentry for Windows";
+        $else
+            if (try String xdg_cache = env::tget_var("XDG_CACHE_HOME") && xdg_cache.len) {
+                Path cache_dir = path::temp(xdg_cache)!;
+                Path dir2 = cache_dir.tappend("OpenPNGStudio/sentry")!;
+                path::mkdir(dir2, true)!;
+                self.sentry.db = dir2.str_view().zstr_copy(mem);
+            } else {
+                Path cache_dir = path::temp(home)!;
+                Path dir2 = cache_dir.tappend(".cache/OpenPNGStudio/sentry")!;
+                path::mkdir(dir2, true)!;
+                self.sentry.db = dir2.str_view().zstr_copy(mem);
+            }
+        $endif
+    };
+}
 
 fn int load_font(Context *self)
 {

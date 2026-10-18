@@ -89,6 +89,21 @@ executable(
     win_subsystem: win_subsystem,
 )
 
+custom_target(
+    'sentry_crash',
+    input: sentry_p.get_variable('sentry_crash'),
+    output: 'sentry_crash',
+    command: [
+        python,
+        here / 'meson/copy_file.py',
+        '@INPUT@',
+        '@OUTPUT@'
+    ],
+    build_always_stale: true,
+    install: true,
+    install_dir: 'libexec/OpenPNGStudio'
+)
+
 if system != 'windows'
     subdir('src/opng')
 
@@ -103,7 +118,19 @@ if system != 'windows'
         c_args: ['-DOPNG_STANDALONE'],
         cpp_args: ['-DOPNG_STANDALONE']
     )
+else
+    cli_lib = []
 endif
+
+subdir('src/oxy_reporter')
+
+executable(
+    'oxy_reporter',
+    dependencies: [deps, oxy_reporter_dep],
+    install: true,
+    install_dir: 'libexec/OpenPNGStudio',
+    win_subsystem: win_subsystem,
+)
 
 # Install
 subdir('licenses')

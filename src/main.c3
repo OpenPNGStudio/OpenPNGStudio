@@ -6,6 +6,9 @@ import nk;
 import fons;
 
 import openpngstudio::console;
+import openpngstudio::splash;
+import openpngstudio::core::mask;
+import openpngstudio::sentry;
 import openpngstudio::ui;
 import openpngstudio::ui::icons;
 import openpngstudio::core::model;
@@ -18,6 +21,8 @@ import ev;
 extern fn void quit_openpngstudio();
 
 extern void *c_ctx;
+
+extern fn void sentry_close();
 
 fn int win_main() @export("WinMain") @if(env::WIN32)
 {
@@ -33,6 +38,11 @@ fn int main()
 {
     Context ctx;
     defer ctx.free();
+
+    ctx.exe_path = core::whereami()!!;
+    prep_sentry(&ctx)!!;
+    sentry::setup(ctx.sentry.crash, ctx.sentry.db, ctx.sentry.reporter);
+    defer sentry_close();
 
     console::init(mem);
 
@@ -336,6 +346,7 @@ fn void initialize_panel(Context *self) @local
     self.panel.add_left_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         io::printn("hello, world");
+        *(int*) 4 = 0;
     }, SHORTCUTS, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
