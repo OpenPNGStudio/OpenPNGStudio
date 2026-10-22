@@ -190,26 +190,32 @@ fn void? prep_sentry(Context *self)
             dir = dir.tappend("OpenPNGStudio")!;
         }
 
-        self.sentry.crash = dir.tappend("sentry_crash").str_view().zstr_copy(mem)!;
-        self.sentry.reporter = dir.tappend("oxy_reporter").str_view().zstr_copy(mem)!;
+        String tmp = dir.tappend("sentry_crash").str_view()!;
+        self.sentry.crash = (env::WIN32 ? tmp.tconcat(".exe") : tmp).zstr_copy(mem);
+        tmp = dir.tappend("oxy_reporter").str_view()!;
+        self.sentry.reporter = (env::WIN32 ? tmp.tconcat(".exe") : tmp).zstr_copy(mem);
 
-        String home = env::tget_var("HOME")!;
+        Path home = path::home_directory(tmem)!;
 
+        Path dir2;
         $if env::WIN32:
-        $error "Setup sentry for Windows";
+            if (try String appdata = env::tget_var("LOCALAPPDATA") && appdata.len) {
+                Path cache_dir = path::temp(appdata)!;
+                dir2 = cache_dir.tappend("OpenPNGStudio\\sentry")!;
+            } else {
+                dir2 = home.tappend("AppData\\Local\\OpenPNGStudio\\sentry")!;
+            }
         $else
             if (try String xdg_cache = env::tget_var("XDG_CACHE_HOME") && xdg_cache.len) {
                 Path cache_dir = path::temp(xdg_cache)!;
                 Path dir2 = cache_dir.tappend("OpenPNGStudio/sentry")!;
-                path::mkdir(dir2, true)!;
-                self.sentry.db = dir2.str_view().zstr_copy(mem);
             } else {
-                Path cache_dir = path::temp(home)!;
-                Path dir2 = cache_dir.tappend(".cache/OpenPNGStudio/sentry")!;
-                path::mkdir(dir2, true)!;
-                self.sentry.db = dir2.str_view().zstr_copy(mem);
+                Path dir2 = home.tappend(".cache/OpenPNGStudio/sentry")!;
             }
         $endif
+
+        (void) path::mkdir(dir2, true);
+        self.sentry.db = dir2.str_view().zstr_copy(mem);
     };
 }
 

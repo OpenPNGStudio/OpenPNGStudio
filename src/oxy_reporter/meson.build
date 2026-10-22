@@ -6,4 +6,4 @@ oxy_reporter_lib = custom_target(
     build_always_stale: true
 )
 
-oxy_reporter_dep = declare_dependency(link_with: oxy_reporter_lib)
+oxy_reporter_dep = declare_dependency(link_whole: oxy_reporter_lib)

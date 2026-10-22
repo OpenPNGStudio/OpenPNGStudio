@@ -11,7 +11,9 @@ fn void setup(ZString handler_path, ZString db_path, ZString reporter_path) @pub
     env::set_var("SENTRY_DSN", "");
     env::set_var("SENTRY_DEBUG", "0");
 
+    $if env::POSIX:
     libc::signal(libc::SIGBUS, null);
+    $endif
     libc::signal(libc::SIGILL, null);
     libc::signal(libc::SIGSEGV, null);
 

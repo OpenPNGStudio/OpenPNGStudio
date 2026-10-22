@@ -6,7 +6,7 @@ opng_lib = custom_target(
     build_always_stale: true
 )
 
-opng_dep = declare_dependency(link_with: opng_lib)
+opng_dep = declare_dependency(link_whole: opng_lib)
 
 src = files('wrappers.c', 'core/brain_damage.c', 'core/microphone.c',
     'loaders/avif.c', 'loaders/jpeg_xl.cpp', 'loaders/webp.c',

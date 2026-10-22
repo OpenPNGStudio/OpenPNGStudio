@@ -36,10 +36,12 @@ c3_buildtypes = {
 c3_opt = c3_buildtypes.get(get_option('buildtype'), ['-O0', '-g'])
 
 lib_ext = 'a'
+exe_ext = ''
 win_subsystem = 'windows'
 
 if system == 'windows'
     lib_ext = 'lib'
+    exe_ext = '.exe'
     add_project_arguments('/wd5105', '/experimental:c11atomics', language: 'c')
 
     if get_option('buildtype') == 'debug'
@@ -92,7 +94,7 @@ executable(
 custom_target(
     'sentry_crash',
     input: sentry_p.get_variable('sentry_crash'),
-    output: 'sentry_crash',
+    output: 'sentry_crash' + exe_ext,
     command: [
         python,
         here / 'meson/copy_file.py',
@@ -124,12 +126,18 @@ endif
 
 subdir('src/oxy_reporter')
 
+link_flags = []
+if system == 'windows'
+    link_flags = ['/ENTRY:mainCRTStartup', 'libcmt.lib', 'oldnames.lib']
+endif
+
 executable(
     'oxy_reporter',
     dependencies: [deps, oxy_reporter_dep],
     install: true,
     install_dir: 'libexec/OpenPNGStudio',
     win_subsystem: win_subsystem,
+    link_args: link_flags
 )
 
 # Install
