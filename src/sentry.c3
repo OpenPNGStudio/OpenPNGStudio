@@ -24,7 +24,7 @@ fn void setup(ZString handler_path, ZString db_path, ZString reporter_path) @pub
     options_set_debug(opts, false);
     options_set_release(opts, "OpenPNGStudio@" +++ $$PROJECT_VERSION);
     options_set_environment(opts, "production");
-    options_set_crash_reporting_mode(opts, NATIVE_WITH_MINIDUMP);
+    options_set_crash_reporting_mode(opts, MINIDUMP);
 
     init(opts);
 }

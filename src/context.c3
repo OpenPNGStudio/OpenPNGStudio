@@ -208,9 +208,9 @@ fn void? prep_sentry(Context *self)
         $else
             if (try String xdg_cache = env::tget_var("XDG_CACHE_HOME") && xdg_cache.len) {
                 Path cache_dir = path::temp(xdg_cache)!;
-                Path dir2 = cache_dir.tappend("OpenPNGStudio/sentry")!;
+                dir2 = cache_dir.tappend("OpenPNGStudio/sentry")!;
             } else {
-                Path dir2 = home.tappend(".cache/OpenPNGStudio/sentry")!;
+                dir2 = home.tappend(".cache/OpenPNGStudio/sentry")!;
             }
         $endif
 
