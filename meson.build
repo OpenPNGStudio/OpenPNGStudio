@@ -53,12 +53,10 @@ endif
 cmake = import('cmake')
 fs = import('fs')
 
-if system == 'linux'
-    wl = import('wayland')
-endif
-
 if system == 'windows'
     windows = import('windows')
+else
+    wl = import('wayland')
 endif
 
 # Programs
@@ -91,20 +89,22 @@ executable(
     win_subsystem: win_subsystem,
 )
 
-custom_target(
-    'sentry_crash',
-    input: sentry_p.get_variable('sentry_crash'),
-    output: 'sentry_crash' + exe_ext,
-    command: [
-        python,
-        here / 'meson/copy_file.py',
-        '@INPUT@',
-        '@OUTPUT@'
-    ],
-    build_always_stale: true,
-    install: true,
-    install_dir: 'libexec/OpenPNGStudio'
-)
+if system == 'windows' or system == 'linux'
+    custom_target(
+        'sentry_crash',
+        input: sentry_p.get_variable('sentry_crash'),
+        output: 'sentry_crash' + exe_ext,
+        command: [
+            python,
+            here / 'meson/copy_file.py',
+            '@INPUT@',
+            '@OUTPUT@'
+        ],
+        build_always_stale: true,
+        install: true,
+        install_dir: 'libexec/OpenPNGStudio'
+    )
+endif
 
 if system != 'windows'
     subdir('src/opng')
@@ -124,21 +124,23 @@ else
     cli_lib = []
 endif
 
-subdir('src/oxy_reporter')
+if system == 'windows' or system == 'linux'
+    subdir('src/oxy_reporter')
 
-link_flags = []
-if system == 'windows'
-    link_flags = ['/ENTRY:mainCRTStartup', 'libcmt.lib', 'oldnames.lib']
+    link_flags = []
+    if system == 'windows'
+        link_flags = ['/ENTRY:mainCRTStartup', 'libcmt.lib', 'oldnames.lib']
+    endif
+
+    executable(
+        'oxy_reporter',
+        dependencies: [deps, oxy_reporter_dep],
+        install: true,
+        install_dir: 'libexec/OpenPNGStudio',
+        win_subsystem: win_subsystem,
+        link_args: link_flags
+    )
 endif
-
-executable(
-    'oxy_reporter',
-    dependencies: [deps, oxy_reporter_dep],
-    install: true,
-    install_dir: 'libexec/OpenPNGStudio',
-    win_subsystem: win_subsystem,
-    link_args: link_flags
-)
 
 # Install
 subdir('licenses')

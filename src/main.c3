@@ -40,9 +40,14 @@ fn int main()
     defer ctx.free();
 
     ctx.exe_path = core::whereami()!!;
-    prep_sentry(&ctx)!!;
-    sentry::setup(ctx.sentry.crash, ctx.sentry.db, ctx.sentry.reporter);
-    defer sentry_close();
+
+    $if env::WIN32 || env::LINUX:
+	    prep_sentry(&ctx)!!;
+	    sentry::setup(ctx.sentry.crash, ctx.sentry.db, ctx.sentry.reporter);
+	    defer sentry_close();
+    $else
+        $echo "platform may need crash handling";
+    $endif
 
     console::init(mem);
 

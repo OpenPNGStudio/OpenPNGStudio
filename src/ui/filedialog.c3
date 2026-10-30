@@ -14,7 +14,7 @@ interface FileDialog {
 
 fn FileDialog init_filedialog()
 {
-    $if env::LINUX:
+    $if env::LINUX || env::FREEBSD:
         filedialogs::xdp::XdpFileDialog *xdp = filedialogs::xdp::init();
         if (xdp) return xdp;
     $endif

@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#ifdef __linux__
+#ifndef _WIN32
 #include <libportal/portal.h>
 
 #include <stdbool.h>
 #include <stdio.h>
+/*
 #include <parent-private.h>
+*/
 #include <wayland-client.h>
 #include <xdg-foreign-unstable-v1-client-protocol.h>
 

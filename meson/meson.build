@@ -22,7 +22,7 @@ raylib_o.add_cmake_defines({
     'CMAKE_SKIP_INSTALL_RULES': true,
 })
 
-if host_machine.system() == 'linux'
+if host_machine.system() != 'windows'
     raylib_o.add_cmake_defines({
         'GLFW_BUILD_X11': true,
         'GLFW_BUILD_WAYLAND': true,
@@ -133,8 +133,6 @@ if get_option('jxl')
     libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 endif
 
-sentry_p = cmake.subproject('sentry-native', options: sentry_o)
-
 # Includes
 includes += raylib_p.get_variable('raylib_inc')
 
@@ -155,7 +153,10 @@ deps += [
     libwebp_p.get_variable('webpdemux_dep'),
 ]
 
-deps += sentry_p.get_variable('sentry_dep')
+if system == 'windows' or system == 'linux'
+    sentry_p = cmake.subproject('sentry-native', options: sentry_o)
+    deps += sentry_p.get_variable('sentry_dep')
+endif
 
 if get_option('jxl')
     deps += [
@@ -221,7 +222,7 @@ foreach ptch, to_patch : patches
 endforeach
 
 # libportal
-if host_machine.system() == 'linux'
+if system != 'windows'
     libportal_p = subproject('libportal', default_options: {
         'default_library': 'static',
         'backend-gtk3': 'disabled',

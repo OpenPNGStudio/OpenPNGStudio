@@ -30,3 +30,12 @@ fn Path? whereami() @if(env::WIN32)
 
     return path::new(mem, zstr.str_view());
 }
+
+extern fn ZString freebsd_executable_path_raw() @if(env::FREEBSD);
+
+fn Path? whereami() @if(env::FREEBSD)
+{
+    ZString zstr = freebsd_executable_path_raw();
+
+    return path::new(mem, zstr.str_view());
+}

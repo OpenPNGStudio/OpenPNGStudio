@@ -19,3 +19,7 @@ if system == 'windows'
     
     sources += windows.compile_resources('../data/win.rc')
 endif
+
+if system == 'freebsd'
+    src += files('platform/freebsd.c')
+endif

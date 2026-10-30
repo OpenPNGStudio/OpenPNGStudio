@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-module openpngstudio::ui::filedialogs::xdp @if(env::LINUX);
+module openpngstudio::ui::filedialogs::xdp @if(!env::WIN32);
 
 import openpngstudio;
 import std::core::log;
