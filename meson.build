@@ -127,18 +127,13 @@ endif
 if system == 'windows' or system == 'linux'
     subdir('src/oxy_reporter')
 
-    link_flags = []
-    if system == 'windows'
-        link_flags = ['/ENTRY:mainCRTStartup', 'libcmt.lib', 'oldnames.lib']
-    endif
-
     executable(
         'oxy_reporter',
-        dependencies: [deps, oxy_reporter_dep],
+        oxy_reporter_src,
+        dependencies: [deps, oxy_reporter_dep, libs],
         install: true,
         install_dir: 'libexec/OpenPNGStudio',
-        win_subsystem: win_subsystem,
-        link_args: link_flags
+        win_subsystem: win_subsystem
     )
 endif
 

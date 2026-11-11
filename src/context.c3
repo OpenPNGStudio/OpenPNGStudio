@@ -40,8 +40,8 @@ struct Context {
     Scene scene;
 
     ui::Panel panel;
-    nk::Context*nk_ctx;
-    fons::Context*fons;
+    nk::Context* nk_ctx;
+    fons::Context* fons;
 
     /* State */
     FileLoadState loading_state;
