@@ -131,6 +131,7 @@ if system == 'windows' or system == 'linux'
         'oxy_reporter',
         oxy_reporter_src,
         dependencies: [deps, oxy_reporter_dep, libs],
+        include_directories: ['include', 'include/vendor', includes],
         install: true,
         install_dir: 'libexec/OpenPNGStudio',
         win_subsystem: win_subsystem

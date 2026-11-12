@@ -8,7 +8,7 @@ oxy_reporter_lib = custom_target(
 
 oxy_reporter_dep = declare_dependency(link_whole: oxy_reporter_lib)
 
-oxy_reporter_src = []
+oxy_reporter_src = [files('raygui.c')]
 
 if system == 'windows'
     oxy_reporter_src += files('titlebar.c')
