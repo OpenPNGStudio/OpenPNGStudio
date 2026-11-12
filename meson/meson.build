@@ -186,7 +186,9 @@ headers = {
     'stb_rect_pack.h': 'https://raw.githubusercontent.com/nothings/stb/refs' /
         'heads/master/stb_rect_pack.h',
     'fontstash.h': 'https://raw.githubusercontent.com/memononen/fontstash' /
-        'refs/heads/master/src/fontstash.h'
+        'refs/heads/master/src/fontstash.h',
+    'raygui.h': 'https://raw.githubusercontent.com/raysan5/raygui/refs' /
+        'heads/master/src/raygui.h'
 }
 
 foreach name, url : headers
