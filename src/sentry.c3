@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-module openpngstudio::sentry @local;
+module openpngstudio::sentry @local @if(env::WIN32 || env::LINUX);
 
 import std::io;
 import std::os;
@@ -58,3 +58,14 @@ extern fn void options_set_crash_reporting_mode(Options *self, CrashReportingMod
 
 extern fn int init(Options *self) @cname("sentry_init");
 extern fn int close() @cname("sentry_close");
+
+
+module openpngstudio::sentry @local @if(env::FREEBSD);
+
+fn void close() @export("sentry_close")
+{}
+
+extern fn void freebsd_crash_handling(ZString path);
+
+fn void setup(ZString _a, ZString _b, ZString reporter_path) @public
+    => freebsd_crash_handling(reporter_path);

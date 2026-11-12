@@ -124,18 +124,16 @@ else
     cli_lib = []
 endif
 
-if system == 'windows' or system == 'linux'
-    subdir('src/oxy_reporter')
+subdir('src/oxy_reporter')
 
-    executable(
-        'oxy_reporter',
-        oxy_reporter_src,
-        dependencies: [deps, oxy_reporter_dep, libs],
-        install: true,
-        install_dir: 'libexec/OpenPNGStudio',
-        win_subsystem: win_subsystem
-    )
-endif
+executable(
+  'oxy_reporter',
+  oxy_reporter_src,
+  dependencies: [deps, oxy_reporter_dep, libs],
+  install: true,
+  install_dir: 'libexec/OpenPNGStudio',
+  win_subsystem: win_subsystem
+)
 
 # Install
 subdir('licenses')

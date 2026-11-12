@@ -41,7 +41,7 @@ fn int main()
 
     ctx.exe_path = core::whereami()!!;
 
-    $if env::WIN32 || env::LINUX:
+    $if env::WIN32 || env::LINUX || env::FREEBSD:
 	    prep_sentry(&ctx)!!;
 	    sentry::setup(ctx.sentry.crash, ctx.sentry.db, ctx.sentry.reporter);
 	    defer sentry_close();

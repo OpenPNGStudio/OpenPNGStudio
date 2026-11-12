@@ -44,6 +44,7 @@ fn void main(String[] args)
             core = file::open(dump_path.str_view(), "rb")!!;
         };
     $else
+        (void) io::fprintn(&f, args[1]);
         core = file::open(args[1], "rb")!!;
         /* pass it through zstd, or it'll be fat */
     $endif
