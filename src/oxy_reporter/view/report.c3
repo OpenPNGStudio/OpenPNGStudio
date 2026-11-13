@@ -31,12 +31,12 @@ fn GuiState draw(Texture2D icon)
     draw_text("How to provide the crash report:", 10, 220, 20, rl::WHITE);
 
     draw_text("1. Click \"Join Discord\" below to enter the community", 30, 245, 18, rl::WHITE);
-    draw_text("discord server.", 50, 272, 18, rl::WHITE);
-    draw_text("2. Head to the #crash-reports channel.", 30, 294, 18, rl::WHITE);
-    draw_text("3. Open a ticket and drag-and-drop the crash", 30, 318, 18, rl::WHITE);
-    draw_text("report file there.", 50, 340, 18, rl::WHITE);
+    draw_text("discord server.", 50, 261, 18, rl::WHITE);
+    draw_text("2. Head to the #crash-reports channel.", 30, 284, 18, rl::WHITE);
+    draw_text("3. Open a ticket and drag-and-drop the crash", 30, 308, 18, rl::WHITE);
+    draw_text("report file there.", 50, 325, 18, rl::WHITE);
 
-    draw_text("The ticket is private between you and developers.", 10, 380, 20, rl::WHITE);
+    draw_text("The ticket is private between you and developers.", 10, 370, 20, rl::WHITE);
 
     if (draw_button(10, 527, "Show in Folder")) open_dir();
 
@@ -50,13 +50,15 @@ fn GuiState draw(Texture2D icon)
 fn void open_dir()
 {
     $if env::WIN32:
-        (void) process::spawn({"explorer.exe", pack::root_dir.str_view()});
+        (void) process::spawn({"explorer.exe", pack::root_dir.str_view()}, INHERIT_ENV);
     $else
         (void) process::spawn({"xdg-open", pack::root_dir.str_view()}, INHERIT_ENV);
     $endif
 }
 
-fn void join_discord()
+extern fn void shellExecute(void *a, ZString action, ZString url, void *b, void *c, int showcmd) @if(env::WIN32) @cname("ShellExecuteA");
+
+fn void join_discord() => @pool()
 {
     char[INVITE_LINK.len] buffer;
 
@@ -67,7 +69,7 @@ fn void join_discord()
     String url = (String) &buffer;
 
     $if env::WIN32:
-        (void) process::spawn({"start", "", url});
+        shellExecute(null, "open", url.zstr_tcopy(), null, null, 1);
     $else
         (void) process::spawn({"xdg-open", url}, INHERIT_ENV);
     $endif

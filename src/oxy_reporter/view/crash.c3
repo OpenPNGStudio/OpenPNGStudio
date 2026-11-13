@@ -30,9 +30,11 @@ fn GuiState draw(Texture2D icon)
     } else {
         draw_check(15, 160, false);
     }
-        draw_text("Crash State & Memory Dump (Recommended)", 40, 160, 20, rl::WHITE);
-        draw_text("Exact call stack, crash signal & memory snapshot.", 40, 184, 18, rl::WHITE);
-        draw_text("Provides the highest chance of finding the bug.", 40, 204, 18, rl::WHITE);
+
+    draw_text("Crash State & Memory Dump (Recommended)", 40, 160, 20, rl::WHITE);
+    draw_text("Exact call stack, crash signal & memory snapshot.", 40, 184, 18, rl::WHITE);
+    draw_text("Provides the highest chance of finding the bug.", 40, 204, 18, rl::WHITE);
+
     if (!oxy_reporter::no_core) {
         draw_text("Note: captures RAM state; may contain images,", 40, 224, 18, rl::YELLOW);
         draw_text("they aren't kept after bug was found.", 40, 244, 18, rl::YELLOW);
