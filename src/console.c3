@@ -25,11 +25,16 @@ struct Console (wm::Window, Logger) @local {
 const NLOGS = 128;
 
 Console c @local;
+File f @local;
 
-fn void init(Allocator alloc)
+fn void init(Allocator alloc) => @pool()
 {
     c.alloc = alloc;
     c.record.init(alloc);
+
+    if (try String loc = find_log()) {
+        f = file::open(loc, "w")!!;
+    }
 
     log::set_logger(&c);
 }
@@ -126,6 +131,11 @@ fn void Console.log(&self, LogPriority priority, LogCategory category,
 		TzDateTime time = datetime::now().to_local();
 		io::eprintfn("[%02d:%02d:%02d:%04d] %s:%d [%s] %s", time.hour, 
             time.min, time.sec, (time.usec / 1000), file, line, priority, str);
+
+		(void) io::fprintfn(&f, "[%02d:%02d:%02d:%04d] %s:%d [%s] %s", time.hour, 
+            time.min, time.sec, (time.usec / 1000), file, line, priority, str);
+
+        (void) f.flush();
 	};
 
     if (self.record.len() == NLOGS) {

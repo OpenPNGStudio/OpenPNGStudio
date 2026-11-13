@@ -8,8 +8,12 @@ oxy_reporter_lib = custom_target(
 
 oxy_reporter_dep = declare_dependency(link_whole: oxy_reporter_lib)
 
-oxy_reporter_src = [files('raygui.c')]
+oxy_reporter_src = [files('raygui.c'), files('env.c')]
 
 if system == 'windows'
     oxy_reporter_src += files('titlebar.c')
+endif
+
+if system == 'freebsd'
+    oxy_reporter_src += files('../platform/freebsd.c')
 endif

@@ -186,6 +186,7 @@ fn void? prep_sentry(Context *self)
     @pool() {
         Path dir = self.exe_path.parent()!;
         if (dir.basename() != "build") {
+            dir = dir.parent()!!;
             dir = dir.tappend("libexec")!;
             dir = dir.tappend("OpenPNGStudio")!;
         }

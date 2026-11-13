@@ -29,7 +29,7 @@
             "type": "static-lib",
             "name": "liboxy_reporter",
             "dependencies-override": ["raylib55"],
-            "sources": ["src/oxy_reporter/**"],
+            "sources": ["src/oxy_reporter/**", "src/console_loc.c3", "src/core/whereami.c3"],
             "features": ["OXY_REPORTER_STANDALONE"],
             "output": "build/src/oxy_reporter"
         }

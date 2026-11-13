@@ -1,10 +1,10 @@
 module oxy_reporter @if($feature(OXY_REPORTER_STANDALONE));
 
 import std::io, std::collections::object, std::encoding::json;
-
 import raylib5::rl, oxy_reporter::crash, oxy_reporter::report;
 
-char[] ded_png = $embed("../../assets/Oxy/ded.png");
+import openpngstudio::core;
+
 char[] icon_png = $embed("../../assets/logo.png");
 char[] font_ttf = $embed("../../assets/fonts/VarelaRound-Regular.ttf");
 char[] check_png = $embed("../../assets/icons/check.png");
@@ -13,12 +13,15 @@ File f;
 Font font @local;
 Texture2D check @local;
 
+bool no_core = true;
+
 extern fn void update_titlebar_theme() @cname("UpdateTitleBarTheme") @if(env::WIN32);
 extern fn void init_style(Font font);
 
 constdef GuiState : int {
     END,
     MAIN_SCREEN,
+    PACK,
     REPORT_SCREEN,
 }
 
@@ -56,19 +59,42 @@ fn bool draw_button(int x, int y, ZString text, Color bg = {0x38, 0x38, 0x38, 0x
 
     bool hovered = rl::checkCollisionRecs(bounds, { (float) rl::getMouseX(), (float) rl::getMouseY(), 1.0f, 1.0f });
 
-    Color bg_color = hovered ? (Color) { bg.r + 0x10, bg.g + 0x10, bg.b + 0x10, 0xFF } : bg;
+    Color bg_color = hovered ? (Color) { bg.r + 10, bg.g + 10, bg.b + 10, 0xFF } : bg;
     rl::drawRectangleRounded(bounds, 0.3f, 8, bg_color);
 
     rl::drawTextEx(font, text, {bounds.x + padding_x, bounds.y + padding_y}, 18, 1, rl::WHITE);
     return hovered && rl::isMouseButtonReleased(LEFT);
 }
 
+fn Path[2] resolve_assets(Path self) => @pool()
+{
+    Path[2] res;
+
+    Path dir = self.parent()!!; /* /build /libexec/OpenPNGStudio */
+    if (dir.basename() == "build") {
+        dir = dir.parent()!!;
+        dir = dir.tappend("assets")!!;
+    } else {
+        dir = dir.parent()!!; /* /libexec */
+        dir = dir.parent()!!; /* / */
+        dir = dir.tappend("share")!!;
+        dir = dir.tappend("OpenPNGStudio")!!;
+    }
+
+    dir = dir.tappend("Oxy")!!;
+
+    res[0] = dir.append(mem, "ded.png")!!;
+    res[1] = dir.append(mem, "relieved.png")!!;
+
+    return res;
+}
+
 fn void main(String[] args)
 {
     File core;
     ulong len = 0;
-    bool needs_compression = false;
     GuiState state = MAIN_SCREEN;
+    Path[2] assets = resolve_assets(core::whereami())!!;
 
     f = file::open("log.txt", "w")!!;
     defer (void) f.close();
@@ -96,12 +122,24 @@ fn void main(String[] args)
                 }
             }
 
-            core = file::open(dump_path.str_view(), "rb")!!;
+            if (try File maybe = file::open(dump_path.str_view(), "rb")) {
+                core = maybe;
+                no_core = false;
+            } else {
+                crash::crash_info = false;
+            }
         };
     $else
-        if (args[1] != "NO CORE") core = file::open(args[1], "rb")!!;
-        /* pass it through zstd, or it'll be fat */
-        if (args[1].ends_with(".core")) needs_compression = true;
+        if (args[1] != "NO CORE") {
+            if (try File maybe = file::open(args[1], "rb")) {
+                core = maybe;
+                no_core = false;
+            } else {
+                crash::crash_info = false;
+            }
+        } else {
+            crash::crash_info = false;
+        }
     $endif
 
     /* GUI */
@@ -118,12 +156,19 @@ fn void main(String[] args)
         update_titlebar_theme();
     $endif
 
-    Image oxy_img = rl::loadImageFromMemory(".png", ded_png.ptr, ded_png.len);
+    Image oxy_img = rl::loadImage(assets[0].str_view().zstr_tcopy());
     Texture2D oxy = rl::loadTextureFromImage(oxy_img);
     rl::setTextureFilter(oxy, TextureFilter.BILINEAR);
 
     rl::unloadImage(oxy_img);
     defer rl::unloadTexture(oxy);
+
+    Image oxy2_img = rl::loadImage(assets[1].str_view().zstr_tcopy());
+    Texture2D oxy2 = rl::loadTextureFromImage(oxy2_img);
+    rl::setTextureFilter(oxy2, TextureFilter.BILINEAR);
+
+    rl::unloadImage(oxy2_img);
+    defer rl::unloadTexture(oxy2);
 
     Image check_img = rl::loadImageFromMemory(".png", check_png.ptr, check_png.len);
     check = rl::loadTextureFromImage(check_img);
@@ -150,8 +195,10 @@ fn void main(String[] args)
             break LOOP;
         case MAIN_SCREEN:
             state = crash::draw(oxy);
+        case PACK:
+            state = pack::draw(oxy, core);
         case REPORT_SCREEN:
-            state = report::draw();
+            state = report::draw(oxy2);
         }
 
         rl::endDrawing();

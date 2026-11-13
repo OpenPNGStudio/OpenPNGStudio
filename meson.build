@@ -127,12 +127,13 @@ endif
 subdir('src/oxy_reporter')
 
 executable(
-  'oxy_reporter',
-  oxy_reporter_src,
-  dependencies: [deps, oxy_reporter_dep, libs],
-  install: true,
-  install_dir: 'libexec/OpenPNGStudio',
-  win_subsystem: win_subsystem
+    'oxy_reporter',
+    oxy_reporter_src,
+    dependencies: [deps, oxy_reporter_dep, libs],
+    include_directories: ['include', 'include/vendor', includes],
+    install: true,
+    install_dir: 'libexec/OpenPNGStudio',
+    win_subsystem: win_subsystem
 )
 
 # Install

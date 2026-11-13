@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 module openpngstudio::core;
-import std::core::env;
 
+import std::core::env;
 import std::io;
 import std::io::path;
+
+import std::os::win32;
 
 extern fn isz readlink(ZString path, char[] buf) @if(env::POSIX);
 
@@ -17,8 +19,6 @@ fn Path? whereami() @if(env::LINUX)
 
     return path::new(mem, zstr.str_view());
 }
-
-import std::os::win32;
 
 fn Path? whereami() @if(env::WIN32)
 {
@@ -39,3 +39,4 @@ fn Path? whereami() @if(env::FREEBSD)
 
     return path::new(mem, zstr.str_view());
 }
+
