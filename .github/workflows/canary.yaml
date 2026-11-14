@@ -1,0 +1,218 @@
+name: Build And Publish Canary
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_enabled:
+        type: boolean
+        description: 'Build release binaries'
+        required: false
+        default: false
+  push:
+
+jobs:
+  linux:
+    runs-on: ubuntu-26.04
+    name: Linux Build
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux Build
+        env:
+          BUILD_RELEASE: ${{ inputs.release_enabled }}
+        run: |
+          export DEBIAN_FRONTEND="noninteractive"
+          sudo apt update
+          sudo apt install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+          sudo apt install -y ninja-build cmake meson make gcc g++ wget curl git nasm libportal-dev
+
+          wget "https://github.com/c3lang/c3c/releases/download/v0.7.11/c3-linux-static.tar.gz"
+          tar xf c3-linux-static.tar.gz
+
+          BUILD_TYPE="debug"
+          if [ "$BUILD_RELEASE" = "true" ]; then
+              BUILD_TYPE="debugoptimized"
+          fi
+
+          echo "Configuring Meson with buildtype=${BUILD_TYPE}"
+          meson setup build -Dprefix=/ -Dbuildtype="${BUILD_TYPE}"
+
+          ninja -C build
+          meson install --no-rebuild --destdir _install -C build --skip-subprojects
+
+          cd build/_install || exit 1
+              # Detach symbols
+              objcopy --only-keep-debug bin/OpenPNGStudio OpenPNGStudio.debug
+              objcopy --strip-debug --strip-unneeded bin/OpenPNGStudio
+              objcopy --add-gnu-debuglink=OpenPNGStudio.debug bin/OpenPNGStudio
+
+              mv OpenPNGStudio.debug ..
+
+              for bin in bin/opng libexec/OpenPNGStudio/oxy_reporter libexec/OpenPNGStudio/sentry_crash; do
+                  strip "$bin"
+              done
+          cd ../.. || exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-linux-x86_64
+          path: build/_install/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-linux-x86_64.debug
+          path: build/OpenPNGStudio.debug
+
+  windows:
+    runs-on: windows-latest
+    name: Windows Build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up NASM
+        uses: ilammy/setup-nasm@v1
+
+      - name: Set up MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build
+        shell: bash
+        run: |
+          pip install meson
+          curl.exe -fLO "https://github.com/c3lang/c3c/releases/download/v0.7.11/c3-windows.zip"
+          unzip -q c3-windows.zip -d .
+
+          BUILD_TYPE="debug"
+          if [ "$BUILD_RELEASE" = "true" ]; then
+              BUILD_TYPE="debugoptimized"
+          fi
+
+          rm -f "/c/Program Files/Git/usr/bin/link.exe"
+
+          meson setup build -Dprefix="$PWD/build/_install" -Dbuildtype="${BUILD_TYPE}" -Db_vscrt=md
+
+          ninja -C build
+          meson install --no-rebuild -C build --skip-subprojects
+
+          find build/_install -type f -name "*.pdb" -delete
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-windows-x86_64
+          path: build/_install/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-windows-x86_64.debug
+          path: build/OpenPNGStudio.pdb
+
+  freebsd:
+    runs-on: ubuntu-26.04
+    name: FreeBSD 15.0 Build
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: FreeBSD 15.0 Build
+        env:
+          BUILD_RELEASE: ${{ inputs.release_enabled }}
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "15.0"
+          envs: 'BUILD_RELEASE'
+          run: |
+            pkg install -y xorg
+            pkg install -y meson cmake wget curl git nasm libportal python3 pkgconf libxkbcommon
+
+            git clone https://github.com/c3lang/c3c.git --branch v0.7.11 --depth 1
+            cd c3c || exit 1
+                cmake -B build -G Ninja
+                ninja -C build
+            cd .. || exit 1
+
+            BUILD_TYPE="debug"
+            if [ "$BUILD_RELEASE" = "true" ]; then
+                BUILD_TYPE="debugoptimized"
+            fi
+
+            meson setup build -Dprefix=/ -Dbuildtype="${BUILD_TYPE}"
+
+            ninja -C build
+            meson install --no-rebuild --destdir _install -C build --skip-subprojects
+
+            cd build/_install || exit 1
+                # Detach symbols
+                objcopy --only-keep-debug bin/OpenPNGStudio OpenPNGStudio.debug
+                objcopy --strip-debug --strip-unneeded bin/OpenPNGStudio
+                objcopy --add-gnu-debuglink=OpenPNGStudio.debug bin/OpenPNGStudio
+
+                mv OpenPNGStudio.debug ..
+
+                for bin in bin/opng libexec/OpenPNGStudio/oxy_reporter; do
+                    strip "$bin"
+                done
+            cd ../.. || exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-freebsd-x86_64
+          path: build/_install/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-freebsd-x86_64.debug
+          path: build/OpenPNGStudio.debug
+
+  release:
+    needs: [linux, windows, freebsd]
+    runs-on: ubuntu-26.04
+    name: Publish Built Binaries
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Merge
+        run: |
+          export DEBIAN_FRONTEND="noninteractive"
+          sudo apt update
+          sudo apt install -y zip
+
+          OS="linux windows freebsd"
+
+          for os in $OS; do
+            dir="OpenPNGStudio-$os-x86_64"
+            zip -r $dir.zip $dir
+            if [ "$os" = "windows" ]; then
+              mv "$dir.debug/OpenPNGStudio.pdb" "$dir.debug/OpenPNGStudio-windows-x86_64.pdb"
+            else
+              mv "$dir.debug/OpenPNGStudio.debug" "$dir.debug/OpenPNGStudio-$os-x86_64.debug"
+            fi
+          done
+
+      - name: Set Release Names
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "TAG_NAME=latest-prerelease-tag" >> $GITHUB_ENV
+            echo "RELEASE_NAME=latest-prerelease-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+          else
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            echo "TAG_NAME=${BRANCH_NAME}-latest" >> $GITHUB_ENV
+            echo "RELEASE_NAME=${BRANCH_NAME}-latest" >> $GITHUB_ENV
+          fi
+
+      - run: gh release delete ${{ env.TAG_NAME }} --cleanup-tag -y || true
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: true
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: "OpenPNGStudio-*-x86_64.zip,OpenPNGStudio-*-x86_64.debug/*"

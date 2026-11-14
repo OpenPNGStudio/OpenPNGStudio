@@ -4,11 +4,6 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-/*
-#include <parent-private.h>
-*/
-#include <wayland-client.h>
-#include <xdg-foreign-unstable-v1-client-protocol.h>
 
 /* extern */
 #define GLFW_PLATFORM_WAYLAND       0x00060003

@@ -47,7 +47,7 @@ libavif_o.add_cmake_defines({
     'AVIF_LIBYUV': 'SYSTEM',
     'BUILD_SHARED_LIBS': false,
     'DAV1D_LIBRARY': 'libdav1d.a',
-    'AOM_INCLUDE_DIR': libdav1d_inc,
+    'DAV1D_INCLUDE_DIR': libdav1d_inc,
     'LIBYUV_LIBRARY': 'libyuv.a',
     'LIBYUV_INCLUDE_DIR': libyuv_inc,
 })
@@ -85,6 +85,7 @@ sentry_o.add_cmake_defines({
     'SENTRY_TRANSPORT': 'none',
     'SENTRY_BACKEND': 'native',
     'SENTRY_INTEGRATION_WER': 'OFF',
+    'CMAKE_MSVC_RUNTIME_LIBRARY': 'MultiThreadedDLL',
 })
 
 # Projects
@@ -96,7 +97,9 @@ sqlite_p = subproject('sqlite3', default_options: {
 
 libyuv_p = cmake.subproject('libyuv', options: libyuv_o)
 dav1d_p = subproject('libdav1d', default_options: {
-	'default_library': 'static'
+    'default_library': 'static',
+    'enable_tools': false,
+    'enable_tests': false
 })
 libavif_p = cmake.subproject('libavif', options: libavif_o)
 
@@ -213,15 +216,4 @@ if system != 'windows'
     })
     
     deps += libportal_p.get_variable('libportal_dep')
-    
-    xml = wl.find_protocol('xdg-foreign',
-        state : 'unstable',
-        version : 1,
-    )
-    
-    xdg_foreign = wl.scan_xml(xml)
-    
-    sources += xdg_foreign
-    deps += dependency('wayland-client')
-    includes += libportal_p.get_variable('libportal_inc')
 endif
