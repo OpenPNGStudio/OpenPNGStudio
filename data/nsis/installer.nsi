@@ -48,6 +48,9 @@ Section "C3 Compiler"
   SetOutPath "$INSTDIR\share"
   File /nonfatal /r "..\..\${IDIR}\share\*"
 
+  SetOutPath "$INSTDIR\libexec"
+  File /nonfatal /r "..\..\${IDIR}\libexec\*"
+
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   CreateShortcut "$DESKTOP\OpenPNGStudio.lnk" "$INSTDIR\bin\OpenPNGStudio.exe"

@@ -167,8 +167,26 @@ jobs:
           name: OpenPNGStudio-freebsd-x86_64.debug
           path: build/OpenPNGStudio.debug
 
+  windows-installer:
+    runs-on: windows-latest
+    name: Windows Installer
+    needs: windows
+
+    steps:
+      - uses: repolevedavaj/install-nsis@v1
+        with:
+          nsis-version: '3.12'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: OpenPNGStudio-windows-x86_64
+
+      - run: |
+          makensis -DIDIR=OpenPNGStudio-windows-x86_64 data/nsis/installer.nsi
+          mv data/nsis/installer.exe OpenPNGStudio-windows-installer.exe
+
   release:
-    needs: [linux, windows, freebsd]
+    needs: [linux, windows, windows-installer, freebsd]
     runs-on: ubuntu-26.04
     name: Publish Built Binaries
     steps:
@@ -215,4 +233,4 @@ jobs:
           prerelease: true
           allowUpdates: true
           removeArtifacts: true
-          artifacts: "OpenPNGStudio-*-x86_64.zip,OpenPNGStudio-*-x86_64.debug/*"
+          artifacts: "OpenPNGStudio-*-x86_64.zip,OpenPNGStudio-*-x86_64.debug/*,OpenPNGStudio-windows-installer.exe"
