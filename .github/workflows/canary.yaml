@@ -182,8 +182,13 @@ jobs:
           name: OpenPNGStudio-windows-x86_64
 
       - run: |
-          makensis -DIDIR=OpenPNGStudio-windows-x86_64 data/nsis/installer.nsi
-          mv data/nsis/installer.exe OpenPNGStudio-windows-installer.exe
+          makensis -DIDIR=OpenPNGStudio-windows-x86_64 data\nsis\installer.nsi
+          mv data\nsis\installer.exe OpenPNGStudio-windows-installer-x86_64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenPNGStudio-windows-installer-x86_64
+          path: OpenPNGStudio-windows-installer-x86_64.exe
 
   release:
     needs: [linux, windows, windows-installer, freebsd]
@@ -211,6 +216,8 @@ jobs:
               mv "$dir.debug/OpenPNGStudio.debug" "$dir.debug/OpenPNGStudio-$os-x86_64.debug"
             fi
           done
+          
+          mv OpenPNGStudio-windows-installer-x86_64/*.exe .
 
       - name: Set Release Names
         run: |
@@ -233,4 +240,4 @@ jobs:
           prerelease: true
           allowUpdates: true
           removeArtifacts: true
-          artifacts: "OpenPNGStudio-*-x86_64.zip,OpenPNGStudio-*-x86_64.debug/*,OpenPNGStudio-windows-installer.exe"
+          artifacts: "OpenPNGStudio-*-x86_64.zip,OpenPNGStudio-*-x86_64.debug/*,OpenPNGStudio-windows-installer-x86_64.exe"
