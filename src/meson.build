@@ -13,7 +13,7 @@ src = files('wrappers.c', 'core/brain_damage.c', 'core/microphone.c',
     'ui/filedialogs/xdp.c', 'ui/filedialogs/win32.c')
 
 if system == 'windows'
-    foreach winlib : ['Shlwapi', 'Dbghelp', 'Ws2_32']
+    foreach winlib : ['Shlwapi', 'Dbghelp', 'Ws2_32', 'Shell32']
         libs += cc.find_library(winlib)
     endforeach
     

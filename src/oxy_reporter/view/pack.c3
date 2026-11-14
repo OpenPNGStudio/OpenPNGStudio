@@ -48,14 +48,12 @@ fn Path find_location()
             root = path::temp(home)!!;
             at_home = true;
         }
-    $else
-        abort("How did you get here?");
     $endif
 
     Path parent = root;
     if (!at_home) parent = root.parent()!!;
 
-    pretty_loc = string::tformat("~%s/%s", root.str_view()[parent.str_view().len..], name).zstr_copy(mem);
+    pretty_loc = string::tformat("~%s%c%s", root.str_view()[parent.str_view().len..], path::PREFERRED_SEPARATOR, name).zstr_copy(mem);
 
     root_dir = path::new(mem, root.str_view())!!;
 
