@@ -1,4 +1,0 @@
-[wrap-git]
-url = https://aomedia.googlesource.com/aom.git
-revision = v3.14.1
-depth = 1

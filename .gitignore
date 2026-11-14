@@ -15,6 +15,9 @@ subprojects/packagecache/
 subprojects/libportal/
 subprojects/libaom/
 subprojects/libyuv/
+subprojects/checkasm/
+subprojects/checkasm.wrap
+subprojects/libdav1d/
 subprojects/sentry-native/
 .cache/
 CMakeSettings.json

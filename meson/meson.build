@@ -29,58 +29,31 @@ if host_machine.system() != 'windows'
     })
 endif
 
-libaom_o = cmake.subproject_options()
-libaom_o.add_cmake_defines({
-    'CONFIG_WEBM_IO': false,
-    'ENABLE_APPS': false,
-    'ENABLE_DOCS': false,
-    'ENABLE_EXAMPLES': false,
-    'ENABLE_TESTS': false,
-    'ENABLE_TESTDATA': false,
-    'ENABLE_TOOLS': false,
-    'CONFIG_PIC': true,
-    'CONFIG_LIBYUV': false,
-    'BUILD_SHARED_LIBS': false
-})
-
 libyuv_o = cmake.subproject_options()
 libyuv_o.add_cmake_defines({
     'BUILD_SHARED_LIBS': false
 })
 
-libaom_inc = here / 'subprojects/libaom'
+libdav1d_inc = here / 'subprojects/libdav1d/include'
 libyuv_inc = here / 'subprojects/libyuv/include'
 
 libavif_o = cmake.subproject_options()
 libavif_o.add_cmake_defines({
-    'AVIF_CODEC_AOM': 'SYSTEM',
-    'AVIF_CODEC_DAV1D': false,
+    'AVIF_CODEC_AOM': false,
+    'AVIF_CODEC_DAV1D': 'SYSTEM',
     'AVIF_CODEC_LIBGAV1': false,
     'AVIF_CODEC_RAV1E': false,
     'AVIF_CODEC_SVT': false,
     'AVIF_LIBYUV': 'SYSTEM',
     'BUILD_SHARED_LIBS': false,
-    'AOM_LIBRARY': 'libaom.a',
-    'AOM_INCLUDE_DIR': libaom_inc,
+    'DAV1D_LIBRARY': 'libdav1d.a',
+    'AOM_INCLUDE_DIR': libdav1d_inc,
     'LIBYUV_LIBRARY': 'libyuv.a',
     'LIBYUV_INCLUDE_DIR': libyuv_inc,
 })
 
-libavif_o.append_compile_args('c', '-I' + libaom_inc)
+libavif_o.append_compile_args('c', '-I' + libdav1d_inc)
 libavif_o.append_compile_args('c', '-I' + libyuv_inc)
-
-if not nasm.found()
-    libavif_o.add_cmake_defines({
-        'AOM_TARGET_CPU': 'generic'
-    })
-    libaom_o.add_cmake_defines({
-        'AOM_TARGET_CPU': 'generic'
-    })
-else
-    libaom_o.add_cmake_defines({
-        'ENABLE_NASM': true
-    })
-endif
 
 if get_option('jxl')
     libjxl_o = cmake.subproject_options()
@@ -122,7 +95,9 @@ sqlite_p = subproject('sqlite3', default_options: {
 })
 
 libyuv_p = cmake.subproject('libyuv', options: libyuv_o)
-libaom_p = cmake.subproject('libaom', options: libaom_o)
+dav1d_p = subproject('libdav1d', default_options: {
+	'default_library': 'static'
+})
 libavif_p = cmake.subproject('libavif', options: libavif_o)
 
 libwebp_p = subproject('libwebp', default_options: {
@@ -143,7 +118,7 @@ deps += sqlite_p.get_variable('sqlite3_dep')
 
 deps += [
     libyuv_p.dependency('yuv'),
-    libaom_p.dependency('aom'),
+    dav1d_p.get_variable('dav1d_dep'),
     libavif_p.dependency('avif')
 ]
 
