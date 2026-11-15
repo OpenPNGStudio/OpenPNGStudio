@@ -83,6 +83,8 @@ struct Context {
     struct sentry {
         ZString crash, reporter, db;
     }
+
+    Shortcuts shortcuts;
 }
 
 Context *instance @local = null;
