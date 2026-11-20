@@ -9,7 +9,6 @@ char[] icon_png = $embed("../../assets/logo.png");
 char[] font_ttf = $embed("../../assets/fonts/VarelaRound-Regular.ttf");
 char[] check_png = $embed("../../assets/icons/check.png");
 
-File f;
 Font font @local;
 Texture2D check @local;
 
@@ -96,9 +95,6 @@ fn void main(String[] args)
     GuiState state = MAIN_SCREEN;
     Path[2] assets = resolve_assets(core::whereami())!!;
 
-    f = file::open("log.txt", "w")!!;
-    defer (void) f.close();
-
     File dump = file::open("crash.dmp", "w")!!;
     defer (void) dump.close();
 
@@ -144,6 +140,7 @@ fn void main(String[] args)
 
     /* GUI */
     rl::setConfigFlags(rl::FLAG_MSAA_4X_HINT);
+    rl::setTraceLogLevel(ERROR);
     rl::initWindow(448, 568, "Crash Report");
     defer rl::closeWindow();
 

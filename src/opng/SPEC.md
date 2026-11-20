@@ -70,7 +70,7 @@ Directory info header:
 | nchildren | INTEGER             |
 | data_id   | INTEGER             |
 
-> If `Child_Count` is more than 0, it's a group.
+> If `nchildren` is more than 0, it's a group.
 
 `Layer Data (1->1)`:
 
@@ -88,6 +88,7 @@ Directory info header:
 | Image_ID | INTEGER             |
 | Mask     | BIGINT              |
 | Toggle   | BOOLEAN             |
+| Clear    | BOOLEAN             |
 
 `Animation Data (1->N)`:
 

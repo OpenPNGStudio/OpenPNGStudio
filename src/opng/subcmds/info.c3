@@ -165,6 +165,13 @@ fn void? layer_info(Reader *rd, int depth = 2) @local @maydiscard
     io::print(" = ");
     @boolean(data.toggle);
 
+    if (layer.nchildren > 0 || data.image_id == 0) {
+        io::printn();
+        @ident("clear", depth);
+        io::print(" = ");
+        @boolean(data.clear);
+    }
+
     if (data.image_id > 0) {
         io::printn();
         @ident("image id", depth);

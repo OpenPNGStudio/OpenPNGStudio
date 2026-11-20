@@ -87,7 +87,7 @@ struct SQLLayerData {
     usz timeout;
     uint image_id;
     ulong mask;
-    bool toggle;
+    bool toggle, clear;
 }
 
 struct SQLAnimation {

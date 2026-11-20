@@ -8,11 +8,13 @@ import std::collections::list, std::io;
 import opng;
 import nk;
 import raylib5::rl;
+import std::math;
 
 struct LayerGroup (Layer) {
     StaticLayer base;
     List{Layer} layers;
     LayerGroup *parent;
+    bool clear;
 
     /* nuklear state */
     CollapseStates tree_state;
@@ -58,13 +60,16 @@ fn bool LayerGroup.draw(&self, Origin origin) @dynamic
         origin.rotation += self.base.rotation;
         origin.tint = self.base.tint;
 
-        rl::drawLineEx(orig_pos, origin.position, 5, rl::RED);
         foreach (a : self.base.animations) {
             if (a.a == null) continue;
 
             BasicAnimation *b = a.a.get_base();
             b.enable(true);
             a.a.animate(&origin);
+        }
+
+        if (self.clear) {
+            openpngstudio::clear_screen(openpngstudio::get_ctx(), false);
         }
 
         foreach (layer : self.layers) {
@@ -131,8 +136,41 @@ fn layer::Command LayerGroup.layer_entry(&self, nk::Context *ctx) @dynamic
     return { NONE, null, null };
 }
 
-fn void LayerGroup.config(&self, nk::Context *ctx) @dynamic =>
+fn void LayerGroup.config(&self, nk::Context *ctx) @dynamic
+{
+
+    float win_width = nk::window_get_width(ctx);
+    float min_width = math::max(win_width * 0.49f, 250.0f);
+
+    nk::layout_row_template_begin(ctx, 35);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_variable(ctx, min_width);
+    nk::layout_row_template_end(ctx);
+
+    nk::label(ctx, "Clear Background: ", nk::TEXT_LEFT);
+    if (nk::group_begin(ctx, "Clear Background", nk::WINDOW_NO_SCROLLBAR)) {
+        nk::layout_row_template_begin(ctx, 30);
+        nk::layout_row_template_push_dynamic(ctx);
+        nk::layout_row_template_push_static(ctx, 75);
+        nk::layout_row_template_end(ctx);
+
+        nk::spacing(ctx, 1);
+        bool has_clear = self.clear;
+        nk::checkbox_label(ctx, "Enable", &has_clear);
+        self.clear = has_clear;
+
+        nk::group_end(ctx);
+    }
+
+    nk::layout_row_dynamic(ctx, 4, 1);
+    nk::spacer(ctx);
+    nk::layout_row_dynamic(ctx, 2, 1);
+    nk::rule_horizontal(ctx, ctx.style.window.border_color, false);
+    nk::layout_row_dynamic(ctx, 4, 1);
+    nk::spacer(ctx);
+    
     static_layer::config(&self.base, ctx);
+}
 
 fn bool LayerGroup.can_cleanup(&self) @dynamic
 {
@@ -182,7 +220,7 @@ fn void? LayerGroup.up(&self, layer::Command *sel) @maydiscard
             if (LayerGroup *layer_group = layer.ptr, layer.type == LayerGroup) {
                 layer_group.parent = group;
             }
-            return;
+return;
         }
     }
 
@@ -230,6 +268,7 @@ fn void? LayerGroup.down(&self, layer::Command *sel) @maydiscard
 fn void? LayerGroup.pack(&self, Writer *wr) @dynamic
 {
     SQLLayerData data = static_layer::prepare_data(&self.base);
+    data.clear = self.clear;
 
     uint layer_id = wr.add_layer_data(data)!;
 

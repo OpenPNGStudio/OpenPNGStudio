@@ -349,7 +349,8 @@ fn SQLLayerData prepare_data(StaticLayer *self) @inline => {
     self.timeout,
     self.image == null ? 0 : self.image.id,
     self.mask,
-    self.toggle
+    self.toggle,
+    false
 };
 
 fn uint color_to_uint(rl::Color color) @local

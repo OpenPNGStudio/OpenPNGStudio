@@ -180,7 +180,8 @@ SELECT * FROM layer_data WHERE id = ?;
             sqlite3::column_int64(stmt, 8),
             sqlite3::column_int(stmt, 9),
             sqlite3::column_int64(stmt, 10),
-            sqlite3::column_int(stmt, 11) == 1
+            sqlite3::column_int(stmt, 11) == 1,
+            sqlite3::column_int(stmt, 12) == 1
         };
     };
 }

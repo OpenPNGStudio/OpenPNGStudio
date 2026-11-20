@@ -172,8 +172,8 @@ fn uint? Writer.add_layer_data(&self, SQLLayerData data)
     @pool() {
         SqliteStmt stmt;
         String insert = `
-INSERT INTO layer_data (name, x, y, scale_x, scale_y, rotation, tint, timeout, image_id, mask, toggle)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO layer_data (name, x, y, scale_x, scale_y, rotation, tint, timeout, image_id, mask, toggle, clear)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
         insert = insert.trim();
         
@@ -213,6 +213,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         if (res != OK) return SQLITE_FAILED~;
 
         res = sqlite3::bind_int(stmt, 11, (int) data.toggle);
+        if (res != OK) return SQLITE_FAILED~;
+
+        res = sqlite3::bind_int(stmt, 12, (int) data.clear);
         if (res != OK) return SQLITE_FAILED~;
         
         res = sqlite3::step(stmt);
@@ -410,7 +413,8 @@ CREATE TABLE layer_data (
     timeout INTEGER,
     image_id INTEGER,
     mask INTEGER,
-    toggle BOOLEAN
+    toggle BOOLEAN,
+    clear BOOLEAN
 );
 `;
         stmt = stmt.trim();

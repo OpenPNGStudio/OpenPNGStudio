@@ -9,8 +9,6 @@ typedef Shortcuts (wm::Window) = int;
 
 fn void Shortcuts.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
-    float win_width = nk::window_get_width(ctx);
-
     nk::layout_row_template_begin(ctx, 30);
     nk::layout_row_template_push_dynamic(ctx);
     nk::layout_row_template_push_static(ctx, 200);

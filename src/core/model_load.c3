@@ -91,6 +91,8 @@ fn void load_model(Work{ModelLoad*} *work) @local
             }
         }
     case LOAD_IMAGES:
+        if (self.model_images.len == 0) break;
+
         ImageEntry img_entry = self.model_images[0];
         
         image::Image *img = mem::new(image::Image);
@@ -137,6 +139,7 @@ fn ev::Action load_done(Work{ModelLoad*} *work) @local
         self.state = LOAD_IMAGES;
         return REARM;
     case LOAD_IMAGES:
+        if (self.model_images.len == 0) nextcase;
         self.model_images = self.model_images[1..];
         if (self.model_images.len == 0) nextcase;
         
@@ -178,10 +181,11 @@ fn ev::Action load_done(Work{ModelLoad*} *work) @local
                 SQLLayerData data = self.rd.get_layer_data(layer.data_id)!!;
                 
                 /* create and append ground */
-                if (layer.nchildren > 0) {
+                if (layer.nchildren > 0 || data.image_id == 0) {
                     LayerGroup *group = mem::new(LayerGroup);
                     group.init(mem, data.name);
                     group.parent = top.root;
+                    group.clear = data.clear;
                     update_values(self, &group.base, data, layer.data_id);
                     
                     self.roots.push({ group, layer.nchildren });

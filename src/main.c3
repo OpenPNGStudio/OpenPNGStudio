@@ -202,6 +202,31 @@ fn void custom_blend() @export("custom_blend") @inline
     rlSetBlendFactorsSeparate(0x0302, 0x0303, 1, 0x0303, 0x8006, 0x8006);
 }
 
+extern fn void rlSetBlendMode(int mode);
+extern fn void rlSetBlendFactors(int glSrcFactor, int glDstFactor, int glEquation);
+
+fn void clear_screen(Context *ctx, bool fast = true)
+{
+    rl::Color inverted = {255, 255, 255, 255};
+    rl::Color bg = ctx.scene.background;
+    inverted.r -= bg.r;
+    inverted.g -= bg.g;
+    inverted.b -= bg.b;
+
+    if (fast) {
+        rl::clearBackground(bg);
+    } else {
+        rl::endMode2D();
+        rl::clearBackground(bg);
+    }
+
+    if (ctx.editing) draw_grid(1, 60, inverted);
+
+    if (!fast) {
+        rl::beginMode2D(ctx.camera);
+    }
+}
+
 fn ev::Action draw(Timer{Context*} *idle)
 {
     Context *ctx = idle.ctx;
@@ -209,17 +234,9 @@ fn ev::Action draw(Timer{Context*} *idle)
 
     if (rl::windowShouldClose()) ctx.loop.stop();
 
-    rl::Color inverted = {255, 255, 255, 255};
-    rl::Color bg = ctx.scene.background;
-    inverted.r -= bg.r;
-    inverted.g -= bg.g;
-    inverted.b -= bg.b;
-
     rl::beginDrawing();
-    rl::clearBackground(bg);
-
-    if (ctx.editing) draw_grid(1, 60, inverted);
-    
+    clear_screen(ctx);
+ 
     custom_blend();
     
     rl::beginMode2D(ctx.camera);
