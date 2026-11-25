@@ -130,6 +130,7 @@ fn void run(openpngstudio::Context *self)
             self.wm.register("Microphone Configuration", &self.microphone);
             self.wm.register("Scene Configurator", &self.scene);
             self.wm.register("Shortcuts", &self.shortcuts);
+            self.wm.register("About OpenPNGStudio", &self.about);
             state = ICONS;
         case ICONS:
             openpngstudio::load_icons(self);

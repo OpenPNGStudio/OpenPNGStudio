@@ -374,6 +374,11 @@ fn void initialize_panel(Context *self) @local
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, HELP, self);
+    
+    self.panel.add_right_entry(fn void(void *_ctx) {
+        Context *ctx = _ctx;
+        ctx.wm.show(&ctx.about);
+    }, INFO, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
@@ -404,10 +409,20 @@ fn void initialize_panel(Context *self) @local
         ctx.wm.show(&ctx.microphone);
     }, MICROPHONE, self);
 
+    self.panel.add_left_entry(fn void(void *_ctx) {
+        Context *ctx = _ctx;
+        ctx.wm.show(&ctx.shortcuts);
+    }, SHORTCUTS, self);
+
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
         io::printn("hello, world");
     }, HELP, self);
+
+    self.panel.add_right_entry(fn void(void *_ctx) {
+        Context *ctx = _ctx;
+        ctx.wm.show(&ctx.about);
+    }, INFO, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
