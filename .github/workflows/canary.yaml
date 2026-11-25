@@ -59,7 +59,7 @@ jobs:
           path: build/OpenPNGStudio.debug
 
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Windows Build
     steps:
       - uses: actions/checkout@v4
