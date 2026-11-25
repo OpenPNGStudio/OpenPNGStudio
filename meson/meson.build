@@ -34,7 +34,7 @@ libyuv_o.add_cmake_defines({
     'BUILD_SHARED_LIBS': false
 })
 
-libdav1d_inc = here / 'subprojects/libdav1d/include'
+libdav1d_inc = here / 'subprojects/dav1d-1.5.4/include'
 libyuv_inc = here / 'subprojects/libyuv/include'
 
 libavif_o = cmake.subproject_options()

@@ -1,4 +1,5 @@
-[wrap-git]
-url = https://github.com/videolan/dav1d.git
-revision = 1.5.4
-depth = 1
+[wrap-file]
+directory = dav1d-1.5.4
+source_url = https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz
+source_filename = dav1d-1.5.4.tar.xz
+source_hash = 686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5
