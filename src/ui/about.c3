@@ -7,14 +7,22 @@ import nk;
 
 typedef About (wm::Window) = int;
 
-const char[] LICENSE = $embed("../../COPYING");
-
 extern fn void set_nuklear_scaling(nk::Context* ctx, float scaling) @cname("SetNuklearScaling");
 extern fn float get_nuklear_scaling(nk::Context* ctx) @cname("GetNuklearScaling");
 
 fn void About.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
-    float width = nk::window_get_width(ctx);
+    float height = nk::window_get_content_region(ctx).h;
+
+    nk::layout_row_template_begin(ctx, 128);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 128);
+    nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_end(ctx);
+
+    nk::spacer(ctx);
+    nk::image(ctx, icons::get(LOGO));
+    nk::spacer(ctx);
 
     nk::layout_row_dynamic(ctx, 32, 1);
     {
@@ -27,16 +35,20 @@ fn void About.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     nk::layout_row_dynamic(ctx, 30, 1);
     nk::label(ctx, "Create & stream PNGTuber models", nk::TEXT_ALIGN_CENTERED);
 
-    nk::layout_row_template_begin(ctx, 128);
+    nk::layout_row_dynamic(ctx, height - 250, 1);
+    nk::spacer(ctx);
+
+    nk::layout_row_template_begin(ctx, 30);
+    nk::layout_row_template_push_static(ctx, 128);
     nk::layout_row_template_push_dynamic(ctx);
     nk::layout_row_template_push_static(ctx, 128);
     nk::layout_row_template_push_dynamic(ctx);
+    nk::layout_row_template_push_static(ctx, 128);
     nk::layout_row_template_end(ctx);
 
+    nk::button_label(ctx, "Website");
     nk::spacer(ctx);
-    nk::image(ctx, icons::get(LOGO));
+    nk::button_label(ctx, "License");
     nk::spacer(ctx);
-
-    nk::layout_row_dynamic(ctx, 30, 1);
-    nk::label(ctx, "License:", nk::TEXT_ALIGN_LEFT);
+    nk::button_label(ctx, "Third-Party");
 }
