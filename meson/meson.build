@@ -216,4 +216,6 @@ if system != 'windows'
     })
     
     deps += libportal_p.get_variable('libportal_dep')
+else
+    add_project_arguments('/Zc:preprocessor-', language: 'c')
 endif
