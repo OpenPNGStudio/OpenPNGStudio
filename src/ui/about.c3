@@ -7,9 +7,6 @@ import nk;
 
 typedef About (wm::Window) = int;
 
-extern fn void set_nuklear_scaling(nk::Context* ctx, float scaling) @cname("SetNuklearScaling");
-extern fn float get_nuklear_scaling(nk::Context* ctx) @cname("GetNuklearScaling");
-
 fn void About.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
 {
     float height = nk::window_get_content_region(ctx).h;
@@ -46,9 +43,20 @@ fn void About.draw(&self, WindowManager *wm, nk::Context *ctx) @dynamic
     nk::layout_row_template_push_static(ctx, 128);
     nk::layout_row_template_end(ctx);
 
-    nk::button_label(ctx, "Website");
+    if (nk::button_label(ctx, "Website")) open_browser("https://opng.dev");
     nk::spacer(ctx);
-    nk::button_label(ctx, "License");
+    if (nk::button_label(ctx, "License")) open_browser("https://opng.dev/license");
     nk::spacer(ctx);
-    nk::button_label(ctx, "Third-Party");
+    if (nk::button_label(ctx, "Third-Party")) open_browser("https://opng.dev/third-party");
+}
+
+extern fn void shellExecute(void *a, ZString action, ZString url, void *b, void *c, int showcmd) @if(env::WIN32) @cname("ShellExecuteA");
+
+fn void open_browser(String url) @local => @pool()
+{
+    $if env::WIN32:
+        shellExecute(null, "open", url.zstr_tcopy(), null, null, 1);
+    $else
+        (void) process::spawn({"xdg-open", url}, INHERIT_ENV);
+    $endif
 }

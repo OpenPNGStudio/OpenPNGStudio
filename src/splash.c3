@@ -131,6 +131,7 @@ fn void run(openpngstudio::Context *self)
             self.wm.register("Scene Configurator", &self.scene);
             self.wm.register("Shortcuts", &self.shortcuts);
             self.wm.register("About OpenPNGStudio", &self.about);
+            self.wm.register("Help", &self.help);
             state = ICONS;
         case ICONS:
             openpngstudio::load_icons(self);

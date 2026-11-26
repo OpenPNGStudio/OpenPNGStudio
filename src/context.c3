@@ -86,6 +86,7 @@ struct Context {
 
     Shortcuts shortcuts;
     About about;
+    Help help;
 }
 
 Context *instance @local = null;

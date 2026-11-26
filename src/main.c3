@@ -372,7 +372,7 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        io::printn("hello, world");
+        ctx.wm.show(&ctx.help);
     }, HELP, self);
     
     self.panel.add_right_entry(fn void(void *_ctx) {
@@ -416,7 +416,7 @@ fn void initialize_panel(Context *self) @local
 
     self.panel.add_right_entry(fn void(void *_ctx) {
         Context *ctx = _ctx;
-        io::printn("hello, world");
+        ctx.wm.show(&ctx.help);
     }, HELP, self);
 
     self.panel.add_right_entry(fn void(void *_ctx) {
