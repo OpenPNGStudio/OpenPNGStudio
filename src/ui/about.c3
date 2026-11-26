@@ -2,6 +2,7 @@
 module openpngstudio::ui;
 
 import std::math, std::io;
+import std::os::process;
 
 import nk;
 
