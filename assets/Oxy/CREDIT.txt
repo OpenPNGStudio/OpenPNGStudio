@@ -20,7 +20,7 @@ Digital Protogen Furry Sticker / Emote Base:
 - license:              CUSTOM License (TOS in product details)
 
 C3 logo:
-- author:               Christoffer Lerno
+- author:               Christoffer Lernö
 - website:              https://c3-lang.org/
 - website repository:   https://github.com/c3lang/c3-web
 - license:              MIT License

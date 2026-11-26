@@ -95,9 +95,6 @@ fn void main(String[] args)
     GuiState state = MAIN_SCREEN;
     Path[2] assets = resolve_assets(core::whereami())!!;
 
-    File dump = file::open("crash.dmp", "w")!!;
-    defer (void) dump.close();
-
     $if !env::FREEBSD:
         @pool() {
             Path envelope = path::temp(args[1])!!;
