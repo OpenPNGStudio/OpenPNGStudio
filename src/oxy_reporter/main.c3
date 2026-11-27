@@ -72,15 +72,12 @@ fn Path[2] resolve_assets(Path self) => @pool()
     Path dir = self.parent()!!; /* /build /libexec/OpenPNGStudio */
     if (dir.basename() == "build") {
         dir = dir.parent()!!;
-        dir = dir.tappend("assets")!!;
+        dir = dir.tappend("subprojects/oxy/crash_reporter")!!;
     } else {
         dir = dir.parent()!!; /* /libexec */
         dir = dir.parent()!!; /* / */
-        dir = dir.tappend("share")!!;
-        dir = dir.tappend("OpenPNGStudio")!!;
+        dir = dir.tappend("share/OpenPNGStudio/crash_reporter")!!;
     }
-
-    dir = dir.tappend("Oxy")!!;
 
     res[0] = dir.append(mem, "ded.png")!!;
     res[1] = dir.append(mem, "relieved.png")!!;

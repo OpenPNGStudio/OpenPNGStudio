@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://codeberg.org/OpenPNGStudio/oxy.git
+revision = main
+depth = 1

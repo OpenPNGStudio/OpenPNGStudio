@@ -2,11 +2,7 @@ project(
     'OpenPNGStudio',
     'c', 'cpp',
     license: ['GPL-3.0-or-later', 'CC-BY-NC-SA-4.0'],
-    license_files: [
-        'COPYING',
-        'assets/Oxy/LICENSE.txt',
-        'assets/Oxy/CREDIT.txt',
-    ],
+    license_files: 'COPYING',
     version: '0.3.0',
     meson_version: '>= 1.8.0',
     default_options: {
@@ -34,6 +30,14 @@ c3_buildtypes = {
 }
 
 c3_opt = c3_buildtypes.get(get_option('buildtype'), ['-O0', '-g'])
+
+release_types = {
+    'debugoptimized': true,
+    'release': true,
+    'minsize': true
+}
+
+release = release_types.get(get_option('buildtype'), false)
 
 lib_ext = 'a'
 exe_ext = ''

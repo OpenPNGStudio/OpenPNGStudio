@@ -8,11 +8,19 @@ Name "OpenPNGStudio"
 InstallDir "$LOCALAPPDATA\OpenPNGStudio"
 OutFile "installer.exe"
 
+!ifndef IDIR
+  !define IDIR "build\_install"
+!endif
+
+!ifndef ODIR
+  !define ODIR "..\..\subprojects\oxy\installer"
+!endif
+
 !define MUI_ABORTWARNING
 !define MUI_ICON "logo.ico"
 
-!define MUI_WELCOMEFINISHPAGE_BITMAP "welcome.bmp"
-!define FINAL_PAGE_BITMAP "finish.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${ODIR}\welcome.bmp"
+!define FINAL_PAGE_BITMAP "${ODIR}\finish.bmp"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
@@ -20,13 +28,9 @@ OutFile "installer.exe"
 !insertmacro MUI_PAGE_INSTFILES
 
 !include "FinishPage.nsh"
-!insertmacro INSERT_FINAL_PAGE "finish.bmp"
+!insertmacro INSERT_FINAL_PAGE "${ODIR}\finish.bmp"
 
 !insertmacro MUI_LANGUAGE "English"
-
-!ifndef IDIR
-  !define IDIR "build\_install"
-!endif
 
 Function .onInit
   SetRegView 64

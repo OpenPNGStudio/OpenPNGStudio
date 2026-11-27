@@ -6,10 +6,21 @@ libcooker = static_library('cooker', 'cooker/loader.c',
 cooker_flags = []
 cooker_depends = []
 
-if get_option('release')
+if release
     cooker_flags += ['-D', 'RELEASE_SPLASH']
 
-    cooker_depends += fs.copyfile('banners/banner_' + meson.project_version() + '.qoi', 'banner.qoi')
+    cooker_depends += custom_target(
+        'banner.qoi',
+        output: 'banner.qoi',
+        command: [
+            python,
+            here / 'meson/copy_file.py',
+            oxy_assets / 'banners/banner_' + meson.project_version() + '.qoi',
+            '@OUTPUT@'
+        ],
+        build_always_stale: true,
+        install: false,
+    )
 endif
 
 cooker = custom_target('cooker',
@@ -39,16 +50,13 @@ install_subdir('shaders',
     install_dir: 'share/OpenPNGStudio'
 )
 
-install_subdir('Oxy',
-    install_dir: 'share/OpenPNGStudio',
-    exclude_files: ['Oxy/refsheet.png']
-)
-
-install_data(
-    'logo.png',
-    install_dir: 'share/icons/hicolor/512x512/apps',
-    rename: 'openpngstudio.png'
-)
+if system != 'windows'
+    install_data(
+        'logo.png',
+        install_dir: 'share/icons/hicolor/96x96/apps',
+        rename: 'openpngstudio.png'
+    )
+endif
 
 install_data(
     'logo.png',

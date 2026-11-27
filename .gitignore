@@ -18,6 +18,7 @@ subprojects/libyuv/
 subprojects/checkasm/
 subprojects/checkasm.wrap
 subprojects/dav1d-1.5.4/
+subprojects/oxy/
 subprojects/sentry-native/
 .cache/
 CMakeSettings.json

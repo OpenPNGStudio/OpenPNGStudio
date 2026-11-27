@@ -107,6 +107,9 @@ libwebp_p = subproject('libwebp', default_options: {
     'default_library': 'static'
 })
 
+oxy_p = subproject('oxy')
+oxy_assets = oxy_p.get_variable('here')
+
 if get_option('jxl')
     libjxl_p = cmake.subproject('libjxl', options: libjxl_o)
 endif
