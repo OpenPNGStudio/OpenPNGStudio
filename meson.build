@@ -144,4 +144,4 @@ executable(
 subdir('licenses')
 subdir('data')
 
-# Note: meson install --no-rebuild --destdir _install -C build --skip-subprojects
+# Note: meson install --no-rebuild --destdir _install -C build --skip-subprojects raylib,sqlite3,libyuv,libdav1d,libavif,libwebp,libportal,libjxl,checkasm

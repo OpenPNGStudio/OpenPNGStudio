@@ -37,7 +37,7 @@ jobs:
           echo "Configuring Meson with buildtype=${BUILD_TYPE}"
           meson setup build -Dprefix=/ -Dbuildtype="${BUILD_TYPE}"
           ninja -C build
-          meson install --no-rebuild --destdir _install -C build --skip-subprojects
+          meson install --no-rebuild --destdir _install -C build --skip-subprojects raylib,sqlite3,libyuv,libdav1d,libavif,libwebp,libportal,libjxl,checkasm
           cd build/_install || exit 1
               # Detach symbols
               objcopy --only-keep-debug bin/OpenPNGStudio OpenPNGStudio.debug
@@ -85,7 +85,7 @@ jobs:
           rm -f "/c/Program Files/Git/usr/bin/link.exe"
           meson setup build -Dprefix="$PWD/build/_install" -Dbuildtype="${BUILD_TYPE}" -Db_vscrt=md
           ninja -C build
-          meson install --no-rebuild -C build --skip-subprojects
+          meson install --no-rebuild -C build --skip-subprojects raylib,sqlite3,libyuv,libdav1d,libavif,libwebp,libportal,libjxl,checkasm
           find build/_install -type f -name "*.pdb" -delete
       - uses: actions/upload-artifact@v4
         with:
@@ -124,7 +124,7 @@ jobs:
             fi
             meson setup build -Dprefix=/ -Dbuildtype="${BUILD_TYPE}"
             ninja -C build
-            meson install --no-rebuild --destdir _install -C build --skip-subprojects
+            meson install --no-rebuild --destdir _install -C build --skip-subprojects raylib,sqlite3,libyuv,libdav1d,libavif,libwebp,libportal,libjxl,checkasm
             cd build/_install || exit 1
                 # Detach symbols
                 objcopy --only-keep-debug bin/OpenPNGStudio OpenPNGStudio.debug

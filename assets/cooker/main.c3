@@ -94,6 +94,7 @@ fn int main(String[] args)
         copy_file(orig.tappend("splash.qoi").str_view(), "assets/splash.qoi")!!;
     $else
         copy_file("assets/banner.qoi", orig.tappend("splash.qoi").str_view())!!;
+        copy_file("assets/banner.qoi", "assets/splash.qoi")!!;
     $endif
     return 0;
 }
