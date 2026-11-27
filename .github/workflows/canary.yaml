@@ -166,6 +166,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: bash
         run: |
+          git clone --depth 1 https://codeberg.org/OpenPNGStudio/oxy.git subprojects/oxy
           makensis -DIDIR=OpenPNGStudio-windows-x86_64 data/nsis/installer.nsi
           mv data/nsis/installer.exe OpenPNGStudio-windows-installer-x86_64.exe
       - uses: actions/upload-artifact@v4
